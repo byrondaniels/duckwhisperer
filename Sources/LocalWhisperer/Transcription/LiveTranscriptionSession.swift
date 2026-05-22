@@ -85,6 +85,12 @@ final class LiveTranscriptionSession {
         }
     }
 
+    func previewText() -> String {
+        queue.sync {
+            normalizedTranscript(chunks)
+        }
+    }
+
     private func schedulePoll(for scheduledGeneration: UUID) {
         queue.asyncAfter(deadline: .now() + 0.75) { [weak self] in
             self?.processNextChunk(for: scheduledGeneration)

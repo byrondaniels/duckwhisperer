@@ -9,15 +9,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let menu = NSMenu()
     private let modelMenu = NSMenu()
     private let outputMenu = NSMenu()
+    private let profileMenu = NSMenu()
+    private let performanceMenu = NSMenu()
+    private let historyMenu = NSMenu()
+    private let appDefaultsMenu = NSMenu()
     private let statusMenuItem = NSMenuItem(title: "Starting...", action: nil, keyEquivalent: "")
     private let autoPastePermissionMenuItem = NSMenuItem(title: "Auto-Paste Permission: Checking...", action: #selector(openAccessibilitySettings), keyEquivalent: "")
     private let toggleMenuItem = NSMenuItem(title: "Start Recording", action: #selector(toggleRecordingFromMenu), keyEquivalent: "")
     private let copyLastMenuItem = NSMenuItem(title: "Copy Last Transcript", action: #selector(copyLastTranscript), keyEquivalent: "")
     private let preserveCapitalizationMenuItem = NSMenuItem(title: "Preserve Capitalization", action: #selector(togglePreserveCapitalization), keyEquivalent: "")
+    private let audioDuckingMenuItem = NSMenuItem(title: "Audio Ducking", action: #selector(toggleAudioDucking), keyEquivalent: "")
     private let hotKeyController = HotKeyController()
     private let audioCapture = AudioCapture()
+    private let audioDucker = AudioDucker()
     private let recordingOverlay = RecordingOverlayController()
     private let transcriptionResult = TranscriptionResultController()
+    private lazy var personalDictionaryController = PersonalDictionaryController { [weak self] in
+        self?.refreshPermissionUI()
+    }
+    private lazy var transcriptHistoryController = TranscriptHistoryController()
+    private lazy var setupDoctorController = SetupDoctorController(
+        onOpenMicrophone: { [weak self] in self?.openMicrophoneSettings() },
+        onOpenAccessibility: { [weak self] in self?.openAccessibilitySettings() },
+        onOpenModelExplorer: { [weak self] in self?.showModelExplorer() }
+    )
     private lazy var transcriber = WhisperTranscriber(modelURL: modelURL)
     private lazy var modelExplorer = ModelExplorerController(
         currentModel: selectedModel,
@@ -39,6 +54,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var transcriptionProgressTargetDuration: TimeInterval = 2.0
     private var transcriptionProgressPercent = 0
     private var activeTranscriptionID: UUID?
+    private var recordingStartedAt: Date?
+    private var activeAppName: String?
+    private var activeOutputLanguage: OutputLanguage?
+    private var activeWritingProfile: WritingProfile?
+    private var activeModelChoice: ModelChoice?
 
     private var selectedModel: ModelChoice {
         let choice = ModelChoice.choice(for: UserDefaults.standard.string(forKey: selectedModelIDKey))
@@ -47,6 +67,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var selectedOutputLanguage: OutputLanguage {
         OutputLanguage.choice(for: UserDefaults.standard.string(forKey: selectedOutputLanguageIDKey))
+    }
+
+    private var selectedWritingProfile: WritingProfile {
+        WritingProfile.choice(for: UserDefaults.standard.string(forKey: selectedWritingProfileIDKey))
+    }
+
+    private var audioDuckingEnabled: Bool {
+        UserDefaults.standard.bool(forKey: audioDuckingEnabledKey)
+    }
+
+    private var personalDictionaryEntries: [PersonalDictionaryEntry] {
+        PersonalDictionary.entries(from: UserDefaults.standard.string(forKey: personalDictionaryTextKey) ?? "")
     }
 
     private var preserveCapitalization: Bool {
@@ -98,6 +130,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             showModelExplorer()
         }
 
+        if !UserDefaults.standard.bool(forKey: hasSeenOnboardingKey) {
+            UserDefaults.standard.set(true, forKey: hasSeenOnboardingKey)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
+                self?.showSetupDoctor()
+            }
+        }
+
         if let debugPasteText {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
                 guard let self else { return }
@@ -112,6 +151,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         permissionRefreshTimer?.invalidate()
         recordingLevelTimer?.invalidate()
         transcriptionProgressTimer?.invalidate()
+        audioDucker.restore()
         hotKeyController.unregisterCancelHotKey()
     }
 
@@ -148,6 +188,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         copyLastMenuItem.target = self
         copyLastMenuItem.isEnabled = false
         preserveCapitalizationMenuItem.target = self
+        audioDuckingMenuItem.target = self
 
         let openMicSettings = NSMenuItem(
             title: "Open Microphone Settings",
@@ -168,8 +209,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(NSMenuItem.separator())
         menu.addItem(toggleMenuItem)
         menu.addItem(copyLastMenuItem)
+        menu.addItem(historyMenuItem())
         menu.addItem(outputMenuItem())
+        menu.addItem(profileMenuItem())
+        menu.addItem(performanceMenuItem())
         menu.addItem(preserveCapitalizationMenuItem)
+        menu.addItem(audioDuckingMenuItem)
+        menu.addItem(appDefaultsMenuItem())
+        let personalDictionaryItem = NSMenuItem(
+            title: "Personal Dictionary...",
+            action: #selector(openPersonalDictionary),
+            keyEquivalent: ""
+        )
+        personalDictionaryItem.target = self
+        menu.addItem(personalDictionaryItem)
         let topLevelModelExplorer = NSMenuItem(
             title: "Open Model Explorer...",
             action: #selector(openModelExplorer(_:)),
@@ -181,11 +234,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(NSMenuItem.separator())
         menu.addItem(openMicSettings)
         menu.addItem(openAccessibilitySettings)
+        let setupDoctorItem = NSMenuItem(
+            title: "Setup Doctor...",
+            action: #selector(openSetupDoctor),
+            keyEquivalent: ""
+        )
+        setupDoctorItem.target = self
+        menu.addItem(setupDoctorItem)
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Quit \(appDisplayName)", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         statusItem.menu = menu
         rebuildPreserveCapitalizationMenuItem()
+        rebuildAudioDuckingMenuItem()
         rebuildOutputMenu()
+        rebuildProfileMenu()
+        rebuildPerformanceMenu()
+        rebuildHistoryMenu()
+        rebuildAppDefaultsMenu()
         rebuildModelMenu()
         refreshPermissionUI()
     }
@@ -193,6 +258,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func outputMenuItem() -> NSMenuItem {
         let item = NSMenuItem(title: "Output Language", action: nil, keyEquivalent: "")
         item.submenu = outputMenu
+        return item
+    }
+
+    private func profileMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(title: "Writing Profile", action: nil, keyEquivalent: "")
+        item.submenu = profileMenu
+        return item
+    }
+
+    private func performanceMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(title: "Speed / Quality", action: nil, keyEquivalent: "")
+        item.submenu = performanceMenu
+        return item
+    }
+
+    private func historyMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(title: "Transcript History", action: nil, keyEquivalent: "")
+        item.submenu = historyMenu
+        return item
+    }
+
+    private func appDefaultsMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(title: "Per-App Defaults", action: nil, keyEquivalent: "")
+        item.submenu = appDefaultsMenu
         return item
     }
 
@@ -215,8 +304,110 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    private func rebuildProfileMenu() {
+        profileMenu.removeAllItems()
+        let current = selectedWritingProfile
+
+        for profile in WritingProfile.all {
+            let item = NSMenuItem(title: "\(profile.title) - \(profile.detail)", action: #selector(selectWritingProfile(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = profile.id
+            item.state = profile == current ? .on : .off
+            profileMenu.addItem(item)
+        }
+    }
+
+    private func rebuildPerformanceMenu() {
+        performanceMenu.removeAllItems()
+        let mappings: [(title: String, model: ModelChoice)] = [
+            ("Fast - Tiny English", ModelChoice.choice(for: "tiny-en")),
+            ("Balanced - Base English", ModelChoice.choice(for: "base-en")),
+            ("Accurate - Small English", ModelChoice.choice(for: "small-en"))
+        ]
+
+        for mapping in mappings {
+            let installed = ModelStore.isInstalled(mapping.model)
+            let title = installed ? mapping.title : "\(mapping.title) - not installed"
+            let item = NSMenuItem(
+                title: title,
+                action: installed ? #selector(selectPerformanceModel(_:)) : #selector(openModelExplorer(_:)),
+                keyEquivalent: ""
+            )
+            item.target = self
+            item.representedObject = mapping.model.id
+            item.state = mapping.model == selectedModel ? .on : .off
+            performanceMenu.addItem(item)
+        }
+    }
+
+    private func rebuildHistoryMenu() {
+        historyMenu.removeAllItems()
+
+        let openItem = NSMenuItem(title: "Open History...", action: #selector(openTranscriptHistory), keyEquivalent: "")
+        openItem.target = self
+        historyMenu.addItem(openItem)
+
+        let clearItem = NSMenuItem(title: "Clear History", action: #selector(clearTranscriptHistory), keyEquivalent: "")
+        clearItem.target = self
+        historyMenu.addItem(clearItem)
+
+        let entries = TranscriptHistoryStore.entries().prefix(6)
+        guard !entries.isEmpty else {
+            historyMenu.addItem(NSMenuItem.separator())
+            let emptyItem = NSMenuItem(title: "No transcripts yet", action: nil, keyEquivalent: "")
+            emptyItem.isEnabled = false
+            historyMenu.addItem(emptyItem)
+            return
+        }
+
+        historyMenu.addItem(NSMenuItem.separator())
+        for entry in entries {
+            let title = entry.text.replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+            let item = NSMenuItem(
+                title: String(title.prefix(72)),
+                action: #selector(copyHistoryItem(_:)),
+                keyEquivalent: ""
+            )
+            item.target = self
+            item.representedObject = entry.id.uuidString
+            historyMenu.addItem(item)
+        }
+    }
+
+    private func rebuildAppDefaultsMenu() {
+        appDefaultsMenu.removeAllItems()
+
+        let currentAppName = PasteTargetDetector.currentExternalFrontmostApplication()?.localizedName ?? "Current App"
+        let saveItem = NSMenuItem(title: "Save Defaults for \(currentAppName)", action: #selector(saveCurrentAppDefaults), keyEquivalent: "")
+        saveItem.target = self
+        appDefaultsMenu.addItem(saveItem)
+
+        let clearItem = NSMenuItem(title: "Clear Defaults for \(currentAppName)", action: #selector(clearCurrentAppDefaults), keyEquivalent: "")
+        clearItem.target = self
+        clearItem.isEnabled = AppDefaultsStore.defaultForCurrentApp() != nil
+        appDefaultsMenu.addItem(clearItem)
+
+        let defaults = AppDefaultsStore.all().values.sorted { $0.appName < $1.appName }
+        guard !defaults.isEmpty else {
+            return
+        }
+
+        appDefaultsMenu.addItem(NSMenuItem.separator())
+        for appDefault in defaults {
+            let profile = WritingProfile.choice(for: appDefault.writingProfileID)
+            let language = OutputLanguage.choice(for: appDefault.outputLanguageID)
+            let item = NSMenuItem(title: "\(appDefault.appName): \(profile.title) -> \(language.title)", action: nil, keyEquivalent: "")
+            item.isEnabled = false
+            appDefaultsMenu.addItem(item)
+        }
+    }
+
     private func rebuildPreserveCapitalizationMenuItem() {
         preserveCapitalizationMenuItem.state = preserveCapitalization ? .on : .off
+    }
+
+    private func rebuildAudioDuckingMenuItem() {
+        audioDuckingMenuItem.state = audioDuckingEnabled ? .on : .off
     }
 
     private func rebuildModelMenu() {
@@ -262,19 +453,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         switch newState {
         case .ready, .error:
+            recordingStartedAt = nil
+            audioDucker.restore()
             stopRecordingLevelTimer()
             stopTranscriptionProgress()
             recordingOverlay.hide()
             toggleMenuItem.title = "Start Recording"
             toggleMenuItem.isEnabled = true
         case .recording:
-            recordingOverlay.show(progressPercent: nil)
+            recordingOverlay.show(
+                progressPercent: nil,
+                statusText: "Recording",
+                contextText: overlayContextText(),
+                previewText: "",
+                hintText: "Esc cancels"
+            )
             startRecordingLevelTimer()
             toggleMenuItem.title = "Stop and Paste"
             toggleMenuItem.isEnabled = true
         case .transcribing:
             stopRecordingLevelTimer()
-            recordingOverlay.show(progressPercent: transcriptionProgressPercent)
+            recordingOverlay.show(
+                progressPercent: transcriptionProgressPercent,
+                statusText: "Transcribing",
+                contextText: overlayContextText(),
+                previewText: "Finalizing local transcript...",
+                hintText: "Esc cancels"
+            )
             toggleMenuItem.title = "Transcribing..."
             toggleMenuItem.isEnabled = false
         }
@@ -282,6 +487,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         copyLastMenuItem.isEnabled = !lastTranscript.isEmpty
         refreshPermissionUI()
         rebuildPreserveCapitalizationMenuItem()
+        rebuildAudioDuckingMenuItem()
+        rebuildProfileMenu()
+        rebuildPerformanceMenu()
+        rebuildHistoryMenu()
+        rebuildAppDefaultsMenu()
     }
 
     private func updateCancelHotKey(for newState: AppState) {
@@ -310,6 +520,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 return
             }
             self.recordingOverlay.setAudioLevel(self.audioCapture.currentLevel())
+            let elapsed = self.recordingStartedAt.map { Date().timeIntervalSince($0) } ?? 0
+            let preview = self.liveTranscriptionSession?.previewText() ?? ""
+            self.recordingOverlay.setDetails(
+                statusText: "Recording",
+                contextText: self.overlayContextText(),
+                previewText: preview,
+                hintText: "Esc cancels • \(self.elapsedText(elapsed))"
+            )
         }
     }
 
@@ -317,6 +535,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         recordingLevelTimer?.invalidate()
         recordingLevelTimer = nil
         recordingOverlay.setAudioLevel(0)
+    }
+
+    private func overlayContextText() -> String {
+        let model = activeModelChoice ?? selectedModel
+        let profile = activeWritingProfile ?? selectedWritingProfile
+        let language = activeOutputLanguage ?? selectedOutputLanguage
+        return "\(model.title) • \(profile.title) • \(language.title)"
+    }
+
+    private func elapsedText(_ elapsed: TimeInterval) -> String {
+        let seconds = max(0, Int(elapsed.rounded()))
+        return String(format: "%d:%02d", seconds / 60, seconds % 60)
     }
 
     private func refreshPermissionUI() {
@@ -331,7 +561,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let permissionSuffix = hasAutoPastePermission ? "" : " - Auto-Paste Permission Needed"
         statusItem.button?.toolTip = "\(appDisplayName): \(state.statusText)\(permissionSuffix)"
         let formattingText = preserveCapitalization ? "Caps On" : "Caps Off"
-        statusMenuItem.title = "\(state.statusText)\(permissionSuffix) - \(selectedModel.title) -> \(selectedOutputLanguage.title) - \(formattingText)"
+        statusMenuItem.title = "\(state.statusText)\(permissionSuffix) - \(selectedModel.title) -> \(selectedOutputLanguage.title) - \(selectedWritingProfile.title) - \(formattingText)"
     }
 
     private func requestMicrophoneAccess() {
@@ -417,10 +647,84 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setState(.ready)
     }
 
+    @objc private func selectWritingProfile(_ sender: NSMenuItem) {
+        guard state != .recording, state != .transcribing else {
+            NSSound.beep()
+            return
+        }
+
+        guard let id = sender.representedObject as? String else {
+            return
+        }
+
+        UserDefaults.standard.set(WritingProfile.choice(for: id).id, forKey: selectedWritingProfileIDKey)
+        rebuildProfileMenu()
+        setState(.ready)
+    }
+
+    @objc private func selectPerformanceModel(_ sender: NSMenuItem) {
+        guard let id = sender.representedObject as? String else {
+            return
+        }
+        useModel(ModelChoice.choice(for: id))
+    }
+
     @objc private func togglePreserveCapitalization() {
         UserDefaults.standard.set(!preserveCapitalization, forKey: preserveCapitalizationKey)
         rebuildPreserveCapitalizationMenuItem()
         setState(state)
+    }
+
+    @objc private func toggleAudioDucking() {
+        UserDefaults.standard.set(!audioDuckingEnabled, forKey: audioDuckingEnabledKey)
+        rebuildAudioDuckingMenuItem()
+        setState(state)
+    }
+
+    @objc private func openPersonalDictionary() {
+        personalDictionaryController.show()
+    }
+
+    @objc private func openTranscriptHistory() {
+        transcriptHistoryController.show()
+    }
+
+    @objc private func clearTranscriptHistory() {
+        TranscriptHistoryStore.clear()
+        rebuildHistoryMenu()
+    }
+
+    @objc private func copyHistoryItem(_ sender: NSMenuItem) {
+        guard let id = sender.representedObject as? String,
+              let entry = TranscriptHistoryStore.entries().first(where: { $0.id.uuidString == id })
+        else {
+            return
+        }
+        copyToClipboard(entry.text)
+        lastTranscript = entry.text
+        copyLastMenuItem.isEnabled = true
+    }
+
+    @objc private func saveCurrentAppDefaults() {
+        guard let appDefault = AppDefaultsStore.saveCurrentAppDefault(
+            model: selectedModel,
+            outputLanguage: selectedOutputLanguage,
+            writingProfile: selectedWritingProfile
+        ) else {
+            NSSound.beep()
+            return
+        }
+        AppLog.write("saved app defaults for \(appDefault.appName)")
+        rebuildAppDefaultsMenu()
+    }
+
+    @objc private func clearCurrentAppDefaults() {
+        guard let appDefault = AppDefaultsStore.clearCurrentAppDefault() else {
+            NSSound.beep()
+            return
+        }
+        AppLog.write("cleared app defaults for \(appDefault.appName)")
+        rebuildAppDefaultsMenu()
     }
 
     private func toggleRecording() {
@@ -444,6 +748,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             } catch {
                 AppLog.write("recording cancel stop failed: \(error.localizedDescription)")
             }
+            recordingStartedAt = nil
+            audioDucker.restore()
             AppLog.write("recording cancelled with Escape")
             setState(.ready)
         case .transcribing:
@@ -451,6 +757,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             liveTranscriptionSession = nil
             pasteTarget = nil
             stopTranscriptionProgress()
+            audioDucker.restore()
             AppLog.write("transcription cancelled with Escape")
             setState(.ready)
         case .ready, .error:
@@ -470,15 +777,43 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         do {
             pasteTarget = PasteTargetDetector.captureFocusedEditableTarget()
+            activeAppName = pasteTarget?.application?.localizedName
+            applyAppDefaultsIfAvailable(for: pasteTarget?.application)
+            activeOutputLanguage = selectedOutputLanguage
+            activeWritingProfile = selectedWritingProfile
+            activeModelChoice = selectedModel
             try audioCapture.start()
+            recordingStartedAt = Date()
+            audioDucker.duckIfNeeded(enabled: audioDuckingEnabled)
             let session = LiveTranscriptionSession(audioCapture: audioCapture, transcriber: transcriber)
             liveTranscriptionSession = session
             session.start()
             setState(.recording)
         } catch {
+            audioDucker.restore()
             setState(.error(error.localizedDescription))
             NSSound.beep()
         }
+    }
+
+    private func applyAppDefaultsIfAvailable(for application: NSRunningApplication?) {
+        guard let appDefault = AppDefaultsStore.defaultFor(application) else {
+            return
+        }
+
+        let model = ModelChoice.choice(for: appDefault.modelID)
+        if let modelURL = ModelStore.installedURL(for: model) {
+            UserDefaults.standard.set(model.id, forKey: selectedModelIDKey)
+            transcriber.setModelURL(modelURL)
+            rebuildModelMenu()
+            rebuildPerformanceMenu()
+        }
+
+        UserDefaults.standard.set(OutputLanguage.choice(for: appDefault.outputLanguageID).id, forKey: selectedOutputLanguageIDKey)
+        UserDefaults.standard.set(WritingProfile.choice(for: appDefault.writingProfileID).id, forKey: selectedWritingProfileIDKey)
+        rebuildOutputMenu()
+        rebuildProfileMenu()
+        AppLog.write("applied app defaults for \(appDefault.appName)")
     }
 
     private func stopTranscribeAndPaste() {
@@ -489,17 +824,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         do {
             samples = try audioCapture.stop()
         } catch {
+            audioDucker.restore()
             setState(.error(error.localizedDescription))
             NSSound.beep()
             return
         }
 
+        recordingStartedAt = nil
+        audioDucker.restore()
         let transcriptionID = UUID()
         activeTranscriptionID = transcriptionID
         setState(.transcribing)
         startTranscriptionProgress(audioDuration: Double(samples.count) / Double(WHISPER_SAMPLE_RATE))
-        let outputLanguage = selectedOutputLanguage
+        let outputLanguage = activeOutputLanguage ?? selectedOutputLanguage
+        let writingProfile = activeWritingProfile ?? selectedWritingProfile
+        let modelChoice = activeModelChoice ?? selectedModel
+        let appName = activeAppName
         let shouldPreserveCapitalization = preserveCapitalization
+        let dictionaryEntries = personalDictionaryEntries
 
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self else { return }
@@ -508,16 +850,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 let startedAt = Date()
                 let transcript = try liveSession?.finish(with: samples)
                     ?? self.transcriber.transcribe(samples: samples)
+                let commandResult = CommandPhraseProcessor.process(
+                    transcript,
+                    outputLanguage: outputLanguage,
+                    writingProfile: writingProfile
+                )
+                let dictionaryOutput = PersonalDictionary.apply(dictionaryEntries, to: commandResult.text)
                 let translatedOutput: String
                 do {
-                    translatedOutput = try LocalTranslator.translate(transcript, to: outputLanguage)
+                    translatedOutput = try LocalTranslator.translate(dictionaryOutput, to: commandResult.outputLanguage)
                 } catch {
-                    AppLog.write("translation failed for \(outputLanguage.title); falling back to English transcript: \(error.localizedDescription)")
-                    translatedOutput = transcript
+                    AppLog.write("translation failed for \(commandResult.outputLanguage.title); falling back to English transcript: \(error.localizedDescription)")
+                    translatedOutput = dictionaryOutput
                 }
-                let languageOutput = self.applyLanguageOutput(to: translatedOutput, outputLanguage: outputLanguage)
+                let languageOutput = self.applyLanguageOutput(to: translatedOutput, outputLanguage: commandResult.outputLanguage)
+                let profileOutput = WritingProfileRenderer.render(languageOutput, profile: commandResult.writingProfile)
                 let output = self.applyOutputFormatting(
-                    to: languageOutput,
+                    to: profileOutput,
                     preserveCapitalization: shouldPreserveCapitalization
                 )
                 let elapsed = Date().timeIntervalSince(startedAt)
@@ -528,9 +877,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                         return
                     }
                     self.completeTranscriptionProgress()
+                    self.recordingOverlay.show(
+                        progressPercent: 100,
+                        statusText: "Pasting",
+                        contextText: self.overlayContextText(),
+                        previewText: output,
+                        hintText: "Copied to clipboard"
+                    )
                     AppLog.write(String(format: "transcribed %.2fs of audio in %.2fs", Double(samples.count) / Double(WHISPER_SAMPLE_RATE), elapsed))
+                    if let commandName = commandResult.commandName {
+                        AppLog.write("command phrase applied: \(commandName)")
+                    }
                     self.lastTranscript = output
                     self.copyToClipboard(output)
+                    TranscriptHistoryStore.add(
+                        text: output,
+                        appName: appName,
+                        model: modelChoice,
+                        outputLanguage: commandResult.outputLanguage,
+                        writingProfile: commandResult.writingProfile
+                    )
+                    self.rebuildHistoryMenu()
                     self.deliverTranscript(output, transcriptionID: transcriptionID)
                 }
             } catch {
@@ -611,6 +978,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func applyLanguageOutput(to text: String, outputLanguage: OutputLanguage) -> String {
+        guard text.unicodeScalars.contains(where: { CharacterSet.alphanumerics.contains($0) }) else {
+            return text
+        }
+
         switch outputLanguage.id {
         case "british":
             return StyledSpeech.british(text)
@@ -814,6 +1185,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             AppLog.write("presenting model explorer after menu close")
             self.modelExplorer.show(currentModel: self.selectedModel)
         }
+    }
+
+    @objc private func openSetupDoctor() {
+        showSetupDoctor()
+    }
+
+    private func showSetupDoctor() {
+        setupDoctorController.show()
     }
 
     @objc private func openInstalledModelsFolder() {

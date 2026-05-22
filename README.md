@@ -30,6 +30,8 @@ Then grant the macOS permissions:
 Use `Option+Space` once to start recording and `Option+Space` again to stop, transcribe, and paste.
 Press `Escape` while recording or transcribing to cancel without pasting.
 
+Open the menu-bar duck for writing profiles, transcript history, app-specific defaults, personal dictionary, audio ducking, model speed/quality, and Setup Doctor.
+
 ## What Gets Installed
 
 The app bundle is installed at:
@@ -121,7 +123,7 @@ Run the full local verification loop before pushing changes:
 - `Sources/LocalWhisperer/Transcription`: whisper.cpp wrapper and live chunking
 - `Sources/LocalWhisperer/Translation`: Argos package management and local translation calls
 - `Sources/LocalWhisperer/UI`: menu-bar icon, overlay, transcript window, model explorer
-- `Sources/LocalWhisperer/Text`: Duck output rendering
+- `Sources/LocalWhisperer/Text`: output styles, writing profiles, command phrases, and dictionary replacement
 
 ## Features
 
@@ -130,8 +132,16 @@ Run the full local verification loop before pushing changes:
 - Local English speech transcription
 - Optional English -> French and English -> Dutch local output translation
 - Built-in British and Gen Z style output modes
+- Writing profiles: Smart Clean, Raw Dictation, Clean Email, Slack Casual, Meeting Notes, Code Prompt, and Bullet Notes
+- Command phrases such as "make this shorter", "turn this into bullets", "rewrite professionally", "translate to Dutch", and "duck mode"
+- Per-app defaults for model, output language, and writing profile
+- Personal dictionary replacements stored locally
+- Searchable local transcript history
+- Optional audio ducking while recording
+- Speed / Quality menu for Fast, Balanced, and Accurate model choices
+- Setup Doctor for microphone, Accessibility, model, install, and signing checks
 - Duck output that turns the transcript into assorted quacks
-- Audio-reactive duck recording overlay and transcription progress percentage
+- Audio-reactive duck recording overlay with live preview, elapsed time, profile/model context, cancel hint, and transcription progress percentage
 - Model Explorer for `Small English`, `Base English`, and `Tiny English`
 - Duck menu-bar icon and DuckWhisperer app icon
 - `Preserve Capitalization` toggle
@@ -179,6 +189,23 @@ Translation runtime data is stored in:
 Duck output is built into the app. It does not require a model, package, or network call.
 
 British and Gen Z output are built-in text style modes. They do not require a model, package, or network call.
+
+## Product Features
+
+Writing profiles are deterministic local cleanup modes. They do not call a cloud model. Pick a default profile from the menu, or save a per-app default so Slack, Mail, Codex, and Notes can each use a different model/language/profile combination.
+
+The personal dictionary is a local text list of replacements, one per line:
+
+```text
+open ai = OpenAI
+duck whisperer = DuckWhisperer
+```
+
+Transcript history stores recent outputs locally in macOS user defaults. Use the history menu to copy recent transcripts or open the searchable history window.
+
+Command phrases are interpreted at the start of a dictation. For example, saying "turn this into bullets follow up with Alex and ship the build" applies the Bullet Notes profile to the remaining text.
+
+Audio ducking lowers system output volume while recording and restores it afterward. It is off by default.
 
 ## macOS Permissions Note
 

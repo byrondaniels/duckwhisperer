@@ -22,6 +22,22 @@ private final class RecordingOverlayView: NSView {
         }
     }
 
+    var statusText = "Recording" {
+        didSet { needsDisplay = true }
+    }
+
+    var contextText = "" {
+        didSet { needsDisplay = true }
+    }
+
+    var previewText = "" {
+        didSet { needsDisplay = true }
+    }
+
+    var hintText = "Esc cancels" {
+        didSet { needsDisplay = true }
+    }
+
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         wantsLayer = true
@@ -46,15 +62,60 @@ private final class RecordingOverlayView: NSView {
 
         NSGraphicsContext.saveGraphicsState()
         let drawingTransform = NSAffineTransform()
-        drawingTransform.translateX(
-            by: (bounds.width - baseDrawingSize.width) / 2,
-            yBy: (bounds.height - baseDrawingSize.height) / 2
-        )
+        drawingTransform.translateX(by: 12, yBy: 30)
         drawingTransform.concat()
         drawCrescendo()
         drawBird(level: audioLevel)
         NSGraphicsContext.restoreGraphicsState()
+        drawText()
         drawProgress()
+    }
+
+    private func drawText() {
+        let textX: CGFloat = 148
+        let maxWidth = bounds.width - textX - 18
+
+        let titleAttributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 15, weight: .semibold),
+            .foregroundColor: NSColor.white.withAlphaComponent(0.95)
+        ]
+        statusText.draw(
+            in: NSRect(x: textX, y: 14, width: maxWidth, height: 20),
+            withAttributes: titleAttributes
+        )
+
+        let contextAttributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 11, weight: .medium),
+            .foregroundColor: NSColor(calibratedRed: 1.0, green: 0.78, blue: 0.24, alpha: 0.9)
+        ]
+        contextText.draw(
+            in: NSRect(x: textX, y: 35, width: maxWidth, height: 16),
+            withAttributes: contextAttributes
+        )
+
+        let preview = previewText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? "Listening..."
+            : previewText
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.lineBreakMode = .byTruncatingTail
+        let previewAttributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 12),
+            .foregroundColor: NSColor.white.withAlphaComponent(0.78),
+            .paragraphStyle: paragraph
+        ]
+        preview.draw(
+            in: NSRect(x: textX, y: 56, width: maxWidth, height: 42),
+            withAttributes: previewAttributes
+        )
+
+        let hintAttributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 10, weight: .medium),
+            .foregroundColor: NSColor.white.withAlphaComponent(0.46)
+        ]
+        hintText.draw(
+            in: NSRect(x: textX, y: bounds.maxY - 24, width: maxWidth - 42, height: 14),
+            withAttributes: hintAttributes
+        )
     }
 
     private func drawCrescendo() {
@@ -206,7 +267,7 @@ final class RecordingOverlayController {
     private var isVisible = false
 
     init() {
-        let size = NSSize(width: 176, height: 96)
+        let size = NSSize(width: 360, height: 142)
         overlayView = RecordingOverlayView(frame: NSRect(origin: .zero, size: size))
         panel = NSPanel(
             contentRect: NSRect(origin: .zero, size: size),
@@ -225,8 +286,26 @@ final class RecordingOverlayController {
         panel.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
     }
 
-    func show(progressPercent: Int? = nil) {
+    func show(
+        progressPercent: Int? = nil,
+        statusText: String? = nil,
+        contextText: String? = nil,
+        previewText: String? = nil,
+        hintText: String? = nil
+    ) {
         overlayView.progressPercent = progressPercent
+        if let statusText {
+            overlayView.statusText = statusText
+        }
+        if let contextText {
+            overlayView.contextText = contextText
+        }
+        if let previewText {
+            overlayView.previewText = previewText
+        }
+        if let hintText {
+            overlayView.hintText = hintText
+        }
         guard !isVisible else {
             return
         }
@@ -247,12 +326,14 @@ final class RecordingOverlayController {
         guard isVisible else {
             overlayView.progressPercent = nil
             overlayView.audioLevel = 0
+            overlayView.previewText = ""
             return
         }
 
         isVisible = false
         overlayView.progressPercent = nil
         overlayView.audioLevel = 0
+        overlayView.previewText = ""
 
         NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.18
@@ -282,6 +363,13 @@ final class RecordingOverlayController {
 
     func setProgress(_ progressPercent: Int?) {
         overlayView.progressPercent = progressPercent
+    }
+
+    func setDetails(statusText: String, contextText: String, previewText: String, hintText: String = "Esc cancels") {
+        overlayView.statusText = statusText
+        overlayView.contextText = contextText
+        overlayView.previewText = previewText
+        overlayView.hintText = hintText
     }
 
     func setAudioLevel(_ level: Float) {

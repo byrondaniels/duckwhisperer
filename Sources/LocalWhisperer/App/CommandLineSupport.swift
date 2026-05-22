@@ -25,8 +25,16 @@ func runSmokeTranscriptionIfRequested() {
         } else {
             outputLanguageID = nil
         }
+        let writingProfileID: String?
+        if let profileIndex = arguments.firstIndex(of: "--writing-profile"),
+           arguments.indices.contains(profileIndex + 1) {
+            writingProfileID = arguments[profileIndex + 1]
+        } else {
+            writingProfileID = nil
+        }
         let choice = ModelChoice.choice(for: modelID)
         let outputLanguage = OutputLanguage.choice(for: outputLanguageID)
+        let writingProfile = WritingProfile.choice(for: writingProfileID)
         guard let modelURL = ModelStore.installedURL(for: choice) else {
             throw LocalWhispererError.modelMissing(ModelStore.userURL(for: choice).path)
         }
@@ -35,17 +43,21 @@ func runSmokeTranscriptionIfRequested() {
         let transcript = try transcriber.transcribe(samples: samples)
         let translatedOutput = try LocalTranslator.translate(transcript, to: outputLanguage)
         let output: String
-        switch outputLanguage.id {
-        case "british":
-            output = StyledSpeech.british(translatedOutput)
-        case "genz":
-            output = StyledSpeech.genZ(translatedOutput)
-        case "duck":
-            output = DuckSpeech.render(translatedOutput)
-        default:
+        if translatedOutput.unicodeScalars.contains(where: { CharacterSet.alphanumerics.contains($0) }) {
+            switch outputLanguage.id {
+            case "british":
+                output = StyledSpeech.british(translatedOutput)
+            case "genz":
+                output = StyledSpeech.genZ(translatedOutput)
+            case "duck":
+                output = DuckSpeech.render(translatedOutput)
+            default:
+                output = translatedOutput
+            }
+        } else {
             output = translatedOutput
         }
-        print(output)
+        print(WritingProfileRenderer.render(output, profile: writingProfile))
         exit(EXIT_SUCCESS)
     } catch {
         fputs("\(error.localizedDescription)\n", stderr)

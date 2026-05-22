@@ -5,11 +5,17 @@ let recordHotKeyIdentifier: UInt32 = 1
 let cancelHotKeyIdentifier: UInt32 = 3
 let selectedModelIDKey = "SelectedModelID"
 let selectedOutputLanguageIDKey = "SelectedOutputLanguageID"
+let selectedWritingProfileIDKey = "SelectedWritingProfileID"
 let preserveCapitalizationKey = "PreserveCapitalization"
+let audioDuckingEnabledKey = "AudioDuckingEnabled"
+let appDefaultsKey = "AppDefaults"
+let personalDictionaryTextKey = "PersonalDictionaryText"
+let transcriptHistoryKey = "TranscriptHistory"
+let hasSeenOnboardingKey = "HasSeenOnboarding"
 let appDisplayName = "DuckWhisperer"
 let supportDirectoryName = "Local Whisperer"
 let logFilename = "duckwhisperer.log"
-let buildMarker = "duckwhisperer-2026-05-22-style-output-modes"
+let buildMarker = "duckwhisperer-2026-05-22-product-polish"
 var debugPasteText: String?
 
 private func fourCharCode(_ value: String) -> OSType {
