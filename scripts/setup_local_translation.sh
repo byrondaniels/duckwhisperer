@@ -36,13 +36,15 @@ except Exception:
 
 languages = {language.code: language for language in translate.get_installed_languages()}
 missing = []
-for source, target in (("en", "fr"), ("en", "nl")):
+for source, target in (("en", "fr"), ("en", "nl"), ("fr", "en"), ("nl", "en")):
     if source not in languages or target not in languages:
         missing.append((source, target))
         continue
     try:
-        languages[source].get_translation(languages[target])
+        translation = languages[source].get_translation(languages[target])
     except Exception:
+        translation = None
+    if translation is None:
         missing.append((source, target))
 
 sys.exit(1 if missing else 0)
@@ -67,6 +69,10 @@ curl -L -o "$PACKAGE_DIR/translate-en_fr-1_9.argosmodel" \
   https://argos-net.com/v1/translate-en_fr-1_9.argosmodel
 curl -L -o "$PACKAGE_DIR/translate-en_nl-1_8.argosmodel" \
   https://argos-net.com/v1/translate-en_nl-1_8.argosmodel
+curl -L -o "$PACKAGE_DIR/translate-fr_en-1_9.argosmodel" \
+  https://argos-net.com/v1/translate-fr_en-1_9.argosmodel
+curl -L -o "$PACKAGE_DIR/translate-nl_en-1_8.argosmodel" \
+  https://argos-net.com/v1/translate-nl_en-1_8.argosmodel
 
 XDG_DATA_HOME="$DATA_HOME" \
 XDG_CACHE_HOME="$CACHE_HOME" \

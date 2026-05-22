@@ -8,6 +8,8 @@ dist/
 # Local Python runtimes
 .venv/
 .translation-venv/
+__pycache__/
+*.pyc
 
 # Downloaded Whisper backend and source archives
 vendor/

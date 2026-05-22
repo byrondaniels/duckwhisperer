@@ -8,15 +8,16 @@ import QuartzCore
 import whisper
 
 private let hotKeySignature = fourCharCode("LWSP")
-private let hotKeyIdentifier: UInt32 = 1
+private let recordHotKeyIdentifier: UInt32 = 1
+private let translateSelectionHotKeyIdentifier: UInt32 = 2
 private let selectedModelIDKey = "SelectedModelID"
 private let selectedOutputLanguageIDKey = "SelectedOutputLanguageID"
 private let preserveCapitalizationKey = "PreserveCapitalization"
 private let appDisplayName = "DuckWhisperer"
 private let supportDirectoryName = "Local Whisperer"
 private let logFilename = "duckwhisperer.log"
-private let buildMarker = "duckwhisperer-2026-05-21-reinstall-progress"
-private var globalHotKeyAction: (() -> Void)?
+private let buildMarker = "duckwhisperer-2026-05-21-selection-translate"
+private var globalHotKeyAction: ((UInt32) -> Void)?
 private var debugPasteText: String?
 
 private enum AppLog {
@@ -216,6 +217,7 @@ private struct OutputLanguage: Equatable {
 private struct TranslationPackChoice: Equatable {
     let id: String
     let title: String
+    let sourceCode: String
     let targetCode: String
     let detail: String
     let packageFilename: String
@@ -230,6 +232,7 @@ private struct TranslationPackChoice: Equatable {
         TranslationPackChoice(
             id: "translation-fr",
             title: "French Output",
+            sourceCode: "en",
             targetCode: "fr",
             detail: "English speech -> French text",
             packageFilename: "translate-en_fr-1_9.argosmodel",
@@ -239,11 +242,32 @@ private struct TranslationPackChoice: Equatable {
         TranslationPackChoice(
             id: "translation-nl",
             title: "Dutch Output",
+            sourceCode: "en",
             targetCode: "nl",
             detail: "English speech -> Dutch text",
             packageFilename: "translate-en_nl-1_8.argosmodel",
             packageDirectoryName: "translate-en_nl-1_8",
             downloadSizeText: "68 MB"
+        ),
+        TranslationPackChoice(
+            id: "translation-fr-en",
+            title: "French -> English",
+            sourceCode: "fr",
+            targetCode: "en",
+            detail: "Selected French text -> English",
+            packageFilename: "translate-fr_en-1_9.argosmodel",
+            packageDirectoryName: "translate-fr_en-1_9",
+            downloadSizeText: "63.5 MB"
+        ),
+        TranslationPackChoice(
+            id: "translation-nl-en",
+            title: "Dutch -> English",
+            sourceCode: "nl",
+            targetCode: "en",
+            detail: "Selected Dutch text -> English",
+            packageFilename: "translate-nl_en-1_8.argosmodel",
+            packageDirectoryName: "translate-nl_en-1_8",
+            downloadSizeText: "66.7 MB"
         )
     ]
 
@@ -444,9 +468,9 @@ private let hotKeyEventHandler: EventHandlerUPP = { _, eventRef, _ in
         &hotKeyID
     )
 
-    if status == noErr, hotKeyID.signature == hotKeySignature, hotKeyID.id == hotKeyIdentifier {
+    if status == noErr, hotKeyID.signature == hotKeySignature {
         DispatchQueue.main.async {
-            globalHotKeyAction?()
+            globalHotKeyAction?(hotKeyID.id)
         }
     }
 
@@ -512,10 +536,10 @@ private enum AppState: Equatable {
 }
 
 private final class HotKeyController {
-    private var hotKeyRef: EventHotKeyRef?
+    private var hotKeyRefs: [EventHotKeyRef] = []
     private var eventHandlerRef: EventHandlerRef?
 
-    func register(action: @escaping () -> Void) -> OSStatus {
+    func register(action: @escaping (UInt32) -> Void) -> OSStatus {
         globalHotKeyAction = action
 
         var eventType = EventTypeSpec(
@@ -536,19 +560,42 @@ private final class HotKeyController {
             return handlerStatus
         }
 
-        let hotKeyID = EventHotKeyID(signature: hotKeySignature, id: hotKeyIdentifier)
-        return RegisterEventHotKey(
-            UInt32(kVK_Space),
-            UInt32(optionKey),
+        let recordStatus = registerHotKey(
+            keyCode: UInt32(kVK_Space),
+            modifiers: UInt32(optionKey),
+            identifier: recordHotKeyIdentifier
+        )
+        guard recordStatus == noErr else {
+            return recordStatus
+        }
+
+        return registerHotKey(
+            keyCode: UInt32(kVK_ANSI_X),
+            modifiers: UInt32(optionKey),
+            identifier: translateSelectionHotKeyIdentifier
+        )
+    }
+
+    private func registerHotKey(keyCode: UInt32, modifiers: UInt32, identifier: UInt32) -> OSStatus {
+        var hotKeyRef: EventHotKeyRef?
+        let hotKeyID = EventHotKeyID(signature: hotKeySignature, id: identifier)
+        let status = RegisterEventHotKey(
+            keyCode,
+            modifiers,
             hotKeyID,
             GetApplicationEventTarget(),
             0,
             &hotKeyRef
         )
+
+        if status == noErr, let hotKeyRef {
+            hotKeyRefs.append(hotKeyRef)
+        }
+        return status
     }
 
     deinit {
-        if let hotKeyRef {
+        for hotKeyRef in hotKeyRefs {
             UnregisterEventHotKey(hotKeyRef)
         }
         if let eventHandlerRef {
@@ -1215,7 +1262,7 @@ private final class ModelExplorerController: NSObject, NSWindowDelegate {
             addFullWidthRow(makeModelRow(for: choice))
         }
 
-        addSectionTitle("Output Language Packs")
+        addSectionTitle("Translation Packs")
         for pack in TranslationPackChoice.all {
             addFullWidthRow(makeTranslationPackRow(for: pack))
         }
@@ -1556,6 +1603,28 @@ private struct PasteTarget {
 }
 
 private enum PasteTargetDetector {
+    static func selectedTextFromFocusedTarget() -> String? {
+        guard AXIsProcessTrusted(),
+              var element = focusedUIElement()
+        else {
+            return nil
+        }
+
+        for _ in 0..<8 {
+            if let selectedText = selectedText(of: element),
+               !selectedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                return selectedText
+            }
+
+            guard let parent = parentElement(of: element) else {
+                return nil
+            }
+            element = parent
+        }
+
+        return nil
+    }
+
     static func captureFocusedEditableTarget() -> PasteTarget {
         let application = currentExternalFrontmostApplication()
         let editableElement = focusedEditableElement()
@@ -1805,6 +1874,24 @@ private enum PasteTargetDetector {
             return nil
         }
         return range
+    }
+
+    private static func selectedText(of element: AXUIElement) -> String? {
+        if let selectedText = stringAttribute(kAXSelectedTextAttribute as CFString, of: element),
+           !selectedText.isEmpty {
+            return selectedText
+        }
+
+        guard let value = stringAttribute(kAXValueAttribute as CFString, of: element),
+              let range = selectedTextRange(of: element),
+              range.length > 0,
+              range.location >= 0,
+              range.location + range.length <= value.utf16.count
+        else {
+            return nil
+        }
+
+        return (value as NSString).substring(with: NSRange(location: range.location, length: range.length))
     }
 
     private static func isAttributeSettable(_ attribute: CFString, of element: AXUIElement) -> Bool {
@@ -2153,15 +2240,22 @@ private enum LocalTranslator {
     }
 
     static func translate(_ text: String, to outputLanguage: OutputLanguage) throws -> String {
+        guard let targetCode = outputLanguage.translationTargetCode else {
+            return text
+        }
+        return try translate(text, from: "en", to: targetCode)
+    }
+
+    static func translate(_ text: String, from sourceCode: String, to targetCode: String) throws -> String {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, let targetCode = outputLanguage.translationTargetCode else {
+        guard !trimmed.isEmpty, sourceCode != targetCode else {
             return text
         }
 
         let runtime = try translationRuntime()
         let process = Process()
         process.executableURL = runtime.pythonURL
-        process.arguments = [runtime.scriptURL.path, "--to", targetCode]
+        process.arguments = [runtime.scriptURL.path, "--from", sourceCode, "--to", targetCode]
 
         var environment = ProcessInfo.processInfo.environment
         environment["ARGOS_DEVICE_TYPE"] = "cpu"
@@ -2380,6 +2474,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
     private let statusMenuItem = NSMenuItem(title: "Starting...", action: nil, keyEquivalent: "")
     private let toggleMenuItem = NSMenuItem(title: "Start Recording", action: #selector(toggleRecordingFromMenu), keyEquivalent: "")
     private let copyLastMenuItem = NSMenuItem(title: "Copy Last Transcript", action: #selector(copyLastTranscript), keyEquivalent: "")
+    private let translateSelectionMenuItem = NSMenuItem(title: "Translate Selection to English", action: #selector(translateSelectionFromMenu), keyEquivalent: "")
     private let preserveCapitalizationMenuItem = NSMenuItem(title: "Preserve Capitalization", action: #selector(togglePreserveCapitalization), keyEquivalent: "")
     private let hotKeyController = HotKeyController()
     private let audioCapture = AudioCapture()
@@ -2434,8 +2529,15 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
         setupMenu()
         requestMicrophoneAccess()
 
-        let hotKeyStatus = hotKeyController.register { [weak self] in
-            self?.toggleRecording()
+        let hotKeyStatus = hotKeyController.register { [weak self] identifier in
+            switch identifier {
+            case recordHotKeyIdentifier:
+                self?.toggleRecording()
+            case translateSelectionHotKeyIdentifier:
+                self?.translateSelectedTextToEnglish()
+            default:
+                break
+            }
         }
 
         if hotKeyStatus == noErr {
@@ -2495,6 +2597,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
         toggleMenuItem.target = self
         copyLastMenuItem.target = self
         copyLastMenuItem.isEnabled = false
+        translateSelectionMenuItem.target = self
         preserveCapitalizationMenuItem.target = self
 
         let openMicSettings = NSMenuItem(
@@ -2515,6 +2618,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(NSMenuItem.separator())
         menu.addItem(toggleMenuItem)
         menu.addItem(copyLastMenuItem)
+        menu.addItem(translateSelectionMenuItem)
         menu.addItem(outputMenuItem())
         menu.addItem(preserveCapitalizationMenuItem)
         let topLevelModelExplorer = NSMenuItem(
@@ -2625,6 +2729,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         copyLastMenuItem.isEnabled = !lastTranscript.isEmpty
+        translateSelectionMenuItem.isEnabled = state != .recording && state != .transcribing
         rebuildPreserveCapitalizationMenuItem()
     }
 
@@ -2650,6 +2755,10 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func toggleRecordingFromMenu() {
         toggleRecording()
+    }
+
+    @objc private func translateSelectionFromMenu() {
+        translateSelectedTextToEnglish()
     }
 
     @objc private func selectModel(_ sender: NSMenuItem) {
@@ -2715,6 +2824,108 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
         UserDefaults.standard.set(!preserveCapitalization, forKey: preserveCapitalizationKey)
         rebuildPreserveCapitalizationMenuItem()
         setState(state)
+    }
+
+    private func translateSelectedTextToEnglish() {
+        guard state != .recording, state != .transcribing else {
+            NSSound.beep()
+            return
+        }
+
+        let outputLanguage = selectedOutputLanguage
+        guard let sourceCode = outputLanguage.translationTargetCode else {
+            transcriptionResult.show(text: "Set Output Language to French or Dutch, select text in that language, then press Option+X.")
+            return
+        }
+
+        captureSelectedText { [weak self] selectedText in
+            guard let self else { return }
+            guard let selectedText else {
+                self.transcriptionResult.show(text: "No selected text found. Select text in the current output language, then press Option+X.")
+                NSSound.beep()
+                return
+            }
+
+            self.statusMenuItem.title = "Translating selection to English..."
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                guard let self else { return }
+
+                do {
+                    let translated = try LocalTranslator.translate(selectedText, from: sourceCode, to: "en")
+                    DispatchQueue.main.async {
+                        AppLog.write("translated selected \(outputLanguage.title) text to English")
+                        self.lastTranscript = translated
+                        self.copyLastMenuItem.isEnabled = true
+                        self.transcriptionResult.show(text: translated)
+                        self.setState(self.state)
+                    }
+                } catch {
+                    DispatchQueue.main.async {
+                        self.setState(.error(error.localizedDescription))
+                        self.transcriptionResult.show(text: error.localizedDescription)
+                        NSSound.beep()
+                    }
+                }
+            }
+        }
+    }
+
+    private func captureSelectedText(completion: @escaping (String?) -> Void) {
+        if let selectedText = PasteTargetDetector.selectedTextFromFocusedTarget() {
+            completion(selectedText)
+            return
+        }
+
+        guard AXIsProcessTrusted() else {
+            AppLog.write("selection translation skipped; Accessibility is not trusted")
+            completion(nil)
+            return
+        }
+
+        let pasteboard = NSPasteboard.general
+        let previousItems = pasteboard.pasteboardItems?.compactMap { $0.copy() as? NSPasteboardItem } ?? []
+        pasteboard.clearContents()
+
+        guard postCopyShortcut() else {
+            restorePasteboardItems(previousItems)
+            completion(nil)
+            return
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+            let copiedText = pasteboard.string(forType: .string)
+            self.restorePasteboardItems(previousItems)
+
+            let trimmed = copiedText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            completion(trimmed.isEmpty ? nil : copiedText)
+        }
+    }
+
+    private func restorePasteboardItems(_ items: [NSPasteboardItem]) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        if !items.isEmpty {
+            pasteboard.writeObjects(items)
+        }
+    }
+
+    private func postCopyShortcut() -> Bool {
+        guard let source = CGEventSource(stateID: .hidSystemState) else {
+            return false
+        }
+
+        let keyCode: CGKeyCode = 8
+        guard let keyDown = CGEvent(keyboardEventSource: source, virtualKey: keyCode, keyDown: true),
+              let keyUp = CGEvent(keyboardEventSource: source, virtualKey: keyCode, keyDown: false)
+        else {
+            return false
+        }
+
+        keyDown.flags = .maskCommand
+        keyUp.flags = .maskCommand
+        keyDown.post(tap: .cghidEventTap)
+        keyUp.post(tap: .cghidEventTap)
+        return true
     }
 
     private func toggleRecording() {

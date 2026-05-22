@@ -4,13 +4,15 @@ import sys
 
 
 LANGUAGE_NAMES = {
+    "en": "English",
     "fr": "French",
     "nl": "Dutch",
 }
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Translate English text with local Argos models.")
+    parser = argparse.ArgumentParser(description="Translate text with local Argos models.")
+    parser.add_argument("--from", dest="source", default="en", choices=sorted(LANGUAGE_NAMES))
     parser.add_argument("--to", required=True, choices=sorted(LANGUAGE_NAMES))
     args = parser.parse_args()
 
@@ -25,16 +27,22 @@ def main() -> int:
         return 2
 
     languages = {language.code: language for language in translate.get_installed_languages()}
-    source = languages.get("en")
+    source = languages.get(args.source)
     target = languages.get(args.to)
     if source is None or target is None:
         sys.stderr.write(
-            f"Missing local Argos Translate package for English -> {LANGUAGE_NAMES[args.to]}.\n"
+            f"Missing local Argos Translate package for {LANGUAGE_NAMES[args.source]} -> {LANGUAGE_NAMES[args.to]}.\n"
         )
         return 3
 
     try:
-        translated = source.get_translation(target).translate(text)
+        translation = source.get_translation(target)
+        if translation is None:
+            sys.stderr.write(
+                f"Missing local Argos Translate package for {LANGUAGE_NAMES[args.source]} -> {LANGUAGE_NAMES[args.to]}.\n"
+            )
+            return 3
+        translated = translation.translate(text)
     except Exception as exc:
         sys.stderr.write(f"Local translation failed: {exc}\n")
         return 4

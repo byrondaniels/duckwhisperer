@@ -2,7 +2,7 @@
 
 Native macOS dictation app powered by `whisper.cpp`.
 
-DuckWhisperer records with `Option+Space`, transcribes locally, copies the transcript, and pastes it back into the app you were using. It can output English, French, Dutch, or a ridiculous Duck mode. It is built to stay small in Git: Whisper models, translation packs, and the whisper.cpp framework are downloaded outside the committed source tree.
+DuckWhisperer records with `Option+Space`, transcribes locally, copies the transcript, and pastes it back into the app you were using. It can output English, French, Dutch, or a ridiculous Duck mode. It can also translate selected French/Dutch text back to English with `Option+X`. It is built to stay small in Git: Whisper models, translation packs, and the whisper.cpp framework are downloaded outside the committed source tree.
 
 ## Fresh Machine Setup
 
@@ -27,6 +27,7 @@ Then grant the macOS permissions:
 - Accessibility: required for automatic paste/type-back into the target app
 
 Use `Option+Space` once to start recording and `Option+Space` again to stop, transcribe, and paste.
+Use `Option+X` to translate currently selected French or Dutch text back to English in a popup transcript window.
 
 ## What Gets Installed
 
@@ -71,6 +72,7 @@ INSTALL_DEFAULT_MODEL=0 INSTALL_TRANSLATION=0 ./scripts/build_app.sh
 - Global shortcut: `Option+Space`
 - Local English speech transcription
 - Optional English -> French and English -> Dutch local output translation
+- Optional French -> English and Dutch -> English selected-text translation
 - Duck output that turns the transcript into assorted quacks
 - Transcription overlay progress percentage
 - Model Explorer for `Small English`, `Base English`, and `Tiny English`
@@ -116,6 +118,8 @@ Translation runtime data is stored in:
 ```
 
 Duck output is built into the app. It does not require a model, package, or network call.
+
+Selected-text translation uses the current `Output Language` as the source language. For example, if Output Language is `Dutch`, select Dutch text and press `Option+X`; DuckWhisperer translates it to English and opens the transcript window with the result.
 
 ## macOS Permissions Note
 
