@@ -1,0 +1,24 @@
+.DS_Store
+
+# Build output
+.build/
+build/
+dist/
+
+# Local Python runtimes
+.venv/
+.translation-venv/
+
+# Downloaded Whisper backend and source archives
+vendor/
+*.zip
+
+# Runtime model and translation data must not be committed.
+Resources/Models/*.bin
+Resources/Translation/Data/
+Resources/Translation/Cache/
+Resources/Translation/Packages/
+Resources/Translation/*.argosmodel
+
+# Local logs and scratch files
+*.log
