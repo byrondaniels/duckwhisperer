@@ -12,6 +12,7 @@ FRAMEWORK_PARENT="$(dirname "$FRAMEWORK_SRC")"
 MODEL_DST_DIR="$RESOURCES_DIR/Models"
 TRANSLATION_DST_DIR="$RESOURCES_DIR/Translation"
 MODULE_CACHE_DIR="$ROOT_DIR/build/module-cache"
+SWIFT_SOURCES=()
 
 if [[ ! -d "$FRAMEWORK_SRC" ]]; then
   echo "Missing whisper.framework. Download it with scripts/bootstrap_backend.sh first." >&2
@@ -20,6 +21,10 @@ fi
 
 mkdir -p "$MACOS_DIR" "$RESOURCES_DIR" "$FRAMEWORKS_DIR" "$MODEL_DST_DIR" "$TRANSLATION_DST_DIR" "$MODULE_CACHE_DIR"
 cp "$ROOT_DIR/Info.plist" "$CONTENTS_DIR/Info.plist"
+while IFS= read -r source; do
+  SWIFT_SOURCES+=("$source")
+done < <(find "$ROOT_DIR/Sources/LocalWhisperer" -name '*.swift' -print | sort)
+
 swift \
   -module-cache-path "$MODULE_CACHE_DIR/icon-script" \
   "$ROOT_DIR/scripts/generate_duck_icon.swift" \
@@ -41,7 +46,7 @@ swiftc \
   -framework QuartzCore \
   -Xlinker -rpath \
   -Xlinker "@executable_path/../Frameworks" \
-  "$ROOT_DIR/Sources/LocalWhisperer/main.swift" \
+  "${SWIFT_SOURCES[@]}" \
   -o "$MACOS_DIR/DuckWhisperer"
 
 codesign --force --deep --sign - "$APP_DIR"

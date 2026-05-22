@@ -67,6 +67,17 @@ To build only the lightweight app bundle without installing the default model or
 INSTALL_DEFAULT_MODEL=0 INSTALL_TRANSLATION=0 ./scripts/build_app.sh
 ```
 
+## Source Layout
+
+- `Sources/LocalWhisperer/App`: app delegate, menu state, config, logging, launch helpers, errors
+- `Sources/LocalWhisperer/Audio`: microphone capture and audio conversion
+- `Sources/LocalWhisperer/Automation`: global shortcuts, Accessibility target detection, paste/type-back
+- `Sources/LocalWhisperer/Models`: speech model metadata and model storage
+- `Sources/LocalWhisperer/Transcription`: whisper.cpp wrapper and live chunking
+- `Sources/LocalWhisperer/Translation`: Argos package management and local translation calls
+- `Sources/LocalWhisperer/UI`: menu-bar icon, overlay, transcript window, model explorer
+- `Sources/LocalWhisperer/Text`: Duck output rendering
+
 ## Features
 
 - Global shortcut: `Option+Space`
