@@ -15,7 +15,7 @@ private let preserveCapitalizationKey = "PreserveCapitalization"
 private let appDisplayName = "DuckWhisperer"
 private let supportDirectoryName = "Local Whisperer"
 private let logFilename = "duckwhisperer.log"
-private let buildMarker = "duckwhisperer-2026-05-21-duck-output"
+private let buildMarker = "duckwhisperer-2026-05-21-reinstall-progress"
 private var globalHotKeyAction: (() -> Void)?
 private var debugPasteText: String?
 
@@ -761,6 +761,12 @@ private final class AudioCapture {
 }
 
 private final class RecordingOverlayView: NSView {
+    var progressPercent: Int? {
+        didSet {
+            needsDisplay = true
+        }
+    }
+
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         wantsLayer = true
@@ -784,6 +790,7 @@ private final class RecordingOverlayView: NSView {
         background.fill()
 
         drawBird()
+        drawProgress()
     }
 
     private func drawBird() {
@@ -841,6 +848,24 @@ private final class RecordingOverlayView: NSView {
         rightFoot.line(to: NSPoint(x: 78, y: 62))
         rightFoot.stroke()
     }
+
+    private func drawProgress() {
+        guard let progressPercent else {
+            return
+        }
+
+        let text = "\(max(0, min(100, progressPercent)))%"
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .semibold),
+            .foregroundColor: NSColor.white.withAlphaComponent(0.92)
+        ]
+        let size = text.size(withAttributes: attributes)
+        let point = NSPoint(
+            x: bounds.maxX - size.width - 12,
+            y: bounds.maxY - size.height - 8
+        )
+        text.draw(at: point, withAttributes: attributes)
+    }
 }
 
 private final class RecordingOverlayController {
@@ -868,7 +893,8 @@ private final class RecordingOverlayController {
         panel.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
     }
 
-    func show() {
+    func show(progressPercent: Int? = nil) {
+        overlayView.progressPercent = progressPercent
         guard !isVisible else {
             return
         }
@@ -889,10 +915,12 @@ private final class RecordingOverlayController {
 
     func hide() {
         guard isVisible else {
+            overlayView.progressPercent = nil
             return
         }
 
         isVisible = false
+        overlayView.progressPercent = nil
         stopPulse()
 
         NSAnimationContext.runAnimationGroup { context in
@@ -938,6 +966,10 @@ private final class RecordingOverlayController {
 
     private func stopPulse() {
         overlayView.layer?.removeAnimation(forKey: "recording-pulse")
+    }
+
+    func setProgress(_ progressPercent: Int?) {
+        overlayView.progressPercent = progressPercent
     }
 }
 
@@ -2367,6 +2399,10 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
     private var lastTranscript = ""
     private var liveTranscriptionSession: LiveTranscriptionSession?
     private var pasteTarget: PasteTarget?
+    private var transcriptionProgressTimer: Timer?
+    private var transcriptionProgressStartedAt: Date?
+    private var transcriptionProgressTargetDuration: TimeInterval = 2.0
+    private var transcriptionProgressPercent = 0
 
     private var selectedModel: ModelChoice {
         let choice = ModelChoice.choice(for: UserDefaults.standard.string(forKey: selectedModelIDKey))
@@ -2574,15 +2610,16 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
 
         switch newState {
         case .ready, .error:
+            stopTranscriptionProgress()
             recordingOverlay.hide()
             toggleMenuItem.title = "Start Recording"
             toggleMenuItem.isEnabled = true
         case .recording:
-            recordingOverlay.show()
+            recordingOverlay.show(progressPercent: nil)
             toggleMenuItem.title = "Stop and Paste"
             toggleMenuItem.isEnabled = true
         case .transcribing:
-            recordingOverlay.show()
+            recordingOverlay.show(progressPercent: transcriptionProgressPercent)
             toggleMenuItem.title = "Transcribing..."
             toggleMenuItem.isEnabled = false
         }
@@ -2728,6 +2765,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         setState(.transcribing)
+        startTranscriptionProgress(audioDuration: Double(samples.count) / Double(WHISPER_SAMPLE_RATE))
         let outputLanguage = selectedOutputLanguage
         let shouldPreserveCapitalization = preserveCapitalization
 
@@ -2747,6 +2785,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
                 let elapsed = Date().timeIntervalSince(startedAt)
 
                 DispatchQueue.main.async {
+                    self.completeTranscriptionProgress()
                     AppLog.write(String(format: "transcribed %.2fs of audio in %.2fs", Double(samples.count) / Double(WHISPER_SAMPLE_RATE), elapsed))
                     self.lastTranscript = output
                     self.copyToClipboard(output)
@@ -2754,11 +2793,53 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             } catch {
                 DispatchQueue.main.async {
+                    self.stopTranscriptionProgress()
                     self.setState(.error(error.localizedDescription))
                     NSSound.beep()
                 }
             }
         }
+    }
+
+    private func startTranscriptionProgress(audioDuration: TimeInterval) {
+        transcriptionProgressTimer?.invalidate()
+        transcriptionProgressPercent = 0
+        transcriptionProgressStartedAt = Date()
+        transcriptionProgressTargetDuration = max(1.2, min(8.0, 1.0 + audioDuration * 0.12))
+        recordingOverlay.setProgress(0)
+
+        transcriptionProgressTimer = Timer.scheduledTimer(withTimeInterval: 0.12, repeats: true) { [weak self] _ in
+            guard let self,
+                  let startedAt = self.transcriptionProgressStartedAt,
+                  self.state == .transcribing
+            else {
+                return
+            }
+
+            let elapsed = Date().timeIntervalSince(startedAt)
+            let estimatedProgress = Int((elapsed / self.transcriptionProgressTargetDuration) * 95.0)
+            self.transcriptionProgressPercent = max(
+                self.transcriptionProgressPercent,
+                min(95, estimatedProgress)
+            )
+            self.recordingOverlay.setProgress(self.transcriptionProgressPercent)
+        }
+    }
+
+    private func completeTranscriptionProgress() {
+        transcriptionProgressTimer?.invalidate()
+        transcriptionProgressTimer = nil
+        transcriptionProgressStartedAt = nil
+        transcriptionProgressPercent = 100
+        recordingOverlay.setProgress(100)
+    }
+
+    private func stopTranscriptionProgress() {
+        transcriptionProgressTimer?.invalidate()
+        transcriptionProgressTimer = nil
+        transcriptionProgressStartedAt = nil
+        transcriptionProgressPercent = 0
+        recordingOverlay.setProgress(nil)
     }
 
     private func copyToClipboard(_ text: String) {

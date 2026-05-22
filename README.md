@@ -52,6 +52,14 @@ That folder contains downloaded speech models and optional translation runtime d
 open dist/DuckWhisperer.app
 ```
 
+After the first setup, use this faster path when changing app code and reinstalling on the same machine:
+
+```bash
+./scripts/reinstall_app.sh
+```
+
+It rebuilds and replaces `/Applications/DuckWhisperer.app` without reinstalling speech models or translation runtime data.
+
 To build only the lightweight app bundle without installing the default model or translation runtime:
 
 ```bash
@@ -64,6 +72,7 @@ INSTALL_DEFAULT_MODEL=0 INSTALL_TRANSLATION=0 ./scripts/build_app.sh
 - Local English speech transcription
 - Optional English -> French and English -> Dutch local output translation
 - Duck output that turns the transcript into assorted quacks
+- Transcription overlay progress percentage
 - Model Explorer for `Small English`, `Base English`, and `Tiny English`
 - Duck menu-bar icon and DuckWhisperer app icon
 - `Preserve Capitalization` toggle
