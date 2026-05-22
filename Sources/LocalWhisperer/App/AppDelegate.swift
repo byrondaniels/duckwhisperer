@@ -13,7 +13,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let autoPastePermissionMenuItem = NSMenuItem(title: "Auto-Paste Permission: Checking...", action: #selector(openAccessibilitySettings), keyEquivalent: "")
     private let toggleMenuItem = NSMenuItem(title: "Start Recording", action: #selector(toggleRecordingFromMenu), keyEquivalent: "")
     private let copyLastMenuItem = NSMenuItem(title: "Copy Last Transcript", action: #selector(copyLastTranscript), keyEquivalent: "")
-    private let translateSelectionMenuItem = NSMenuItem(title: "Translate Selection to English", action: #selector(translateSelectionFromMenu), keyEquivalent: "")
     private let preserveCapitalizationMenuItem = NSMenuItem(title: "Preserve Capitalization", action: #selector(togglePreserveCapitalization), keyEquivalent: "")
     private let hotKeyController = HotKeyController()
     private let audioCapture = AudioCapture()
@@ -76,8 +75,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             switch identifier {
             case recordHotKeyIdentifier:
                 self?.toggleRecording()
-            case translateSelectionHotKeyIdentifier:
-                self?.translateSelectedTextToEnglish()
             case cancelHotKeyIdentifier:
                 self?.cancelActiveDictation()
             default:
@@ -150,7 +147,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         toggleMenuItem.target = self
         copyLastMenuItem.target = self
         copyLastMenuItem.isEnabled = false
-        translateSelectionMenuItem.target = self
         preserveCapitalizationMenuItem.target = self
 
         let openMicSettings = NSMenuItem(
@@ -172,7 +168,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(NSMenuItem.separator())
         menu.addItem(toggleMenuItem)
         menu.addItem(copyLastMenuItem)
-        menu.addItem(translateSelectionMenuItem)
         menu.addItem(outputMenuItem())
         menu.addItem(preserveCapitalizationMenuItem)
         let topLevelModelExplorer = NSMenuItem(
@@ -285,7 +280,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         copyLastMenuItem.isEnabled = !lastTranscript.isEmpty
-        translateSelectionMenuItem.isEnabled = state != .recording && state != .transcribing
         refreshPermissionUI()
         rebuildPreserveCapitalizationMenuItem()
     }
@@ -364,10 +358,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         toggleRecording()
     }
 
-    @objc private func translateSelectionFromMenu() {
-        translateSelectedTextToEnglish()
-    }
-
     @objc private func selectModel(_ sender: NSMenuItem) {
         guard state != .recording, state != .transcribing else {
             NSSound.beep()
@@ -431,108 +421,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         UserDefaults.standard.set(!preserveCapitalization, forKey: preserveCapitalizationKey)
         rebuildPreserveCapitalizationMenuItem()
         setState(state)
-    }
-
-    private func translateSelectedTextToEnglish() {
-        guard state != .recording, state != .transcribing else {
-            NSSound.beep()
-            return
-        }
-
-        let outputLanguage = selectedOutputLanguage
-        guard let sourceCode = outputLanguage.translationTargetCode else {
-            transcriptionResult.show(text: "Set Output Language to French or Dutch, select text in that language, then press Option+X.")
-            return
-        }
-
-        captureSelectedText { [weak self] selectedText in
-            guard let self else { return }
-            guard let selectedText else {
-                self.transcriptionResult.show(text: "No selected text found. Select text in the current output language, then press Option+X.")
-                NSSound.beep()
-                return
-            }
-
-            self.statusMenuItem.title = "Translating selection to English..."
-            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-                guard let self else { return }
-
-                do {
-                    let translated = try LocalTranslator.translate(selectedText, from: sourceCode, to: "en")
-                    DispatchQueue.main.async {
-                        AppLog.write("translated selected \(outputLanguage.title) text to English")
-                        self.lastTranscript = translated
-                        self.copyLastMenuItem.isEnabled = true
-                        self.transcriptionResult.show(text: translated)
-                        self.setState(self.state)
-                    }
-                } catch {
-                    DispatchQueue.main.async {
-                        self.setState(.error(error.localizedDescription))
-                        self.transcriptionResult.show(text: error.localizedDescription)
-                        NSSound.beep()
-                    }
-                }
-            }
-        }
-    }
-
-    private func captureSelectedText(completion: @escaping (String?) -> Void) {
-        if let selectedText = PasteTargetDetector.selectedTextFromFocusedTarget() {
-            completion(selectedText)
-            return
-        }
-
-        guard AXIsProcessTrusted() else {
-            AppLog.write("selection translation skipped; Accessibility is not trusted")
-            completion(nil)
-            return
-        }
-
-        let pasteboard = NSPasteboard.general
-        let previousItems = pasteboard.pasteboardItems?.compactMap { $0.copy() as? NSPasteboardItem } ?? []
-        pasteboard.clearContents()
-
-        guard postCopyShortcut() else {
-            restorePasteboardItems(previousItems)
-            completion(nil)
-            return
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
-            let copiedText = pasteboard.string(forType: .string)
-            self.restorePasteboardItems(previousItems)
-
-            let trimmed = copiedText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            completion(trimmed.isEmpty ? nil : copiedText)
-        }
-    }
-
-    private func restorePasteboardItems(_ items: [NSPasteboardItem]) {
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        if !items.isEmpty {
-            pasteboard.writeObjects(items)
-        }
-    }
-
-    private func postCopyShortcut() -> Bool {
-        guard let source = CGEventSource(stateID: .hidSystemState) else {
-            return false
-        }
-
-        let keyCode: CGKeyCode = 8
-        guard let keyDown = CGEvent(keyboardEventSource: source, virtualKey: keyCode, keyDown: true),
-              let keyUp = CGEvent(keyboardEventSource: source, virtualKey: keyCode, keyDown: false)
-        else {
-            return false
-        }
-
-        keyDown.flags = .maskCommand
-        keyUp.flags = .maskCommand
-        keyDown.post(tap: .cghidEventTap)
-        keyUp.post(tap: .cghidEventTap)
-        return true
     }
 
     private func toggleRecording() {

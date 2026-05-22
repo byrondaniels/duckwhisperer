@@ -62,11 +62,7 @@ final class HotKeyController {
             return recordStatus
         }
 
-        return registerHotKey(
-            keyCode: UInt32(kVK_ANSI_X),
-            modifiers: UInt32(optionKey),
-            identifier: translateSelectionHotKeyIdentifier
-        )
+        return noErr
     }
 
     func registerCancelHotKey() -> OSStatus {

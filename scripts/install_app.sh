@@ -20,6 +20,19 @@ require_command() {
   fi
 }
 
+replace_app_bundle() {
+  if [[ "$(basename "$APP_DST")" != "$APP_NAME" ]]; then
+    echo "Refusing to replace unexpected app path: $APP_DST" >&2
+    exit 1
+  fi
+
+  if [[ -e "$APP_DST" ]]; then
+    rm -rf "$APP_DST"
+  fi
+
+  ditto "$APP_SRC" "$APP_DST"
+}
+
 require_command swift "Install Xcode Command Line Tools: xcode-select --install"
 require_command curl "Install curl or run on a standard macOS environment."
 
@@ -34,7 +47,7 @@ echo "Building DuckWhisperer..."
 ./scripts/build_app.sh
 
 echo "Installing $APP_NAME to $APP_DST..."
-ditto "$APP_SRC" "$APP_DST"
+replace_app_bundle
 
 echo "Refreshing macOS app registration..."
 /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$APP_DST" || true

@@ -34,26 +34,6 @@ struct TranslationPackChoice: Equatable {
             packageFilename: "translate-en_nl-1_8.argosmodel",
             packageDirectoryName: "translate-en_nl-1_8",
             downloadSizeText: "68 MB"
-        ),
-        TranslationPackChoice(
-            id: "translation-fr-en",
-            title: "French -> English",
-            sourceCode: "fr",
-            targetCode: "en",
-            detail: "Selected French text -> English",
-            packageFilename: "translate-fr_en-1_9.argosmodel",
-            packageDirectoryName: "translate-fr_en-1_9",
-            downloadSizeText: "63.5 MB"
-        ),
-        TranslationPackChoice(
-            id: "translation-nl-en",
-            title: "Dutch -> English",
-            sourceCode: "nl",
-            targetCode: "en",
-            detail: "Selected Dutch text -> English",
-            packageFilename: "translate-nl_en-1_8.argosmodel",
-            packageDirectoryName: "translate-nl_en-1_8",
-            downloadSizeText: "66.7 MB"
         )
     ]
 

@@ -168,10 +168,6 @@ curl -fL -o "$PACKAGE_DIR/translate-en_fr-1_9.argosmodel" \
   https://argos-net.com/v1/translate-en_fr-1_9.argosmodel
 curl -fL -o "$PACKAGE_DIR/translate-en_nl-1_8.argosmodel" \
   https://argos-net.com/v1/translate-en_nl-1_8.argosmodel
-curl -fL -o "$PACKAGE_DIR/translate-fr_en-1_9.argosmodel" \
-  https://argos-net.com/v1/translate-fr_en-1_9.argosmodel
-curl -fL -o "$PACKAGE_DIR/translate-nl_en-1_8.argosmodel" \
-  https://argos-net.com/v1/translate-nl_en-1_8.argosmodel
 
 XDG_DATA_HOME="$DATA_HOME" \
 XDG_CACHE_HOME="$CACHE_HOME" \

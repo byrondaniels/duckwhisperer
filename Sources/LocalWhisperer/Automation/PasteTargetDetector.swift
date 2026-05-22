@@ -9,28 +9,6 @@ struct PasteTarget {
     let selectedRange: CFRange?
 }
 enum PasteTargetDetector {
-    static func selectedTextFromFocusedTarget() -> String? {
-        guard AXIsProcessTrusted(),
-              var element = focusedUIElement()
-        else {
-            return nil
-        }
-
-        for _ in 0..<8 {
-            if let selectedText = selectedText(of: element),
-               !selectedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                return selectedText
-            }
-
-            guard let parent = parentElement(of: element) else {
-                return nil
-            }
-            element = parent
-        }
-
-        return nil
-    }
-
     static func captureFocusedEditableTarget() -> PasteTarget {
         let application = currentExternalFrontmostApplication()
         let editableElement = focusedEditableElement()
@@ -280,24 +258,6 @@ enum PasteTargetDetector {
             return nil
         }
         return range
-    }
-
-    private static func selectedText(of element: AXUIElement) -> String? {
-        if let selectedText = stringAttribute(kAXSelectedTextAttribute as CFString, of: element),
-           !selectedText.isEmpty {
-            return selectedText
-        }
-
-        guard let value = stringAttribute(kAXValueAttribute as CFString, of: element),
-              let range = selectedTextRange(of: element),
-              range.length > 0,
-              range.location >= 0,
-              range.location + range.length <= value.utf16.count
-        else {
-            return nil
-        }
-
-        return (value as NSString).substring(with: NSRange(location: range.location, length: range.length))
     }
 
     private static func isAttributeSettable(_ attribute: CFString, of element: AXUIElement) -> Bool {

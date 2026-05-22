@@ -16,6 +16,7 @@ SUPPORT_ROOT="${DUCKWHISPERER_SUPPORT_DIR:-${LOCAL_WHISPERER_SUPPORT_DIR:-$HOME/
 DEFAULT_MODEL_FILE="ggml-small.en.bin"
 DEFAULT_MODEL_SRC="$SUPPORT_ROOT/Models/$DEFAULT_MODEL_FILE"
 SWIFT_SOURCES=()
+SIGNING_IDENTITY_WAS_SET=0
 
 find_default_signing_identity() {
   local identity
@@ -37,7 +38,21 @@ find_default_signing_identity() {
   fi
 }
 
-SIGNING_IDENTITY="${SIGNING_IDENTITY:-$(find_default_signing_identity)}"
+if [[ -n "${SIGNING_IDENTITY+x}" ]]; then
+  SIGNING_IDENTITY_WAS_SET=1
+else
+  SIGNING_IDENTITY="$(find_default_signing_identity)"
+fi
+
+sign_app() {
+  local identity="$1"
+  if [[ "$identity" == "-" ]]; then
+    echo "Signing DuckWhisperer ad-hoc. Set SIGNING_IDENTITY to a stable code-signing identity to preserve Accessibility trust across rebuilds." >&2
+  else
+    echo "Signing DuckWhisperer with: $identity" >&2
+  fi
+  codesign --force --deep --sign "$identity" "$APP_DIR"
+}
 
 if [[ ! -d "$FRAMEWORK_SRC" ]]; then
   echo "Missing whisper.framework. Download it with scripts/bootstrap_backend.sh first." >&2
@@ -92,12 +107,18 @@ if [[ "${BUNDLE_DEFAULT_MODEL:-0}" == "1" ]]; then
   cp "$DEFAULT_MODEL_SRC" "$MODEL_DST_DIR/$DEFAULT_MODEL_FILE"
 fi
 
-if [[ "$SIGNING_IDENTITY" == "-" ]]; then
-  echo "Signing DuckWhisperer ad-hoc. Set SIGNING_IDENTITY to a stable code-signing identity to preserve Accessibility trust across rebuilds." >&2
-else
-  echo "Signing DuckWhisperer with: $SIGNING_IDENTITY" >&2
+sign_app "$SIGNING_IDENTITY"
+if ! codesign --verify --deep --strict "$APP_DIR" >/dev/null 2>&1; then
+  if [[ "$SIGNING_IDENTITY" != "-" && "$SIGNING_IDENTITY_WAS_SET" == "0" ]]; then
+    echo "Auto-selected signing identity did not pass strict verification; falling back to ad-hoc signing." >&2
+    sign_app "-"
+    codesign --verify --deep --strict "$APP_DIR"
+  else
+    echo "DuckWhisperer signature verification failed for SIGNING_IDENTITY=$SIGNING_IDENTITY" >&2
+    codesign --verify --deep --strict "$APP_DIR"
+    exit 1
+  fi
 fi
-codesign --force --deep --sign "$SIGNING_IDENTITY" "$APP_DIR"
 
 if [[ "${INSTALL_DEFAULT_MODEL:-1}" == "1" ]]; then
   "$ROOT_DIR/scripts/setup_default_model.sh"

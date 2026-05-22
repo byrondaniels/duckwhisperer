@@ -2,7 +2,6 @@ import Foundation
 
 let hotKeySignature = fourCharCode("LWSP")
 let recordHotKeyIdentifier: UInt32 = 1
-let translateSelectionHotKeyIdentifier: UInt32 = 2
 let cancelHotKeyIdentifier: UInt32 = 3
 let selectedModelIDKey = "SelectedModelID"
 let selectedOutputLanguageIDKey = "SelectedOutputLanguageID"
@@ -10,7 +9,7 @@ let preserveCapitalizationKey = "PreserveCapitalization"
 let appDisplayName = "DuckWhisperer"
 let supportDirectoryName = "Local Whisperer"
 let logFilename = "duckwhisperer.log"
-let buildMarker = "duckwhisperer-2026-05-22-overlay-cancel"
+let buildMarker = "duckwhisperer-2026-05-22-no-selection-translation"
 var debugPasteText: String?
 
 private func fourCharCode(_ value: String) -> OSType {

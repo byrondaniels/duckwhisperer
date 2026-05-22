@@ -15,7 +15,7 @@ enum LocalTranslator {
         return try translate(text, from: "en", to: targetCode)
     }
 
-    static func translate(_ text: String, from sourceCode: String, to targetCode: String) throws -> String {
+    private static func translate(_ text: String, from sourceCode: String, to targetCode: String) throws -> String {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, sourceCode != targetCode else {
             return text

@@ -9,6 +9,19 @@ FRAMEWORK_DIR="$ROOT_DIR/vendor/whisper-xcframework/build-apple/whisper.xcframew
 
 cd "$ROOT_DIR"
 
+replace_app_bundle() {
+  if [[ "$(basename "$APP_DST")" != "$APP_NAME" ]]; then
+    echo "Refusing to replace unexpected app path: $APP_DST" >&2
+    exit 1
+  fi
+
+  if [[ -e "$APP_DST" ]]; then
+    rm -rf "$APP_DST"
+  fi
+
+  ditto "$APP_SRC" "$APP_DST"
+}
+
 if [[ ! -d "$FRAMEWORK_DIR" ]]; then
   echo "Preparing whisper.cpp backend..."
   ./scripts/bootstrap_backend.sh
@@ -27,7 +40,7 @@ if pgrep -x DuckWhisperer >/dev/null 2>&1; then
 fi
 
 echo "Installing $APP_NAME to $APP_DST..."
-ditto "$APP_SRC" "$APP_DST"
+replace_app_bundle
 
 echo "Refreshing macOS app registration..."
 /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$APP_DST" || true

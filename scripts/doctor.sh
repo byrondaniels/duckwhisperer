@@ -188,7 +188,12 @@ check_signing_identity() {
 check_installed_app_signature() {
   [[ -d "$APP_PATH" ]] || return
 
-  local requirement
+  local requirement verify_output
+  if ! verify_output="$(codesign --verify --deep --strict "$APP_PATH" 2>&1)"; then
+    warn "installed app signature does not pass strict verification: $verify_output"
+    return
+  fi
+
   requirement="$(codesign -d -r- "$APP_PATH" 2>&1 || true)"
   if [[ "$requirement" == *'designated => cdhash'* ]]; then
     warn "installed app is ad-hoc signed; macOS may require re-enabling Accessibility after each reinstall"
