@@ -12,6 +12,10 @@ FRAMEWORK_PARENT="$(dirname "$FRAMEWORK_SRC")"
 MODEL_DST_DIR="$RESOURCES_DIR/Models"
 TRANSLATION_DST_DIR="$RESOURCES_DIR/Translation"
 MODULE_CACHE_DIR="$ROOT_DIR/build/module-cache"
+SUPPORT_ROOT="${DUCKWHISPERER_SUPPORT_DIR:-${LOCAL_WHISPERER_SUPPORT_DIR:-$HOME/Library/Application Support/Local Whisperer}}"
+DEFAULT_MODEL_FILE="ggml-small.en.bin"
+DEFAULT_MODEL_SRC="$SUPPORT_ROOT/Models/$DEFAULT_MODEL_FILE"
+SIGNING_IDENTITY="${SIGNING_IDENTITY:--}"
 SWIFT_SOURCES=()
 
 if [[ ! -d "$FRAMEWORK_SRC" ]]; then
@@ -58,7 +62,16 @@ swiftc \
   "${SWIFT_SOURCES[@]}" \
   -o "$MACOS_DIR/DuckWhisperer"
 
-codesign --force --deep --sign - "$APP_DIR"
+if [[ "${BUNDLE_DEFAULT_MODEL:-0}" == "1" ]]; then
+  "$ROOT_DIR/scripts/setup_default_model.sh"
+  if [[ ! -f "$DEFAULT_MODEL_SRC" ]]; then
+    echo "Default model was not found at $DEFAULT_MODEL_SRC after setup." >&2
+    exit 1
+  fi
+  cp "$DEFAULT_MODEL_SRC" "$MODEL_DST_DIR/$DEFAULT_MODEL_FILE"
+fi
+
+codesign --force --deep --sign "$SIGNING_IDENTITY" "$APP_DIR"
 
 if [[ "${INSTALL_DEFAULT_MODEL:-1}" == "1" ]]; then
   "$ROOT_DIR/scripts/setup_default_model.sh"

@@ -80,6 +80,24 @@ To build only the lightweight app bundle without installing the default model or
 INSTALL_DEFAULT_MODEL=0 INSTALL_TRANSLATION=0 ./scripts/build_app.sh
 ```
 
+## Release Package
+
+Build a drag-and-drop macOS package with the default `Small English` speech model bundled inside the app:
+
+```bash
+./scripts/package_release.sh
+```
+
+The release artifact is written to `release/`. By default this creates a `.zip`; set `PACKAGE_FORMAT=dmg` or `PACKAGE_FORMAT=both` if needed.
+
+This packaged app can transcribe English without a terminal setup or model download. macOS still requires the user to grant Microphone and Accessibility permissions after installing. French/Dutch translation remains optional and can be installed later from Model Explorer.
+
+If you have a Developer ID certificate, pass it through to the build:
+
+```bash
+SIGNING_IDENTITY="Developer ID Application: Your Name (TEAMID)" ./scripts/package_release.sh
+```
+
 Run the full local verification loop before pushing changes:
 
 ```bash

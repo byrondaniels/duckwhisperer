@@ -156,9 +156,15 @@ require_command swift "Install Xcode Command Line Tools: xcode-select --install"
 require_command swiftc "Install Xcode Command Line Tools: xcode-select --install"
 require_command curl "curl is required for backend/model downloads."
 require_command ditto "ditto is required to assemble and install the app bundle."
+require_command hdiutil "hdiutil is required to create release DMGs."
 require_command codesign "codesign is required for the ad-hoc app signature."
 require_command shasum "shasum is required to verify downloaded model checksums."
 require_command git "git is required for source checkout and development."
+if security find-identity -v -p codesigning 2>/dev/null | grep -q 'Developer ID Application'; then
+  pass "Developer ID signing identity is available"
+else
+  warn "no Developer ID signing identity found; local packages will be ad-hoc signed and may trigger Gatekeeper on other Macs"
+fi
 check_backend
 check_default_model
 check_translation

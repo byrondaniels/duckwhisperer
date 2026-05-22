@@ -4,6 +4,7 @@
 .build/
 build/
 dist/
+release/
 
 # Local Python runtimes
 .venv/
@@ -14,6 +15,7 @@ __pycache__/
 # Downloaded Whisper backend and source archives
 vendor/
 *.zip
+*.dmg
 
 # Runtime model and translation data must not be committed.
 Resources/Models/*.bin

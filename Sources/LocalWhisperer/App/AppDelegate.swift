@@ -525,7 +525,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 let startedAt = Date()
                 let transcript = try liveSession?.finish(with: samples)
                     ?? self.transcriber.transcribe(samples: samples)
-                let translatedOutput = try LocalTranslator.translate(transcript, to: outputLanguage)
+                let translatedOutput: String
+                do {
+                    translatedOutput = try LocalTranslator.translate(transcript, to: outputLanguage)
+                } catch {
+                    AppLog.write("translation failed for \(outputLanguage.title); falling back to English transcript: \(error.localizedDescription)")
+                    translatedOutput = transcript
+                }
                 let languageOutput = self.applyLanguageOutput(to: translatedOutput, outputLanguage: outputLanguage)
                 let output = self.applyOutputFormatting(
                     to: languageOutput,
