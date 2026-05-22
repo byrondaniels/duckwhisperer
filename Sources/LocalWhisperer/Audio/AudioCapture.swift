@@ -14,6 +14,7 @@ final class AudioCapture {
     private var engine: AVAudioEngine?
     private var converter: AVAudioConverter?
     private var samples: [Float] = []
+    private var recentLevel: Float = 0
     private var isRecording = false
 
     func start() throws {
@@ -31,6 +32,7 @@ final class AudioCapture {
 
         lock.lock()
         samples.removeAll(keepingCapacity: true)
+        recentLevel = 0
         isRecording = true
         lock.unlock()
 
@@ -88,6 +90,12 @@ final class AudioCapture {
         lock.lock()
         defer { lock.unlock() }
         return samples.count
+    }
+
+    func currentLevel() -> Float {
+        lock.lock()
+        defer { lock.unlock() }
+        return isRecording ? recentLevel : 0
     }
 
     private func appendConvertedSamples(from buffer: AVAudioPCMBuffer) {
@@ -177,8 +185,29 @@ final class AudioCapture {
         lock.lock()
         if isRecording {
             samples.append(contentsOf: newSamples)
+            recentLevel = smoothedLevel(from: newSamples, previousLevel: recentLevel)
         }
         lock.unlock()
+    }
+
+    private func smoothedLevel(from samples: [Float], previousLevel: Float) -> Float {
+        guard !samples.isEmpty else {
+            return previousLevel * 0.85
+        }
+
+        var squareTotal: Float = 0
+        var peak: Float = 0
+        for sample in samples {
+            let magnitude = abs(sample)
+            squareTotal += sample * sample
+            peak = max(peak, magnitude)
+        }
+
+        let rms = sqrt(squareTotal / Float(samples.count))
+        let weightedLevel = max(rms * 18, peak * 3.2)
+        let normalizedLevel = min(1, max(0, weightedLevel))
+        let attack: Float = normalizedLevel > previousLevel ? 0.42 : 0.16
+        return previousLevel + (normalizedLevel - previousLevel) * attack
     }
 
     static func samples(from url: URL) throws -> [Float] {

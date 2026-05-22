@@ -2,6 +2,18 @@ import AppKit
 import QuartzCore
 
 private final class RecordingOverlayView: NSView {
+    var audioLevel: CGFloat = 0 {
+        didSet {
+            needsDisplay = true
+        }
+    }
+
+    var animationPhase: CGFloat = 0 {
+        didSet {
+            needsDisplay = true
+        }
+    }
+
     var progressPercent: Int? {
         didSet {
             needsDisplay = true
@@ -30,11 +42,65 @@ private final class RecordingOverlayView: NSView {
         NSColor.black.withAlphaComponent(0.88).setFill()
         background.fill()
 
-        drawBird()
+        drawCrescendo()
+        drawBird(level: audioLevel)
         drawProgress()
     }
 
-    private func drawBird() {
+    private func drawCrescendo() {
+        let level = max(0, min(1, audioLevel))
+        let quietPulse = 0.08 + 0.05 * ((sin(animationPhase) + 1) / 2)
+        let energy = max(level, quietPulse)
+
+        let glow = NSBezierPath(ovalIn: NSRect(
+            x: 32 - energy * 8,
+            y: 20 - energy * 5,
+            width: 78 + energy * 18,
+            height: 44 + energy * 10
+        ))
+        NSColor(calibratedRed: 1.0, green: 0.73, blue: 0.20, alpha: 0.10 + energy * 0.18).setFill()
+        glow.fill()
+
+        for index in 0..<7 {
+            let offset = CGFloat(index)
+            let wave = (sin(animationPhase + offset * 0.72) + 1) / 2
+            let height = 6 + energy * (9 + wave * 19)
+            let x = 15 + offset * 7
+            let y = bounds.maxY - 10 - height
+            let bar = NSBezierPath(roundedRect: NSRect(x: x, y: y, width: 3.5, height: height), xRadius: 1.75, yRadius: 1.75)
+            NSColor(calibratedRed: 0.18, green: 0.74, blue: 0.82, alpha: 0.22 + energy * 0.42).setFill()
+            bar.fill()
+        }
+
+        for index in 0..<3 {
+            let offset = CGFloat(index)
+            let wave = (sin(animationPhase + offset * 0.9) + 1) / 2
+            let spread = 8 + offset * 7 + energy * (3 + offset * 2) + wave * 2
+            let x = 105 + offset * 8
+            let path = NSBezierPath()
+            path.move(to: NSPoint(x: x, y: 32 - spread))
+            path.curve(
+                to: NSPoint(x: x, y: 32 + spread),
+                controlPoint1: NSPoint(x: x + 10 + energy * 9, y: 27 - spread * 0.35),
+                controlPoint2: NSPoint(x: x + 10 + energy * 9, y: 37 + spread * 0.35)
+            )
+            path.lineWidth = 1.4 + energy * 2.4
+            path.lineCapStyle = .round
+            NSColor(calibratedRed: 1.0, green: 0.72, blue: 0.22, alpha: 0.18 + energy * 0.48 - offset * 0.07).setStroke()
+            path.stroke()
+        }
+    }
+
+    private func drawBird(level: CGFloat) {
+        let center = NSPoint(x: 68, y: 40)
+        let scale = 1 + max(0, min(1, level)) * 0.075
+        NSGraphicsContext.saveGraphicsState()
+        let transform = NSAffineTransform()
+        transform.translateX(by: center.x, yBy: center.y)
+        transform.scale(by: scale)
+        transform.translateX(by: -center.x, yBy: -center.y)
+        transform.concat()
+
         let body = NSBezierPath(ovalIn: NSRect(x: 45, y: 29, width: 43, height: 27))
         NSColor(calibratedWhite: 0.96, alpha: 1).setFill()
         body.fill()
@@ -88,6 +154,8 @@ private final class RecordingOverlayView: NSView {
         rightFoot.move(to: NSPoint(x: 74, y: 56))
         rightFoot.line(to: NSPoint(x: 78, y: 62))
         rightFoot.stroke()
+
+        NSGraphicsContext.restoreGraphicsState()
     }
 
     private func drawProgress() {
@@ -148,20 +216,19 @@ final class RecordingOverlayController {
             context.duration = 0.16
             context.timingFunction = CAMediaTimingFunction(name: .easeOut)
             panel.animator().alphaValue = 1
-        } completionHandler: { [weak self] in
-            self?.startPulse()
         }
     }
 
     func hide() {
         guard isVisible else {
             overlayView.progressPercent = nil
+            overlayView.audioLevel = 0
             return
         }
 
         isVisible = false
         overlayView.progressPercent = nil
-        stopPulse()
+        overlayView.audioLevel = 0
 
         NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.18
@@ -189,26 +256,13 @@ final class RecordingOverlayController {
         panel.setFrameOrigin(origin)
     }
 
-    private func startPulse() {
-        guard isVisible, let layer = overlayView.layer else {
-            return
-        }
-
-        let animation = CABasicAnimation(keyPath: "opacity")
-        animation.fromValue = 1
-        animation.toValue = 0.45
-        animation.duration = 0.72
-        animation.autoreverses = true
-        animation.repeatCount = .infinity
-        animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-        layer.add(animation, forKey: "recording-pulse")
-    }
-
-    private func stopPulse() {
-        overlayView.layer?.removeAnimation(forKey: "recording-pulse")
-    }
-
     func setProgress(_ progressPercent: Int?) {
         overlayView.progressPercent = progressPercent
+    }
+
+    func setAudioLevel(_ level: Float) {
+        let clampedLevel = max(0, min(1, CGFloat(level)))
+        overlayView.audioLevel = overlayView.audioLevel + (clampedLevel - overlayView.audioLevel) * 0.35
+        overlayView.animationPhase += 0.18 + clampedLevel * 0.22
     }
 }

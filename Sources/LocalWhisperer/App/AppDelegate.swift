@@ -35,6 +35,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var pasteTarget: PasteTarget?
     private var transcriptionProgressTimer: Timer?
     private var permissionRefreshTimer: Timer?
+    private var recordingLevelTimer: Timer?
     private var transcriptionProgressStartedAt: Date?
     private var transcriptionProgressTargetDuration: TimeInterval = 2.0
     private var transcriptionProgressPercent = 0
@@ -109,6 +110,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         permissionRefreshTimer?.invalidate()
+        recordingLevelTimer?.invalidate()
         transcriptionProgressTimer?.invalidate()
     }
 
@@ -260,15 +262,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         switch newState {
         case .ready, .error:
+            stopRecordingLevelTimer()
             stopTranscriptionProgress()
             recordingOverlay.hide()
             toggleMenuItem.title = "Start Recording"
             toggleMenuItem.isEnabled = true
         case .recording:
             recordingOverlay.show(progressPercent: nil)
+            startRecordingLevelTimer()
             toggleMenuItem.title = "Stop and Paste"
             toggleMenuItem.isEnabled = true
         case .transcribing:
+            stopRecordingLevelTimer()
             recordingOverlay.show(progressPercent: transcriptionProgressPercent)
             toggleMenuItem.title = "Transcribing..."
             toggleMenuItem.isEnabled = false
@@ -285,6 +290,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         permissionRefreshTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
             self?.refreshPermissionUI()
         }
+    }
+
+    private func startRecordingLevelTimer() {
+        recordingLevelTimer?.invalidate()
+        recordingLevelTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 30.0, repeats: true) { [weak self] _ in
+            guard let self, self.state == .recording else {
+                return
+            }
+            self.recordingOverlay.setAudioLevel(self.audioCapture.currentLevel())
+        }
+    }
+
+    private func stopRecordingLevelTimer() {
+        recordingLevelTimer?.invalidate()
+        recordingLevelTimer = nil
+        recordingOverlay.setAudioLevel(0)
     }
 
     private func refreshPermissionUI() {
