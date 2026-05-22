@@ -56,4 +56,7 @@ Runtime models live outside the repo at:
 
 Optional local translation is not installed by default. Add it later with:
 ./scripts/setup_local_translation.sh
+
+For rebuilds that preserve Accessibility trust more reliably, sign with a stable identity:
+SIGNING_IDENTITY="Developer ID Application: Your Name (TEAMID)" ./scripts/reinstall_app.sh
 EOF

@@ -93,10 +93,18 @@ The release artifact is written to `release/`. By default this creates a `.zip`;
 
 This packaged app can transcribe English without a terminal setup or model download. macOS still requires the user to grant Microphone and Accessibility permissions after installing. French/Dutch translation remains optional and can be installed later from Model Explorer.
 
-If you have a Developer ID certificate, pass it through to the build:
+The build script automatically uses a local code-signing identity when one is available, preferring `Developer ID Application` and then local Apple development identities. If no identity exists, it falls back to ad-hoc signing.
+
+For release packages meant for other Macs, use a Developer ID certificate:
 
 ```bash
 SIGNING_IDENTITY="Developer ID Application: Your Name (TEAMID)" ./scripts/package_release.sh
+```
+
+To force an ad-hoc local build:
+
+```bash
+SIGNING_IDENTITY=- ./scripts/build_app.sh
 ```
 
 Run the full local verification loop before pushing changes:
@@ -132,7 +140,7 @@ Run the full local verification loop before pushing changes:
 
 ## Models
 
-No speech model is committed or bundled into the app.
+No speech model is committed to Git. Normal source builds keep speech models outside the app bundle in Application Support. Release packages created by `./scripts/package_release.sh` bundle `Small English` inside `DuckWhisperer.app` so a fresh Mac can transcribe English without a separate model download.
 
 Default model:
 
@@ -175,11 +183,15 @@ Selected-text translation uses the current `Output Language` as the source langu
 
 ## macOS Permissions Note
 
-This app is ad-hoc signed unless you add a Developer ID signing identity. macOS may reset Accessibility trust after rebuilding or reinstalling the app. If automatic paste stops working, toggle `DuckWhisperer` off and on in:
+macOS ties Accessibility permission to the app's code-signing requirement. DuckWhisperer will use a stable local signing identity when one exists; that makes paste permission more likely to survive rebuilds. Ad-hoc builds are identified by a changing code hash, so macOS may reset Accessibility trust after rebuilding or reinstalling the app.
+
+If automatic paste stops working, toggle `DuckWhisperer` off and on in:
 
 ```text
 System Settings -> Privacy & Security -> Accessibility
 ```
+
+Run `./scripts/doctor.sh` to see whether the installed app is ad-hoc signed or has a stable signing requirement.
 
 ## Repository Hygiene
 

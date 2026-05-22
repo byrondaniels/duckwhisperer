@@ -151,6 +151,54 @@ check_installed_app() {
   fi
 }
 
+find_codesigning_identity() {
+  security find-identity -v -p codesigning 2>/dev/null |
+    awk -F '"' '
+      /Developer ID Application/ { developer = $2 }
+      /Apple Development/ && !local { local = $2 }
+      /Mac Developer/ && !local { local = $2 }
+      /3rd Party Mac Developer Application/ && !local { local = $2 }
+      END {
+        if (developer) {
+          print "developer:" developer
+        } else if (local) {
+          print "local:" local
+        }
+      }
+    '
+}
+
+check_signing_identity() {
+  local identity
+  identity="$(find_codesigning_identity)"
+  case "$identity" in
+    developer:*)
+      pass "Developer ID signing identity is available"
+      ;;
+    local:*)
+      pass "local code-signing identity is available: ${identity#local:}"
+      warn "no Developer ID signing identity found; release packages may still trigger Gatekeeper on other Macs"
+      ;;
+    *)
+      warn "no code-signing identity found; builds will be ad-hoc signed, Accessibility trust may reset after rebuilds, and packages may trigger Gatekeeper on other Macs"
+      ;;
+  esac
+}
+
+check_installed_app_signature() {
+  [[ -d "$APP_PATH" ]] || return
+
+  local requirement
+  requirement="$(codesign -d -r- "$APP_PATH" 2>&1 || true)"
+  if [[ "$requirement" == *'designated => cdhash'* ]]; then
+    warn "installed app is ad-hoc signed; macOS may require re-enabling Accessibility after each reinstall"
+  elif [[ "$requirement" == *'designated =>'* ]]; then
+    pass "installed app has a stable code-signing requirement"
+  else
+    warn "could not read installed app signing requirement"
+  fi
+}
+
 check_macos
 require_command swift "Install Xcode Command Line Tools: xcode-select --install"
 require_command swiftc "Install Xcode Command Line Tools: xcode-select --install"
@@ -160,15 +208,12 @@ require_command hdiutil "hdiutil is required to create release DMGs."
 require_command codesign "codesign is required for the ad-hoc app signature."
 require_command shasum "shasum is required to verify downloaded model checksums."
 require_command git "git is required for source checkout and development."
-if security find-identity -v -p codesigning 2>/dev/null | grep -q 'Developer ID Application'; then
-  pass "Developer ID signing identity is available"
-else
-  warn "no Developer ID signing identity found; local packages will be ad-hoc signed and may trigger Gatekeeper on other Macs"
-fi
+check_signing_identity
 check_backend
 check_default_model
 check_translation
 check_installed_app
+check_installed_app_signature
 
 printf '\n'
 if (( failures > 0 )); then

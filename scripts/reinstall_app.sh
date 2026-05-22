@@ -39,6 +39,9 @@ cat <<EOF
 
 DuckWhisperer was reinstalled.
 
-If automatic paste stops working, toggle DuckWhisperer off/on in:
+If this build was ad-hoc signed and automatic paste stops working, toggle DuckWhisperer off/on in:
 System Settings -> Privacy & Security -> Accessibility
+
+To reduce Accessibility resets across rebuilds, sign with a stable identity:
+SIGNING_IDENTITY="Developer ID Application: Your Name (TEAMID)" ./scripts/reinstall_app.sh
 EOF

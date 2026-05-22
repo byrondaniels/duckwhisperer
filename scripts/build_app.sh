@@ -15,8 +15,29 @@ MODULE_CACHE_DIR="$ROOT_DIR/build/module-cache"
 SUPPORT_ROOT="${DUCKWHISPERER_SUPPORT_DIR:-${LOCAL_WHISPERER_SUPPORT_DIR:-$HOME/Library/Application Support/Local Whisperer}}"
 DEFAULT_MODEL_FILE="ggml-small.en.bin"
 DEFAULT_MODEL_SRC="$SUPPORT_ROOT/Models/$DEFAULT_MODEL_FILE"
-SIGNING_IDENTITY="${SIGNING_IDENTITY:--}"
 SWIFT_SOURCES=()
+
+find_default_signing_identity() {
+  local identity
+  identity="$(
+    security find-identity -v -p codesigning 2>/dev/null |
+      awk -F '"' '
+        /Developer ID Application/ { selected = $2; exit }
+        /Apple Development/ && !selected { selected = $2 }
+        /Mac Developer/ && !selected { selected = $2 }
+        /3rd Party Mac Developer Application/ && !selected { selected = $2 }
+        END { if (selected) print selected }
+      '
+  )"
+
+  if [[ -n "$identity" ]]; then
+    printf '%s\n' "$identity"
+  else
+    printf '%s\n' "-"
+  fi
+}
+
+SIGNING_IDENTITY="${SIGNING_IDENTITY:-$(find_default_signing_identity)}"
 
 if [[ ! -d "$FRAMEWORK_SRC" ]]; then
   echo "Missing whisper.framework. Download it with scripts/bootstrap_backend.sh first." >&2
@@ -71,6 +92,11 @@ if [[ "${BUNDLE_DEFAULT_MODEL:-0}" == "1" ]]; then
   cp "$DEFAULT_MODEL_SRC" "$MODEL_DST_DIR/$DEFAULT_MODEL_FILE"
 fi
 
+if [[ "$SIGNING_IDENTITY" == "-" ]]; then
+  echo "Signing DuckWhisperer ad-hoc. Set SIGNING_IDENTITY to a stable code-signing identity to preserve Accessibility trust across rebuilds." >&2
+else
+  echo "Signing DuckWhisperer with: $SIGNING_IDENTITY" >&2
+fi
 codesign --force --deep --sign "$SIGNING_IDENTITY" "$APP_DIR"
 
 if [[ "${INSTALL_DEFAULT_MODEL:-1}" == "1" ]]; then
