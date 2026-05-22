@@ -2,6 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+FRAMEWORK_DIR="$ROOT_DIR/vendor/whisper-xcframework/build-apple/whisper.xcframework"
 
 cd "$ROOT_DIR"
 
@@ -32,6 +33,11 @@ fi
 
 echo "Checking whitespace..."
 git diff --check
+
+if [[ ! -d "$FRAMEWORK_DIR" ]]; then
+  echo "Bootstrapping whisper.cpp backend..."
+  ./scripts/bootstrap_backend.sh
+fi
 
 echo "Building lightweight app bundle..."
 INSTALL_DEFAULT_MODEL=0 INSTALL_TRANSLATION=0 ./scripts/build_app.sh >/dev/null
