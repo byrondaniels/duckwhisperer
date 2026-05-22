@@ -16,7 +16,7 @@ Requirements:
 Install:
 
 ```bash
-git clone <repo-url> duckwhisperer
+git clone https://github.com/byrondaniels/duckwhisperer.git duckwhisperer
 cd duckwhisperer
 ./scripts/install_app.sh
 ```
