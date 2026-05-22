@@ -34,9 +34,17 @@ func runSmokeTranscriptionIfRequested() {
         let samples = try AudioCapture.samples(from: audioURL)
         let transcript = try transcriber.transcribe(samples: samples)
         let translatedOutput = try LocalTranslator.translate(transcript, to: outputLanguage)
-        let output = outputLanguage.id == "duck"
-            ? DuckSpeech.render(translatedOutput)
-            : translatedOutput
+        let output: String
+        switch outputLanguage.id {
+        case "british":
+            output = StyledSpeech.british(translatedOutput)
+        case "genz":
+            output = StyledSpeech.genZ(translatedOutput)
+        case "duck":
+            output = DuckSpeech.render(translatedOutput)
+        default:
+            output = translatedOutput
+        }
         print(output)
         exit(EXIT_SUCCESS)
     } catch {

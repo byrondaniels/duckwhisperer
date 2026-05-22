@@ -612,6 +612,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func applyLanguageOutput(to text: String, outputLanguage: OutputLanguage) -> String {
         switch outputLanguage.id {
+        case "british":
+            return StyledSpeech.british(text)
+        case "genz":
+            return StyledSpeech.genZ(text)
         case "duck":
             return DuckSpeech.render(text)
         default:

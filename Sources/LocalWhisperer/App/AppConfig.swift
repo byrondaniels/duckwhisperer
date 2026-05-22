@@ -9,7 +9,7 @@ let preserveCapitalizationKey = "PreserveCapitalization"
 let appDisplayName = "DuckWhisperer"
 let supportDirectoryName = "Local Whisperer"
 let logFilename = "duckwhisperer.log"
-let buildMarker = "duckwhisperer-2026-05-22-no-selection-translation"
+let buildMarker = "duckwhisperer-2026-05-22-style-output-modes"
 var debugPasteText: String?
 
 private func fourCharCode(_ value: String) -> OSType {
