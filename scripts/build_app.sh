@@ -55,7 +55,7 @@ if [[ "${INSTALL_DEFAULT_MODEL:-1}" == "1" ]]; then
   "$ROOT_DIR/scripts/setup_default_model.sh"
 fi
 
-if [[ "${INSTALL_TRANSLATION:-1}" == "1" ]]; then
+if [[ "${INSTALL_TRANSLATION:-0}" == "1" ]]; then
   "$ROOT_DIR/scripts/setup_local_translation.sh"
 fi
 

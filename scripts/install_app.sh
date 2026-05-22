@@ -5,8 +5,27 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_NAME="DuckWhisperer.app"
 APP_SRC="$ROOT_DIR/dist/$APP_NAME"
 APP_DST="${DUCKWHISPERER_INSTALL_DIR:-/Applications}/$APP_NAME"
+INSTALL_TRANSLATION="${INSTALL_TRANSLATION:-0}"
+export INSTALL_TRANSLATION
 
 cd "$ROOT_DIR"
+
+require_command() {
+  local command_name="$1"
+  local install_hint="$2"
+  if ! command -v "$command_name" >/dev/null 2>&1; then
+    echo "Missing required command: $command_name" >&2
+    echo "$install_hint" >&2
+    exit 1
+  fi
+}
+
+require_command swift "Install Xcode Command Line Tools: xcode-select --install"
+require_command curl "Install curl or run on a standard macOS environment."
+
+if [[ "$INSTALL_TRANSLATION" != "1" ]]; then
+  echo "Skipping optional local translation runtime. Run scripts/setup_local_translation.sh later if you want French/Dutch translation."
+fi
 
 echo "Preparing whisper.cpp backend..."
 ./scripts/bootstrap_backend.sh
@@ -34,4 +53,7 @@ Next steps:
 
 Runtime models live outside the repo at:
 ~/Library/Application Support/Local Whisperer
+
+Optional local translation is not installed by default. Add it later with:
+./scripts/setup_local_translation.sh
 EOF

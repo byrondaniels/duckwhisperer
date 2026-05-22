@@ -62,6 +62,9 @@ struct TranslationPackChoice: Equatable {
     }
 }
 enum TranslationStore {
+    private static let argosTranslateRequirement = "argostranslate==1.11.0"
+    private static let sentencePieceRequirement = "sentencepiece==0.2.1"
+
     static var supportRootURL: URL {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent(supportDirectoryName, isDirectory: true)
@@ -118,34 +121,79 @@ enum TranslationStore {
     }
 
     private static func ensureRuntime() throws {
+        if FileManager.default.isExecutableFile(atPath: pythonURL.path),
+           !isSupportedPython(pythonURL),
+           !argostranslateIsAvailable() {
+            try FileManager.default.removeItem(at: venvURL)
+        }
+
         if !FileManager.default.isExecutableFile(atPath: pythonURL.path) {
             let hostPython = try hostPythonURL()
             try run(hostPython, arguments: ["-m", "venv", venvURL.path])
         }
 
         if !argostranslateIsAvailable() {
-            try run(
-                pythonURL,
-                arguments: ["-m", "pip", "install", "--no-cache-dir", "argostranslate==1.9.6"]
-            )
+            do {
+                try run(
+                    pythonURL,
+                    arguments: [
+                        "-m", "pip", "install",
+                        "--no-cache-dir",
+                        "--only-binary=:all:",
+                        argosTranslateRequirement,
+                        sentencePieceRequirement
+                    ]
+                )
+            } catch {
+                throw LocalWhispererError.translationInstallFailed(
+                    "\(error.localizedDescription)\n\nInstall Homebrew Python 3.13 or 3.12, then rerun scripts/setup_local_translation.sh."
+                )
+            }
         }
     }
 
     private static func hostPythonURL() throws -> URL {
         let candidates = [
+            "/opt/homebrew/opt/python@3.13/bin/python3.13",
+            "/opt/homebrew/bin/python3.13",
+            "/usr/local/opt/python@3.13/bin/python3.13",
+            "/usr/local/bin/python3.13",
+            "/opt/homebrew/opt/python@3.12/bin/python3.12",
+            "/opt/homebrew/bin/python3.12",
+            "/usr/local/opt/python@3.12/bin/python3.12",
+            "/usr/local/bin/python3.12",
             "/opt/homebrew/opt/python@3.11/bin/python3.11",
             "/opt/homebrew/bin/python3.11",
-            "/opt/homebrew/bin/python3",
+            "/usr/local/opt/python@3.11/bin/python3.11",
             "/usr/local/bin/python3.11",
+            "/opt/homebrew/bin/python3",
             "/usr/local/bin/python3",
             "/usr/bin/python3"
         ]
 
-        if let path = candidates.first(where: { FileManager.default.isExecutableFile(atPath: $0) }) {
+        if let path = candidates.first(where: {
+            let url = URL(fileURLWithPath: $0)
+            return FileManager.default.isExecutableFile(atPath: $0) && isSupportedPython(url)
+        }) {
             return URL(fileURLWithPath: path)
         }
 
-        throw LocalWhispererError.translationInstallFailed("Could not find a local Python 3 runtime to create the translation environment.")
+        throw LocalWhispererError.translationInstallFailed("Could not find Python 3.11, 3.12, or 3.13 to create the translation environment. Install one with Homebrew, for example: brew install python@3.13")
+    }
+
+    private static func isSupportedPython(_ pythonURL: URL) -> Bool {
+        do {
+            try run(
+                pythonURL,
+                arguments: [
+                    "-c",
+                    "import sys; sys.exit(0 if (3, 11) <= sys.version_info[:2] < (3, 14) else 1)"
+                ]
+            )
+            return true
+        } catch {
+            return false
+        }
     }
 
     private static func argostranslateIsAvailable() -> Bool {

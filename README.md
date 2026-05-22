@@ -11,7 +11,7 @@ Requirements:
 - macOS 13 or newer
 - Xcode Command Line Tools
 - Network access for the first install
-- Python 3 if you want French or Dutch local translation output
+- Python 3.11, 3.12, or 3.13 if you want local French/Dutch translation
 
 Install:
 
@@ -44,6 +44,18 @@ Runtime assets are installed outside the repo and app bundle at:
 ```
 
 That folder contains downloaded speech models and optional translation runtime data. It is not committed to Git.
+
+The default install sets up transcription only. Local translation can be added later from Model Explorer or with:
+
+```bash
+./scripts/setup_local_translation.sh
+```
+
+To force translation setup during install:
+
+```bash
+INSTALL_TRANSLATION=1 ./scripts/install_app.sh
+```
 
 ## Manual Build
 
@@ -121,6 +133,8 @@ French and Dutch output use local Argos Translate packages. Install them from Mo
 ```bash
 ./scripts/setup_local_translation.sh
 ```
+
+The translation setup intentionally avoids Python versions that would require native source builds. It currently looks for Python 3.13, then 3.12, then 3.11, and installs `argostranslate==1.11.0` plus `sentencepiece==0.2.1` from binary wheels.
 
 Translation runtime data is stored in:
 
