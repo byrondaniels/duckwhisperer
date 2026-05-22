@@ -10,6 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let modelMenu = NSMenu()
     private let outputMenu = NSMenu()
     private let statusMenuItem = NSMenuItem(title: "Starting...", action: nil, keyEquivalent: "")
+    private let autoPastePermissionMenuItem = NSMenuItem(title: "Auto-Paste Permission: Checking...", action: #selector(openAccessibilitySettings), keyEquivalent: "")
     private let toggleMenuItem = NSMenuItem(title: "Start Recording", action: #selector(toggleRecordingFromMenu), keyEquivalent: "")
     private let copyLastMenuItem = NSMenuItem(title: "Copy Last Transcript", action: #selector(copyLastTranscript), keyEquivalent: "")
     private let translateSelectionMenuItem = NSMenuItem(title: "Translate Selection to English", action: #selector(translateSelectionFromMenu), keyEquivalent: "")
@@ -33,6 +34,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var liveTranscriptionSession: LiveTranscriptionSession?
     private var pasteTarget: PasteTarget?
     private var transcriptionProgressTimer: Timer?
+    private var permissionRefreshTimer: Timer?
     private var transcriptionProgressStartedAt: Date?
     private var transcriptionProgressTargetDuration: TimeInterval = 2.0
     private var transcriptionProgressPercent = 0
@@ -66,6 +68,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         setupMenu()
         requestMicrophoneAccess()
+        startPermissionRefreshTimer()
 
         let hotKeyStatus = hotKeyController.register { [weak self] identifier in
             switch identifier {
@@ -104,6 +107,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    func applicationWillTerminate(_ notification: Notification) {
+        permissionRefreshTimer?.invalidate()
+        transcriptionProgressTimer?.invalidate()
+    }
+
     private func preloadModel() {
         DispatchQueue.global(qos: .utility).async { [weak self] in
             do {
@@ -132,6 +140,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem.button?.imageScaling = .scaleProportionallyDown
         statusItem.button?.toolTip = appDisplayName
         statusMenuItem.isEnabled = false
+        autoPastePermissionMenuItem.target = self
         toggleMenuItem.target = self
         copyLastMenuItem.target = self
         copyLastMenuItem.isEnabled = false
@@ -153,6 +162,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         openAccessibilitySettings.target = self
 
         menu.addItem(statusMenuItem)
+        menu.addItem(autoPastePermissionMenuItem)
         menu.addItem(NSMenuItem.separator())
         menu.addItem(toggleMenuItem)
         menu.addItem(copyLastMenuItem)
@@ -176,6 +186,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         rebuildPreserveCapitalizationMenuItem()
         rebuildOutputMenu()
         rebuildModelMenu()
+        refreshPermissionUI()
     }
 
     private func outputMenuItem() -> NSMenuItem {
@@ -246,9 +257,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         state = newState
         statusItem.button?.title = ""
         statusItem.button?.image = DuckIcon.menuBarImage()
-        statusItem.button?.toolTip = "\(appDisplayName): \(newState.statusText)"
-        let formattingText = preserveCapitalization ? "Caps On" : "Caps Off"
-        statusMenuItem.title = "\(newState.statusText) - \(selectedModel.title) -> \(selectedOutputLanguage.title) - \(formattingText)"
 
         switch newState {
         case .ready, .error:
@@ -268,7 +276,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         copyLastMenuItem.isEnabled = !lastTranscript.isEmpty
         translateSelectionMenuItem.isEnabled = state != .recording && state != .transcribing
+        refreshPermissionUI()
         rebuildPreserveCapitalizationMenuItem()
+    }
+
+    private func startPermissionRefreshTimer() {
+        permissionRefreshTimer?.invalidate()
+        permissionRefreshTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
+            self?.refreshPermissionUI()
+        }
+    }
+
+    private func refreshPermissionUI() {
+        let hasAutoPastePermission = AXIsProcessTrusted()
+        let permissionStatus = hasAutoPastePermission ? "Auto-Paste Permission Granted" : "Auto-Paste Permission Needed - Click to Fix"
+        autoPastePermissionMenuItem.title = permissionStatus
+        autoPastePermissionMenuItem.state = hasAutoPastePermission ? .on : .off
+        autoPastePermissionMenuItem.toolTip = hasAutoPastePermission
+            ? "DuckWhisperer can paste transcripts back into the target app."
+            : "DuckWhisperer needs Accessibility permission to paste transcripts back into the target app."
+
+        let permissionSuffix = hasAutoPastePermission ? "" : " - Auto-Paste Permission Needed"
+        statusItem.button?.toolTip = "\(appDisplayName): \(state.statusText)\(permissionSuffix)"
+        let formattingText = preserveCapitalization ? "Caps On" : "Caps Off"
+        statusMenuItem.title = "\(state.statusText)\(permissionSuffix) - \(selectedModel.title) -> \(selectedOutputLanguage.title) - \(formattingText)"
     }
 
     private func requestMicrophoneAccess() {
