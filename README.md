@@ -2,7 +2,7 @@
 
 Native macOS dictation app powered by `whisper.cpp`.
 
-DuckWhisperer records with `Option+Space`, transcribes locally, copies the transcript, and pastes it back into the app you were using. It is built to stay small in Git: Whisper models, translation packs, and the whisper.cpp framework are downloaded outside the committed source tree.
+DuckWhisperer records with `Option+Space`, transcribes locally, copies the transcript, and pastes it back into the app you were using. It can output English, French, Dutch, or a ridiculous Duck mode. It is built to stay small in Git: Whisper models, translation packs, and the whisper.cpp framework are downloaded outside the committed source tree.
 
 ## Fresh Machine Setup
 
@@ -63,6 +63,7 @@ INSTALL_DEFAULT_MODEL=0 INSTALL_TRANSLATION=0 ./scripts/build_app.sh
 - Global shortcut: `Option+Space`
 - Local English speech transcription
 - Optional English -> French and English -> Dutch local output translation
+- Duck output that turns the transcript into assorted quacks
 - Model Explorer for `Small English`, `Base English`, and `Tiny English`
 - Duck menu-bar icon and DuckWhisperer app icon
 - `Preserve Capitalization` toggle
@@ -91,7 +92,7 @@ Downloaded models are stored in:
 
 ## Translation
 
-Input speech is always treated as English. Output can be English, French, or Dutch.
+Input speech is always treated as English. Output can be English, French, Dutch, or Duck.
 
 French and Dutch output use local Argos Translate packages. Install them from Model Explorer, or run:
 
@@ -104,6 +105,8 @@ Translation runtime data is stored in:
 ```text
 ~/Library/Application Support/Local Whisperer/Translation
 ```
+
+Duck output is built into the app. It does not require a model, package, or network call.
 
 ## macOS Permissions Note
 
