@@ -39,6 +39,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var transcriptionProgressStartedAt: Date?
     private var transcriptionProgressTargetDuration: TimeInterval = 2.0
     private var transcriptionProgressPercent = 0
+    private var activeTranscriptionID: UUID?
 
     private var selectedModel: ModelChoice {
         let choice = ModelChoice.choice(for: UserDefaults.standard.string(forKey: selectedModelIDKey))
@@ -77,6 +78,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.toggleRecording()
             case translateSelectionHotKeyIdentifier:
                 self?.translateSelectedTextToEnglish()
+            case cancelHotKeyIdentifier:
+                self?.cancelActiveDictation()
             default:
                 break
             }
@@ -112,6 +115,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         permissionRefreshTimer?.invalidate()
         recordingLevelTimer?.invalidate()
         transcriptionProgressTimer?.invalidate()
+        hotKeyController.unregisterCancelHotKey()
     }
 
     private func preloadModel() {
@@ -257,6 +261,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func setState(_ newState: AppState) {
         state = newState
+        updateCancelHotKey(for: newState)
         statusItem.button?.title = ""
         statusItem.button?.image = DuckIcon.menuBarImage()
 
@@ -283,6 +288,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         translateSelectionMenuItem.isEnabled = state != .recording && state != .transcribing
         refreshPermissionUI()
         rebuildPreserveCapitalizationMenuItem()
+    }
+
+    private func updateCancelHotKey(for newState: AppState) {
+        switch newState {
+        case .recording, .transcribing:
+            let status = hotKeyController.registerCancelHotKey()
+            if status != noErr {
+                AppLog.write("failed to register Escape cancel hotkey: \(status)")
+            }
+        case .ready, .error:
+            hotKeyController.unregisterCancelHotKey()
+        }
     }
 
     private func startPermissionRefreshTimer() {
@@ -529,6 +546,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    private func cancelActiveDictation() {
+        switch state {
+        case .recording:
+            liveTranscriptionSession = nil
+            pasteTarget = nil
+            do {
+                _ = try audioCapture.stop()
+            } catch {
+                AppLog.write("recording cancel stop failed: \(error.localizedDescription)")
+            }
+            AppLog.write("recording cancelled with Escape")
+            setState(.ready)
+        case .transcribing:
+            activeTranscriptionID = nil
+            liveTranscriptionSession = nil
+            pasteTarget = nil
+            stopTranscriptionProgress()
+            AppLog.write("transcription cancelled with Escape")
+            setState(.ready)
+        case .ready, .error:
+            break
+        }
+    }
+
     private func startRecording() {
         guard ModelStore.isInstalled(selectedModel) else {
             setState(.error("Download a speech model in Model Explorer before recording."))
@@ -565,6 +606,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        let transcriptionID = UUID()
+        activeTranscriptionID = transcriptionID
         setState(.transcribing)
         startTranscriptionProgress(audioDuration: Double(samples.count) / Double(WHISPER_SAMPLE_RATE))
         let outputLanguage = selectedOutputLanguage
@@ -592,19 +635,44 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 let elapsed = Date().timeIntervalSince(startedAt)
 
                 DispatchQueue.main.async {
+                    guard self.isActiveTranscription(transcriptionID) else {
+                        AppLog.write("ignored transcription result after cancellation")
+                        return
+                    }
                     self.completeTranscriptionProgress()
                     AppLog.write(String(format: "transcribed %.2fs of audio in %.2fs", Double(samples.count) / Double(WHISPER_SAMPLE_RATE), elapsed))
                     self.lastTranscript = output
                     self.copyToClipboard(output)
-                    self.deliverTranscript(output)
+                    self.deliverTranscript(output, transcriptionID: transcriptionID)
                 }
             } catch {
                 DispatchQueue.main.async {
+                    guard self.isActiveTranscription(transcriptionID) else {
+                        AppLog.write("ignored transcription error after cancellation")
+                        return
+                    }
+                    self.finishActiveTranscription(transcriptionID)
                     self.stopTranscriptionProgress()
                     self.setState(.error(error.localizedDescription))
                     NSSound.beep()
                 }
             }
+        }
+    }
+
+    private func isActiveTranscription(_ transcriptionID: UUID?) -> Bool {
+        guard let transcriptionID else {
+            return true
+        }
+        return activeTranscriptionID == transcriptionID
+    }
+
+    private func finishActiveTranscription(_ transcriptionID: UUID?) {
+        guard let transcriptionID else {
+            return
+        }
+        if activeTranscriptionID == transcriptionID {
+            activeTranscriptionID = nil
         }
     }
 
@@ -670,22 +738,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return text.localizedLowercase
     }
 
-    private func deliverTranscript(_ output: String) {
+    private func deliverTranscript(_ output: String, transcriptionID: UUID? = nil) {
+        guard isActiveTranscription(transcriptionID) else {
+            AppLog.write("delivery skipped after cancellation")
+            return
+        }
+
         let target = pasteTarget
         pasteTarget = nil
 
         guard AXIsProcessTrusted() else {
             AppLog.write("delivery fallback; Accessibility not trusted, transcript copied and transcript window shown")
             transcriptionResult.show(text: output)
+            finishActiveTranscription(transcriptionID)
             setState(.ready)
             return
         }
 
         let finish: (_ allowFocusedCheckBypass: Bool) -> Void = { [weak self] allowFocusedCheckBypass in
             guard let self else { return }
+            guard self.isActiveTranscription(transcriptionID) else {
+                AppLog.write("delivery finish skipped after cancellation")
+                return
+            }
             if !self.pasteClipboardIntoFocusedTarget(allowWithoutFocusedCheck: allowFocusedCheckBypass) {
                 self.transcriptionResult.show(text: output)
             }
+            self.finishActiveTranscription(transcriptionID)
             self.setState(.ready)
         }
 
@@ -701,8 +780,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if target.element == nil {
             AppLog.write("blind paste path for AX-invisible target; axTrusted=\(AXIsProcessTrusted()) app=\(target.application?.localizedName ?? "nil")")
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+                guard self.isActiveTranscription(transcriptionID) else {
+                    AppLog.write("blind paste skipped after cancellation")
+                    return
+                }
                 if self.shouldUseSyntheticTyping(for: target),
                    self.typeTextWithKeyboard(output) {
+                    self.finishActiveTranscription(transcriptionID)
                     self.setState(.ready)
                     return
                 }
@@ -717,14 +801,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+            guard self.isActiveTranscription(transcriptionID) else {
+                AppLog.write("focus restore skipped after cancellation")
+                return
+            }
             let restoredFocus = PasteTargetDetector.focusCapturedTarget(target)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+                guard self.isActiveTranscription(transcriptionID) else {
+                    AppLog.write("focused paste skipped after cancellation")
+                    return
+                }
                 if self.shouldUseSyntheticTyping(for: target),
                    self.typeTextWithKeyboard(output) {
+                    self.finishActiveTranscription(transcriptionID)
                     self.setState(.ready)
                     return
                 }
                 if PasteTargetDetector.insertTextDirectly(output, into: target) {
+                    self.finishActiveTranscription(transcriptionID)
                     self.setState(.ready)
                     return
                 }

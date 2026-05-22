@@ -29,6 +29,7 @@ private let hotKeyEventHandler: EventHandlerUPP = { _, eventRef, _ in
 }
 final class HotKeyController {
     private var hotKeyRefs: [EventHotKeyRef] = []
+    private var cancelHotKeyRef: EventHotKeyRef?
     private var eventHandlerRef: EventHandlerRef?
 
     func register(action: @escaping (UInt32) -> Void) -> OSStatus {
@@ -68,6 +69,37 @@ final class HotKeyController {
         )
     }
 
+    func registerCancelHotKey() -> OSStatus {
+        guard cancelHotKeyRef == nil else {
+            return noErr
+        }
+
+        var hotKeyRef: EventHotKeyRef?
+        let hotKeyID = EventHotKeyID(signature: hotKeySignature, id: cancelHotKeyIdentifier)
+        let status = RegisterEventHotKey(
+            UInt32(kVK_Escape),
+            0,
+            hotKeyID,
+            GetApplicationEventTarget(),
+            0,
+            &hotKeyRef
+        )
+
+        if status == noErr, let hotKeyRef {
+            cancelHotKeyRef = hotKeyRef
+        }
+        return status
+    }
+
+    func unregisterCancelHotKey() {
+        guard let cancelHotKeyRef else {
+            return
+        }
+
+        UnregisterEventHotKey(cancelHotKeyRef)
+        self.cancelHotKeyRef = nil
+    }
+
     private func registerHotKey(keyCode: UInt32, modifiers: UInt32, identifier: UInt32) -> OSStatus {
         var hotKeyRef: EventHotKeyRef?
         let hotKeyID = EventHotKeyID(signature: hotKeySignature, id: identifier)
@@ -87,6 +119,7 @@ final class HotKeyController {
     }
 
     deinit {
+        unregisterCancelHotKey()
         for hotKeyRef in hotKeyRefs {
             UnregisterEventHotKey(hotKeyRef)
         }

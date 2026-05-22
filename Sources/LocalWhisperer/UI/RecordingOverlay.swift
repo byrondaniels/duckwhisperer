@@ -2,6 +2,8 @@ import AppKit
 import QuartzCore
 
 private final class RecordingOverlayView: NSView {
+    private let baseDrawingSize = NSSize(width: 140, height: 76)
+
     var audioLevel: CGFloat = 0 {
         didSet {
             needsDisplay = true
@@ -42,8 +44,16 @@ private final class RecordingOverlayView: NSView {
         NSColor.black.withAlphaComponent(0.88).setFill()
         background.fill()
 
+        NSGraphicsContext.saveGraphicsState()
+        let drawingTransform = NSAffineTransform()
+        drawingTransform.translateX(
+            by: (bounds.width - baseDrawingSize.width) / 2,
+            yBy: (bounds.height - baseDrawingSize.height) / 2
+        )
+        drawingTransform.concat()
         drawCrescendo()
         drawBird(level: audioLevel)
+        NSGraphicsContext.restoreGraphicsState()
         drawProgress()
     }
 
@@ -52,25 +62,25 @@ private final class RecordingOverlayView: NSView {
         let quietPulse = 0.08 + 0.05 * ((sin(animationPhase) + 1) / 2)
         let energy = max(level, quietPulse)
 
-        let glow = NSBezierPath(ovalIn: NSRect(
-            x: 32 - energy * 8,
-            y: 20 - energy * 5,
-            width: 78 + energy * 18,
-            height: 44 + energy * 10
-        ))
-        NSColor(calibratedRed: 1.0, green: 0.73, blue: 0.20, alpha: 0.10 + energy * 0.18).setFill()
+        let glowRect = NSRect(
+            x: 34 - energy * 7,
+            y: 18 - energy * 5,
+            width: 76 + energy * 16,
+            height: 48 + energy * 11
+        )
+        let glow = NSBezierPath(roundedRect: glowRect, xRadius: 11, yRadius: 11)
+        NSColor(calibratedRed: 1.0, green: 0.70, blue: 0.16, alpha: 0.12 + energy * 0.26).setFill()
         glow.fill()
 
-        for index in 0..<7 {
-            let offset = CGFloat(index)
-            let wave = (sin(animationPhase + offset * 0.72) + 1) / 2
-            let height = 6 + energy * (9 + wave * 19)
-            let x = 15 + offset * 7
-            let y = bounds.maxY - 10 - height
-            let bar = NSBezierPath(roundedRect: NSRect(x: x, y: y, width: 3.5, height: height), xRadius: 1.75, yRadius: 1.75)
-            NSColor(calibratedRed: 0.18, green: 0.74, blue: 0.82, alpha: 0.22 + energy * 0.42).setFill()
-            bar.fill()
-        }
+        let coreRect = NSRect(
+            x: 39 - energy * 4,
+            y: 23 - energy * 3,
+            width: 66 + energy * 9,
+            height: 38 + energy * 7
+        )
+        let core = NSBezierPath(roundedRect: coreRect, xRadius: 9, yRadius: 9)
+        NSColor(calibratedRed: 1.0, green: 0.78, blue: 0.24, alpha: 0.08 + energy * 0.18).setFill()
+        core.fill()
 
         for index in 0..<3 {
             let offset = CGFloat(index)
@@ -88,6 +98,20 @@ private final class RecordingOverlayView: NSView {
             path.lineCapStyle = .round
             NSColor(calibratedRed: 1.0, green: 0.72, blue: 0.22, alpha: 0.18 + energy * 0.48 - offset * 0.07).setStroke()
             path.stroke()
+        }
+
+        for index in 0..<4 {
+            let offset = CGFloat(index)
+            let wave = (sin(animationPhase * 1.2 + offset * 1.1) + 1) / 2
+            let size = 2.2 + energy * 2.1 + wave * 0.8
+            let dotRect = NSRect(
+                x: 113 + offset * 6 + energy * 4,
+                y: 26 + ((offset.truncatingRemainder(dividingBy: 2) == 0) ? -1 : 13) + wave * 6,
+                width: size,
+                height: size
+            )
+            NSColor(calibratedRed: 1.0, green: 0.78, blue: 0.24, alpha: 0.22 + energy * 0.48).setFill()
+            NSBezierPath(ovalIn: dotRect).fill()
         }
     }
 
@@ -182,7 +206,7 @@ final class RecordingOverlayController {
     private var isVisible = false
 
     init() {
-        let size = NSSize(width: 140, height: 76)
+        let size = NSSize(width: 176, height: 96)
         overlayView = RecordingOverlayView(frame: NSRect(origin: .zero, size: size))
         panel = NSPanel(
             contentRect: NSRect(origin: .zero, size: size),

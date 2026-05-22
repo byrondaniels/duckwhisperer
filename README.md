@@ -28,6 +28,7 @@ Then grant the macOS permissions:
 - Accessibility: required for automatic paste/type-back into the target app
 
 Use `Option+Space` once to start recording and `Option+Space` again to stop, transcribe, and paste.
+Press `Escape` while recording or transcribing to cancel without pasting.
 Use `Option+X` to translate currently selected French or Dutch text back to English in a popup transcript window.
 
 ## What Gets Installed
@@ -118,11 +119,12 @@ Run the full local verification loop before pushing changes:
 ## Features
 
 - Global shortcut: `Option+Space`
+- Active dictation cancel shortcut: `Escape`
 - Local English speech transcription
 - Optional English -> French and English -> Dutch local output translation
 - Optional French -> English and Dutch -> English selected-text translation
 - Duck output that turns the transcript into assorted quacks
-- Transcription overlay progress percentage
+- Audio-reactive duck recording overlay and transcription progress percentage
 - Model Explorer for `Small English`, `Base English`, and `Tiny English`
 - Duck menu-bar icon and DuckWhisperer app icon
 - `Preserve Capitalization` toggle
