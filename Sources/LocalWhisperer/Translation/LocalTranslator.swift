@@ -68,25 +68,29 @@ enum LocalTranslator {
             throw LocalWhispererError.translationRuntimeMissing(scriptURL.path)
         }
 
-        let supportRootURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent(supportDirectoryName, isDirectory: true)
-            .appendingPathComponent("Translation", isDirectory: true)
-        let developmentRootURL = URL(fileURLWithPath: "/Users/byrondaniels/src/automations/local-whisperer")
-
-        let candidates = [
+        let supportRootURL = TranslationStore.supportRootURL
+        var candidates = [
             Runtime(
                 pythonURL: supportRootURL.appendingPathComponent(".venv/bin/python"),
                 scriptURL: scriptURL,
                 dataHomeURL: supportRootURL.appendingPathComponent("Data", isDirectory: true),
                 cacheHomeURL: supportRootURL.appendingPathComponent("Cache", isDirectory: true)
-            ),
-            Runtime(
-                pythonURL: developmentRootURL.appendingPathComponent(".translation-venv/bin/python"),
-                scriptURL: scriptURL,
-                dataHomeURL: developmentRootURL.appendingPathComponent("Resources/Translation/Data", isDirectory: true),
-                cacheHomeURL: developmentRootURL.appendingPathComponent("Resources/Translation/Cache", isDirectory: true)
             )
         ]
+
+        if let overrideRoot = ProcessInfo.processInfo.environment["DUCKWHISPERER_TRANSLATION_ROOT"],
+           !overrideRoot.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            let overrideRootURL = URL(fileURLWithPath: overrideRoot, isDirectory: true)
+            candidates.insert(
+                Runtime(
+                    pythonURL: overrideRootURL.appendingPathComponent(".venv/bin/python"),
+                    scriptURL: scriptURL,
+                    dataHomeURL: overrideRootURL.appendingPathComponent("Data", isDirectory: true),
+                    cacheHomeURL: overrideRootURL.appendingPathComponent("Cache", isDirectory: true)
+                ),
+                at: 0
+            )
+        }
 
         guard let runtime = candidates.first(where: {
             FileManager.default.isExecutableFile(atPath: $0.pythonURL.path)

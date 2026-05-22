@@ -19,11 +19,20 @@ if [[ ! -d "$FRAMEWORK_SRC" ]]; then
   exit 1
 fi
 
+if [[ "$APP_DIR" != "$ROOT_DIR/dist/DuckWhisperer.app" ]]; then
+  echo "Refusing to clean unexpected app directory: $APP_DIR" >&2
+  exit 1
+fi
+rm -rf "$APP_DIR"
 mkdir -p "$MACOS_DIR" "$RESOURCES_DIR" "$FRAMEWORKS_DIR" "$MODEL_DST_DIR" "$TRANSLATION_DST_DIR" "$MODULE_CACHE_DIR"
 cp "$ROOT_DIR/Info.plist" "$CONTENTS_DIR/Info.plist"
 while IFS= read -r source; do
   SWIFT_SOURCES+=("$source")
 done < <(find "$ROOT_DIR/Sources/LocalWhisperer" -name '*.swift' -print | sort)
+if [[ "${#SWIFT_SOURCES[@]}" -eq 0 ]]; then
+  echo "No Swift sources found under Sources/LocalWhisperer." >&2
+  exit 1
+fi
 
 swift \
   -module-cache-path "$MODULE_CACHE_DIR/icon-script" \

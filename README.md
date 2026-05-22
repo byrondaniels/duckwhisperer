@@ -18,6 +18,7 @@ Install:
 ```bash
 git clone https://github.com/byrondaniels/duckwhisperer.git duckwhisperer
 cd duckwhisperer
+./scripts/doctor.sh
 ./scripts/install_app.sh
 ```
 
@@ -77,6 +78,12 @@ To build only the lightweight app bundle without installing the default model or
 
 ```bash
 INSTALL_DEFAULT_MODEL=0 INSTALL_TRANSLATION=0 ./scripts/build_app.sh
+```
+
+Run the full local verification loop before pushing changes:
+
+```bash
+./scripts/verify.sh
 ```
 
 ## Source Layout
