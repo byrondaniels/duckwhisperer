@@ -77,7 +77,7 @@ Voiceover:
 On-screen text: "Completely necessary feature"
 
 Action:
-Choose `Output Style -> Duck`, dictate a serious sentence, show it become quacks.
+Choose `Language -> Duck`, dictate a serious sentence, show it become quacks.
 
 Voiceover:
 "And, because software should have one silly button, Duck mode exists."

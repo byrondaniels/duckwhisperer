@@ -288,7 +288,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func outputMenuItem() -> NSMenuItem {
-        let item = NSMenuItem(title: "Output Style", action: nil, keyEquivalent: "")
+        let item = NSMenuItem(title: "Language", action: nil, keyEquivalent: "")
         item.submenu = outputMenu
         return item
     }

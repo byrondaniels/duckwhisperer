@@ -18,7 +18,7 @@ If you have a packaged release:
 Use `Option+Space` once to start recording and `Option+Space` again to stop, transcribe, and paste.
 Press `Escape` while recording or transcribing to cancel without pasting.
 
-Open the menu-bar duck for `Try It Here`, `Undo Last Paste`, `Output Style`, `Writing Style`, `Speed & Accuracy`, `History`, and `Settings`.
+Open the menu-bar duck for `Try It Here`, `Undo Last Paste`, `Language`, `Writing Style`, `Speed & Accuracy`, `History`, and `Settings`.
 
 ## Fresh Machine Setup
 
