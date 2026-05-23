@@ -15,6 +15,11 @@ struct OutputLanguage: Equatable {
         OutputLanguage(id: "nl", title: "Dutch", translationTargetCode: "nl"),
         OutputLanguage(id: "british", title: "British", translationTargetCode: nil),
         OutputLanguage(id: "genz", title: "Gen Z", translationTargetCode: nil),
+        OutputLanguage(id: "alien", title: "Alien", translationTargetCode: nil),
+        OutputLanguage(id: "cowboy", title: "Cowboy", translationTargetCode: nil),
+        OutputLanguage(id: "pirate", title: "Pirate", translationTargetCode: nil),
+        OutputLanguage(id: "robot", title: "Robot", translationTargetCode: nil),
+        OutputLanguage(id: "shakespeare", title: "Shakespeare", translationTargetCode: nil),
         OutputLanguage(id: "duck", title: "Duck", translationTargetCode: nil)
     ]
 

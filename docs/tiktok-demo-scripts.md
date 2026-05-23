@@ -81,3 +81,13 @@ Choose `Language -> Duck`, dictate a serious sentence, show it become quacks.
 
 Voiceover:
 "And, because software should have one silly button, Duck mode exists."
+
+## 9. Fun Mode Speedrun
+
+On-screen text: "Same sentence, different moods"
+
+Action:
+Dictate the same sentence with `Language -> Alien`, `Cowboy`, `Robot`, and `Shakespeare`.
+
+Voiceover:
+"The fun modes are local too, so they are instant and do not need another download."

@@ -1066,6 +1066,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             return StyledSpeech.british(text)
         case "genz":
             return StyledSpeech.genZ(text)
+        case "alien":
+            return StyledSpeech.alien(text)
+        case "cowboy":
+            return StyledSpeech.cowboy(text)
+        case "pirate":
+            return StyledSpeech.pirate(text)
+        case "robot":
+            return StyledSpeech.robot(text)
+        case "shakespeare":
+            return StyledSpeech.shakespeare(text)
         case "duck":
             return DuckSpeech.render(text)
         default:

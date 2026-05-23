@@ -2,7 +2,7 @@
 
 Private Mac dictation that feels like a normal app.
 
-Press `Option+Space`, talk, press `Option+Space` again, and DuckWhisperer pastes your words into the app you were already using. Transcription runs locally on your Mac, so your voice stays on your machine. It can output English, French, Dutch, British, Gen Z, or a ridiculous Duck mode.
+Press `Option+Space`, talk, press `Option+Space` again, and DuckWhisperer pastes your words into the app you were already using. Transcription runs locally on your Mac, so your voice stays on your machine. It can output English, French, Dutch, British, Gen Z, Alien, Cowboy, Pirate, Robot, Shakespeare, or a ridiculous Duck mode.
 
 ## Quick Start
 
@@ -144,9 +144,9 @@ Run the full local verification loop before pushing changes:
 - `Undo Last Paste` for fast recovery when text lands in the wrong place
 - Local English speech transcription
 - Optional English -> French and English -> Dutch local output translation
-- Built-in British and Gen Z style output modes
+- Built-in British, Gen Z, Alien, Cowboy, Pirate, Robot, Shakespeare, and Duck style modes
 - Writing profiles: Smart Clean, Raw Dictation, Clean Email, Slack Casual, Meeting Notes, Code Prompt, and Bullet Notes
-- Command phrases such as "make this shorter", "turn this into bullets", "rewrite professionally", "translate to Dutch", and "duck mode"
+- Command phrases such as "make this shorter", "turn this into bullets", "rewrite professionally", "translate to Dutch", "alien mode", "cowboy mode", and "duck mode"
 - Per-app defaults for model, output language, and writing profile
 - Personal dictionary replacements stored locally
 - Searchable local transcript history
@@ -154,7 +154,7 @@ Run the full local verification loop before pushing changes:
 - `Speed & Accuracy` menu for Best Accuracy, Fast, and Fastest choices
 - `Finish Setup` for microphone, paste-back, model, install, and app identity checks
 - `Presenter Mode` for camera-readable TikTok/product demos
-- Duck output that turns the transcript into assorted quacks
+- Fun language modes that transform the transcript locally without extra downloads
 - Audio-reactive duck recording overlay with live preview, elapsed time, profile/model context, cancel hint, and transcription progress percentage
 - Paste recovery window with `Paste Again`, `Copy`, and `Fix Permission`
 - Duck menu-bar icon and DuckWhisperer app icon
@@ -184,7 +184,7 @@ Downloaded models are stored in:
 
 ## Translation
 
-Input speech is always treated as English. Output can be English, French, Dutch, British, Gen Z, or Duck.
+Input speech is always treated as English. Output can be English, French, Dutch, British, Gen Z, Alien, Cowboy, Pirate, Robot, Shakespeare, or Duck.
 
 French and Dutch output use local Argos Translate packages. Install them from `Speed & Accuracy`, or run:
 
@@ -200,9 +200,7 @@ Translation runtime data is stored in:
 ~/Library/Application Support/Local Whisperer/Translation
 ```
 
-Duck output is built into the app. It does not require a model, package, or network call.
-
-British and Gen Z output are built-in text style modes. They do not require a model, package, or network call.
+Fun modes are built into the app. British, Gen Z, Alien, Cowboy, Pirate, Robot, Shakespeare, and Duck output do not require a model, package, or network call.
 
 ## Product Features
 

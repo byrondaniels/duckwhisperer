@@ -47,6 +47,72 @@ enum StyledSpeech {
         Replacement(source: "yeah", target: "yeah")
     ]
 
+    private static let alienReplacements = [
+        Replacement(source: "hello", target: "greetings"),
+        Replacement(source: "hi", target: "greetings"),
+        Replacement(source: "people", target: "earthlings"),
+        Replacement(source: "person", target: "earthling"),
+        Replacement(source: "team", target: "crew of this vessel"),
+        Replacement(source: "meeting", target: "council transmission"),
+        Replacement(source: "idea", target: "signal"),
+        Replacement(source: "problem", target: "anomaly"),
+        Replacement(source: "work", target: "mission"),
+        Replacement(source: "today", target: "this solar cycle"),
+        Replacement(source: "tomorrow", target: "the next solar cycle")
+    ]
+
+    private static let cowboyReplacements = [
+        Replacement(source: "hello", target: "howdy"),
+        Replacement(source: "hi", target: "howdy"),
+        Replacement(source: "friend", target: "partner"),
+        Replacement(source: "team", target: "posse"),
+        Replacement(source: "meeting", target: "roundup"),
+        Replacement(source: "problem", target: "trouble"),
+        Replacement(source: "good", target: "mighty fine"),
+        Replacement(source: "great", target: "mighty fine"),
+        Replacement(source: "yes", target: "yep"),
+        Replacement(source: "thanks", target: "much obliged")
+    ]
+
+    private static let pirateReplacements = [
+        Replacement(source: "hello", target: "ahoy"),
+        Replacement(source: "hi", target: "ahoy"),
+        Replacement(source: "friend", target: "matey"),
+        Replacement(source: "team", target: "crew"),
+        Replacement(source: "boss", target: "captain"),
+        Replacement(source: "meeting", target: "parley"),
+        Replacement(source: "yes", target: "aye"),
+        Replacement(source: "no", target: "nay"),
+        Replacement(source: "money", target: "doubloons"),
+        Replacement(source: "thanks", target: "fair winds")
+    ]
+
+    private static let robotReplacements = [
+        Replacement(source: "hello", target: "greetings"),
+        Replacement(source: "hi", target: "greetings"),
+        Replacement(source: "yes", target: "affirmative"),
+        Replacement(source: "no", target: "negative"),
+        Replacement(source: "maybe", target: "probability uncertain"),
+        Replacement(source: "good", target: "optimal"),
+        Replacement(source: "bad", target: "suboptimal"),
+        Replacement(source: "problem", target: "error condition"),
+        Replacement(source: "think", target: "process"),
+        Replacement(source: "thanks", target: "gratitude protocol complete")
+    ]
+
+    private static let shakespeareReplacements = [
+        Replacement(source: "hello", target: "good morrow"),
+        Replacement(source: "hi", target: "good morrow"),
+        Replacement(source: "very", target: "most"),
+        Replacement(source: "really", target: "verily"),
+        Replacement(source: "before", target: "ere"),
+        Replacement(source: "quickly", target: "with haste"),
+        Replacement(source: "friend", target: "good companion"),
+        Replacement(source: "problem", target: "vexing matter"),
+        Replacement(source: "yes", target: "aye"),
+        Replacement(source: "thanks", target: "many thanks")
+    ]
+
     static func british(_ text: String) -> String {
         guard containsAlphanumeric(in: text) else {
             return text
@@ -75,6 +141,85 @@ enum StyledSpeech {
            !containsWholeWord("ngl", in: output),
            !containsWholeWord("lowkey", in: output) {
             output = appendBeforeFinalPunctuation("fr", to: output)
+        }
+        return output
+    }
+
+    static func alien(_ text: String) -> String {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, containsAlphanumeric(in: trimmed) else {
+            return text
+        }
+
+        var output = apply(alienReplacements, to: text)
+        if sentenceCount(in: output) <= 2,
+           !containsWholeWord("earthling", in: output),
+           !containsWholeWord("transmission", in: output) {
+            output = prefixFirstSentence("Greetings, earthling", in: output)
+        }
+        return appendBeforeFinalPunctuation("transmission complete", to: output)
+    }
+
+    static func cowboy(_ text: String) -> String {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, containsAlphanumeric(in: trimmed) else {
+            return text
+        }
+
+        var output = apply(cowboyReplacements, to: text)
+        if sentenceCount(in: output) <= 2,
+           !containsWholeWord("howdy", in: output) {
+            output = prefixFirstSentence("Howdy", in: output)
+        }
+        if !containsWholeWord("partner", in: output) {
+            output = appendBeforeFinalPunctuation("partner", to: output)
+        }
+        return output
+    }
+
+    static func pirate(_ text: String) -> String {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, containsAlphanumeric(in: trimmed) else {
+            return text
+        }
+
+        var output = apply(pirateReplacements, to: text)
+        if sentenceCount(in: output) <= 2,
+           !containsWholeWord("ahoy", in: output) {
+            output = prefixFirstSentence("Ahoy", in: output)
+        }
+        if !containsWholeWord("arr", in: output) {
+            output = appendBeforeFinalPunctuation("arr", to: output)
+        }
+        return output
+    }
+
+    static func robot(_ text: String) -> String {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, containsAlphanumeric(in: trimmed) else {
+            return text
+        }
+
+        var output = apply(robotReplacements, to: text)
+        if !output.localizedCaseInsensitiveContains("beep boop") {
+            output = "Beep boop. \(output)"
+        }
+        return appendBeforeFinalPunctuation("end of line", to: output)
+    }
+
+    static func shakespeare(_ text: String) -> String {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, containsAlphanumeric(in: trimmed) else {
+            return text
+        }
+
+        var output = apply(shakespeareReplacements, to: text)
+        if sentenceCount(in: output) <= 2,
+           !containsWholeWord("verily", in: output) {
+            output = prefixFirstSentence("Verily", in: output)
+        }
+        if !containsWholeWord("forsooth", in: output) {
+            output = appendBeforeFinalPunctuation("forsooth", to: output)
         }
         return output
     }

@@ -95,6 +95,17 @@ enum CommandPhraseProcessor {
             )
         }
 
+        for mode in playfulModes {
+            if let body = stripPrefix(mode.phrases, from: normalized) {
+                return CommandPhraseResult(
+                    text: body,
+                    outputLanguage: OutputLanguage.choice(for: mode.id),
+                    writingProfile: writingProfile,
+                    commandName: mode.title
+                )
+            }
+        }
+
         return CommandPhraseResult(
             text: normalized,
             outputLanguage: outputLanguage,
@@ -102,6 +113,14 @@ enum CommandPhraseProcessor {
             commandName: nil
         )
     }
+
+    private static let playfulModes: [(id: String, title: String, phrases: [String])] = [
+        ("alien", "Alien", ["alien mode", "make this alien"]),
+        ("cowboy", "Cowboy", ["cowboy mode", "make this cowboy"]),
+        ("pirate", "Pirate", ["pirate mode", "make this pirate"]),
+        ("robot", "Robot", ["robot mode", "make this robot"]),
+        ("shakespeare", "Shakespeare", ["shakespeare mode", "make this shakespeare", "make this shakespearean"])
+    ]
 
     private static func stripPrefix(_ prefixes: [String], from text: String) -> String? {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)

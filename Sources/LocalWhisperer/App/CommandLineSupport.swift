@@ -49,6 +49,16 @@ func runSmokeTranscriptionIfRequested() {
                 output = StyledSpeech.british(translatedOutput)
             case "genz":
                 output = StyledSpeech.genZ(translatedOutput)
+            case "alien":
+                output = StyledSpeech.alien(translatedOutput)
+            case "cowboy":
+                output = StyledSpeech.cowboy(translatedOutput)
+            case "pirate":
+                output = StyledSpeech.pirate(translatedOutput)
+            case "robot":
+                output = StyledSpeech.robot(translatedOutput)
+            case "shakespeare":
+                output = StyledSpeech.shakespeare(translatedOutput)
             case "duck":
                 output = DuckSpeech.render(translatedOutput)
             default:
