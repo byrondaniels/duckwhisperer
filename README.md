@@ -152,6 +152,7 @@ Run the full local verification loop before pushing changes:
 - Per-app defaults for model, output language, and writing profile
 - Personal dictionary replacements stored locally
 - Searchable local transcript history
+- Local time-saved tracker based on words dictated, speaking time, and estimated typing time
 - Optional audio ducking while recording
 - `Speed & Accuracy` menu for Best Accuracy, Fast, and Fastest choices
 - `Finish Setup` for microphone, paste-back, model, install, and app identity checks

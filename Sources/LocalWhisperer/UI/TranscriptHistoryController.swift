@@ -3,6 +3,7 @@ import AppKit
 final class TranscriptHistoryController: NSObject {
     private let panel: NSPanel
     private let searchField = NSSearchField()
+    private let statsLabel = NSTextField(labelWithString: "")
     private let textView = NSTextView()
     private var entries: [TranscriptHistoryEntry] = []
 
@@ -27,6 +28,11 @@ final class TranscriptHistoryController: NSObject {
         searchField.placeholderString = "Search your text"
         searchField.target = self
         searchField.action = #selector(rebuild)
+
+        statsLabel.translatesAutoresizingMaskIntoConstraints = false
+        statsLabel.font = .systemFont(ofSize: 12, weight: .medium)
+        statsLabel.textColor = .secondaryLabelColor
+        statsLabel.lineBreakMode = .byTruncatingTail
 
         let scrollView = NSScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
@@ -54,6 +60,7 @@ final class TranscriptHistoryController: NSObject {
         closeButton.bezelStyle = .rounded
 
         contentView.addSubview(searchField)
+        contentView.addSubview(statsLabel)
         contentView.addSubview(scrollView)
         contentView.addSubview(copyButton)
         contentView.addSubview(clearButton)
@@ -64,9 +71,13 @@ final class TranscriptHistoryController: NSObject {
             searchField.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             searchField.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 16),
 
+            statsLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 18),
+            statsLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -18),
+            statsLabel.topAnchor.constraint(equalTo: searchField.bottomAnchor, constant: 8),
+
             scrollView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             scrollView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            scrollView.topAnchor.constraint(equalTo: searchField.bottomAnchor, constant: 12),
+            scrollView.topAnchor.constraint(equalTo: statsLabel.bottomAnchor, constant: 10),
             scrollView.bottomAnchor.constraint(equalTo: closeButton.topAnchor, constant: -14),
 
             closeButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
@@ -93,6 +104,7 @@ final class TranscriptHistoryController: NSObject {
     }
 
     @objc private func rebuild() {
+        statsLabel.stringValue = DictationStatsStore.current().detailSummary
         let query = searchField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines).localizedLowercase
         let visible = entries.filter { entry in
             query.isEmpty ||

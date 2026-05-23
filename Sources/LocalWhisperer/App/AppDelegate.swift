@@ -473,9 +473,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         openItem.target = self
         historyMenu.addItem(openItem)
 
-        let clearItem = NSMenuItem(title: "Clear History", action: #selector(clearTranscriptHistory), keyEquivalent: "")
-        clearItem.target = self
-        historyMenu.addItem(clearItem)
+        historyMenu.addItem(NSMenuItem.separator())
+        let stats = DictationStatsStore.current()
+        let statsItem = NSMenuItem(title: stats.menuSummary, action: nil, keyEquivalent: "")
+        statsItem.isEnabled = false
+        historyMenu.addItem(statsItem)
+        let detailItem = NSMenuItem(title: stats.detailSummary, action: nil, keyEquivalent: "")
+        detailItem.isEnabled = false
+        historyMenu.addItem(detailItem)
 
         let entries = TranscriptHistoryStore.entries().prefix(6)
         guard !entries.isEmpty else {
@@ -483,6 +488,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             let emptyItem = NSMenuItem(title: "No transcripts yet", action: nil, keyEquivalent: "")
             emptyItem.isEnabled = false
             historyMenu.addItem(emptyItem)
+            addHistoryMaintenanceItems()
             return
         }
 
@@ -498,6 +504,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             item.representedObject = entry.id.uuidString
             historyMenu.addItem(item)
         }
+        addHistoryMaintenanceItems()
+    }
+
+    private func addHistoryMaintenanceItems() {
+        historyMenu.addItem(NSMenuItem.separator())
+        let clearItem = NSMenuItem(title: "Clear History", action: #selector(clearTranscriptHistory), keyEquivalent: "")
+        clearItem.target = self
+        historyMenu.addItem(clearItem)
     }
 
     private func rebuildAppDefaultsMenu() {
@@ -1222,7 +1236,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         let transcriptionID = UUID()
         activeTranscriptionID = transcriptionID
         setState(.transcribing)
-        startTranscriptionProgress(audioDuration: Double(samples.count) / Double(WHISPER_SAMPLE_RATE))
+        let audioDuration = Double(samples.count) / Double(WHISPER_SAMPLE_RATE)
+        startTranscriptionProgress(audioDuration: audioDuration)
         let inputLanguage = activeInputLanguage ?? selectedInputLanguage
         let outputLanguage = activeOutputLanguage ?? selectedOutputLanguage
         let writingProfile = activeWritingProfile ?? selectedWritingProfile
@@ -1292,12 +1307,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                         commandText: commandResult.commandName,
                         presenterMode: self.presenterModeEnabled
                     )
-                    AppLog.write(String(format: "transcribed %.2fs of audio in %.2fs", Double(samples.count) / Double(WHISPER_SAMPLE_RATE), elapsed))
+                    AppLog.write(String(format: "transcribed %.2fs of audio in %.2fs", audioDuration, elapsed))
                     if let commandName = commandResult.commandName {
                         AppLog.write("command phrase applied: \(commandName)")
                     }
                     self.lastTranscript = output
                     self.copyToClipboard(output)
+                    DictationStatsStore.record(text: output, spokenDuration: audioDuration)
                     TranscriptHistoryStore.add(
                         text: output,
                         appName: appName,
