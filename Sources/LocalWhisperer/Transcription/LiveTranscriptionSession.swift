@@ -85,6 +85,12 @@ final class LiveTranscriptionSession {
         }
     }
 
+    func stop() {
+        queue.sync {
+            isRunning = false
+        }
+    }
+
     func previewText() -> String {
         queue.sync {
             normalizedTranscript(chunks)

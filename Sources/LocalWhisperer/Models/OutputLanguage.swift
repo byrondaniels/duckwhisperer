@@ -3,16 +3,41 @@ import Foundation
 struct OutputLanguage: Equatable {
     let id: String
     let title: String
+    let languageCode: String?
     let translationTargetCode: String?
+
+    init(id: String, title: String, languageCode: String? = nil, translationTargetCode: String? = nil) {
+        self.id = id
+        self.title = title
+        self.languageCode = languageCode
+        self.translationTargetCode = translationTargetCode
+    }
+
+    var isSameAsInput: Bool {
+        id == "same-input"
+    }
+
+    var isEnglishLanguage: Bool {
+        languageCode == "en"
+    }
 
     var requiresTranslation: Bool {
         translationTargetCode != nil
     }
 
+    func matchesInput(_ inputLanguage: InputLanguageChoice) -> Bool {
+        isSameAsInput || languageCode == inputLanguage.whisperCode
+    }
+
+    func effectiveTitle(for inputLanguage: InputLanguageChoice) -> String {
+        isSameAsInput ? inputLanguage.title : title
+    }
+
     static let all: [OutputLanguage] = [
-        OutputLanguage(id: "en", title: "English", translationTargetCode: nil),
-        OutputLanguage(id: "fr", title: "French", translationTargetCode: "fr"),
-        OutputLanguage(id: "nl", title: "Dutch", translationTargetCode: "nl"),
+        OutputLanguage(id: "same-input", title: "Same as Input"),
+        OutputLanguage(id: "en", title: "English", languageCode: "en"),
+        OutputLanguage(id: "fr", title: "French", languageCode: "fr", translationTargetCode: "fr"),
+        OutputLanguage(id: "nl", title: "Dutch", languageCode: "nl", translationTargetCode: "nl"),
         OutputLanguage(id: "british", title: "British", translationTargetCode: nil),
         OutputLanguage(id: "genz", title: "Gen Z", translationTargetCode: nil),
         OutputLanguage(id: "alien", title: "Alien", translationTargetCode: nil),

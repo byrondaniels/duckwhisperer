@@ -39,14 +39,19 @@ final class WhisperTranscriber {
         languageCode = newLanguageCode
     }
 
-    func transcribe(samples: [Float], initialPrompt: String? = nil, singleSegment: Bool = false) throws -> String {
+    func transcribe(
+        samples: [Float],
+        initialPrompt: String? = nil,
+        singleSegment: Bool = false,
+        translateToEnglish: Bool = false
+    ) throws -> String {
         lock.lock()
         defer { lock.unlock() }
 
         let context = try loadedContext()
         var params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY)
         params.n_threads = Int32(max(4, min(ProcessInfo.processInfo.processorCount - 2, 10)))
-        params.translate = false
+        params.translate = translateToEnglish
         params.no_context = true
         params.no_timestamps = true
         params.single_segment = singleSegment

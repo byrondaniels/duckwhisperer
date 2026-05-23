@@ -49,13 +49,19 @@ func runSmokeTranscriptionIfRequested() {
         let transcriber = WhisperTranscriber(modelURL: modelURL)
         transcriber.setLanguageCode(inputLanguage.whisperCode)
         let samples = try AudioCapture.samples(from: audioURL)
-        let transcript = try transcriber.transcribe(samples: samples)
-        let translatedOutput: String
-        if inputLanguage.isEnglish {
-            translatedOutput = try LocalTranslator.translate(transcript, to: outputLanguage)
-        } else {
-            translatedOutput = transcript
-        }
+        let shouldTranslateAudioToEnglish = TranscriptionOutputPipeline.shouldUseWhisperEnglishTranslation(
+            inputLanguage: inputLanguage,
+            outputLanguage: outputLanguage
+        )
+        let transcript = try transcriber.transcribe(
+            samples: samples,
+            translateToEnglish: shouldTranslateAudioToEnglish
+        )
+        let translatedOutput = try TranscriptionOutputPipeline.applyConfiguredOutputLanguage(
+            to: transcript,
+            inputLanguage: inputLanguage,
+            outputLanguage: outputLanguage
+        )
         let output: String
         if translatedOutput.unicodeScalars.contains(where: { CharacterSet.alphanumerics.contains($0) }) {
             switch outputLanguage.id {

@@ -392,9 +392,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     private func rebuildOutputMenu() {
         outputMenu.removeAllItems()
         let current = selectedOutputLanguage
+        let inputLanguage = selectedInputLanguage
 
-        for language in OutputLanguage.all {
-            let item = NSMenuItem(title: language.title, action: #selector(selectOutputLanguage(_:)), keyEquivalent: "")
+        for (index, language) in OutputLanguage.all.enumerated() {
+            if index == 4 {
+                outputMenu.addItem(NSMenuItem.separator())
+            }
+            let title = language.isSameAsInput
+                ? "Same as Input (\(inputLanguage.title))"
+                : language.title
+            let item = NSMenuItem(title: title, action: #selector(selectOutputLanguage(_:)), keyEquivalent: "")
             item.target = self
             item.representedObject = language.id
             item.state = language == current ? .on : .off
@@ -650,7 +657,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         let inputLanguage = activeInputLanguage ?? selectedInputLanguage
         let profile = activeWritingProfile ?? selectedWritingProfile
         let language = activeOutputLanguage ?? selectedOutputLanguage
-        return "\(model.friendlyTitle) • \(inputLanguage.title) input • \(profile.title) • \(language.title)"
+        return "\(model.friendlyTitle) • \(inputLanguage.title) input • \(profile.title) • \(language.effectiveTitle(for: inputLanguage))"
     }
 
     private func elapsedText(_ elapsed: TimeInterval) -> String {
@@ -673,7 +680,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         let permissionSuffix = hasAutoPastePermission ? "" : " - Paste-Back Needs Permission"
         statusItem.button?.toolTip = "\(appDisplayName): \(state.statusText)\(permissionSuffix)"
         let formattingText = preserveCapitalization ? "Caps On" : "Caps Off"
-        statusMenuItem.title = "\(state.statusText)\(permissionSuffix) - \(selectedModel.friendlyTitle) - \(selectedInputLanguage.title) input -> \(selectedOutputLanguage.title) - \(selectedWritingProfile.title) - \(formattingText)"
+        let outputTitle = selectedOutputLanguage.effectiveTitle(for: selectedInputLanguage)
+        statusMenuItem.title = "\(state.statusText)\(permissionSuffix) - \(selectedModel.friendlyTitle) - \(selectedInputLanguage.title) input -> \(outputTitle) - \(selectedWritingProfile.title) - \(formattingText)"
     }
 
     private func requestMicrophoneAccess() {
@@ -1084,14 +1092,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         let appName = activeAppName
         let shouldPreserveCapitalization = preserveCapitalization
         let dictionaryEntries = personalDictionaryEntries
+        let shouldTranslateAudioToEnglish = TranscriptionOutputPipeline.shouldUseWhisperEnglishTranslation(
+            inputLanguage: inputLanguage,
+            outputLanguage: outputLanguage
+        )
+        if shouldTranslateAudioToEnglish {
+            liveSession?.stop()
+        }
 
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self else { return }
 
             do {
                 let startedAt = Date()
-                let transcript = try liveSession?.finish(with: samples)
-                    ?? self.transcriber.transcribe(samples: samples)
+                let transcript: String
+                if shouldTranslateAudioToEnglish {
+                    transcript = try self.transcriber.transcribe(samples: samples, translateToEnglish: true)
+                } else {
+                    transcript = try liveSession?.finish(with: samples)
+                        ?? self.transcriber.transcribe(samples: samples)
+                }
                 let commandResult = CommandPhraseProcessor.process(
                     transcript,
                     outputLanguage: outputLanguage,
@@ -1099,14 +1119,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                 )
                 let dictionaryOutput = PersonalDictionary.apply(dictionaryEntries, to: commandResult.text)
                 let translatedOutput: String
-                if inputLanguage.isEnglish {
-                    do {
-                        translatedOutput = try LocalTranslator.translate(dictionaryOutput, to: commandResult.outputLanguage)
-                    } catch {
-                        AppLog.write("translation failed for \(commandResult.outputLanguage.title); falling back to English transcript: \(error.localizedDescription)")
-                        translatedOutput = dictionaryOutput
-                    }
-                } else {
+                do {
+                    translatedOutput = try TranscriptionOutputPipeline.applyConfiguredOutputLanguage(
+                        to: dictionaryOutput,
+                        inputLanguage: inputLanguage,
+                        outputLanguage: commandResult.outputLanguage
+                    )
+                } catch {
+                    let fallbackDescription = shouldTranslateAudioToEnglish ? "English transcript" : "transcript"
+                    AppLog.write("translation failed for \(commandResult.outputLanguage.title); falling back to \(fallbackDescription): \(error.localizedDescription)")
                     translatedOutput = dictionaryOutput
                 }
                 let languageOutput = self.applyLanguageOutput(to: translatedOutput, outputLanguage: commandResult.outputLanguage)

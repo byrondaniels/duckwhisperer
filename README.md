@@ -2,7 +2,7 @@
 
 Private Mac dictation that feels like a normal app.
 
-Press `Option+Space`, talk, press `Option+Space` again, and DuckWhisperer pastes your words into the app you were already using. Transcription runs locally on your Mac, so your voice stays on your machine. It can listen in English by default, with optional local input support for Spanish, French, Tagalog, and other common languages. It can output English, French, Dutch, British, Gen Z, Alien, Cowboy, Pirate, Robot, Shakespeare, or a ridiculous Duck mode.
+Press `Option+Space`, talk, press `Option+Space` again, and DuckWhisperer pastes your words into the app you were already using. Transcription runs locally on your Mac, so your voice stays on your machine. It can listen in English by default, with optional local input support for Spanish, French, Tagalog, and other common languages. Output defaults to `Same as Input`, or you can choose English, French, Dutch, British, Gen Z, Alien, Cowboy, Pirate, Robot, Shakespeare, or a ridiculous Duck mode.
 
 ## Quick Start
 
@@ -167,7 +167,7 @@ Run the full local verification loop before pushing changes:
 
 English input uses the smaller English-only Whisper models. Non-English input uses the matching multilingual Whisper model for the selected speed. DuckWhisperer does not download every language up front; the first non-English language you choose prompts for one shared multilingual model for that speed, and that model unlocks the other non-English input languages.
 
-Input language controls what language you speak. The `Language` menu controls output mode, such as English, French, Dutch, British, Gen Z, Alien, Cowboy, Pirate, Robot, Shakespeare, or Duck.
+Input language controls what language you speak. The `Language` menu controls what text comes back. `Same as Input` keeps Spanish speech as Spanish text, French speech as French text, and so on. Choosing `English` while speaking a non-English input language uses Whisper's local speech-translation mode to return English text.
 
 ## Models
 
@@ -198,9 +198,9 @@ Downloaded models are stored in:
 
 ## Translation
 
-Output can be English, French, Dutch, British, Gen Z, Alien, Cowboy, Pirate, Robot, Shakespeare, or Duck.
+Output defaults to `Same as Input`. You can also choose English, French, Dutch, British, Gen Z, Alien, Cowboy, Pirate, Robot, Shakespeare, or Duck.
 
-French and Dutch output translation currently assumes English input and uses local Argos Translate packages. Install them from `Speed & Accuracy`, or run:
+Non-English input to English uses Whisper's local translation mode. French and Dutch output use local Argos Translate packages after the transcript is available in English. Install them from `Speed & Accuracy`, or run:
 
 ```bash
 ./scripts/setup_local_translation.sh
