@@ -15,21 +15,31 @@ enum LocalTranslator {
         return try translate(text, from: "en", to: targetCode)
     }
 
-    private static func translate(_ text: String, from sourceCode: String, to targetCode: String) throws -> String {
+    static func translate(_ text: String, from sourceCode: String, to targetCode: String) throws -> String {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, sourceCode != targetCode else {
             return text
         }
 
         let runtime = try translationRuntime()
+        let pack = TranslationPackChoice.choice(sourceCode: sourceCode, targetCode: targetCode)
         let process = Process()
         process.executableURL = runtime.pythonURL
-        process.arguments = [runtime.scriptURL.path, "--from", sourceCode, "--to", targetCode]
+        var arguments = [runtime.scriptURL.path, "--from", sourceCode, "--to", targetCode]
+        if let pack, case .huggingFaceMarian(_) = pack.backend {
+            let modelURL = TranslationStore.localURL(for: pack)
+            guard TranslationStore.isInstalled(pack) else {
+                throw LocalWhispererError.translationModelMissing(modelURL.path)
+            }
+            arguments.append(contentsOf: ["--hf-model-dir", modelURL.path])
+        }
+        process.arguments = arguments
 
         var environment = ProcessInfo.processInfo.environment
         environment["ARGOS_DEVICE_TYPE"] = "cpu"
         environment["XDG_DATA_HOME"] = runtime.dataHomeURL.path
         environment["XDG_CACHE_HOME"] = runtime.cacheHomeURL.path
+        environment["HF_HOME"] = runtime.cacheHomeURL.appendingPathComponent("huggingface", isDirectory: true).path
         process.environment = environment
 
         let inputPipe = Pipe()
@@ -98,10 +108,6 @@ enum LocalTranslator {
             throw LocalWhispererError.translationRuntimeMissing(
                 supportRootURL.appendingPathComponent(".venv/bin/python").path
             )
-        }
-
-        guard FileManager.default.fileExists(atPath: runtime.dataHomeURL.path) else {
-            throw LocalWhispererError.translationModelMissing(runtime.dataHomeURL.path)
         }
 
         return runtime

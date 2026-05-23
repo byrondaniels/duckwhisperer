@@ -1,6 +1,42 @@
 import Foundation
 
 enum TranscriptionOutputPipeline {
+    static func shouldProduceEnglishBase(outputLanguage: OutputLanguage) -> Bool {
+        outputLanguage.isEnglishLanguage
+            || outputLanguage.requiresTranslation
+            || (!outputLanguage.isSameAsInput && outputLanguage.languageCode == nil)
+    }
+
+    static func requiredTranslationPacks(
+        inputLanguage: InputLanguageChoice,
+        outputLanguage: OutputLanguage
+    ) -> [TranslationPackChoice] {
+        guard !outputLanguage.matchesInput(inputLanguage) else {
+            return []
+        }
+
+        var packs: [TranslationPackChoice] = []
+        if !inputLanguage.isEnglish,
+           shouldProduceEnglishBase(outputLanguage: outputLanguage),
+           let sourceToEnglish = TranslationPackChoice.choice(
+               sourceCode: inputLanguage.whisperCode,
+               targetCode: "en"
+           ) {
+            packs.append(sourceToEnglish)
+        }
+
+        if let targetCode = outputLanguage.translationTargetCode,
+           let englishToTarget = TranslationPackChoice.choice(sourceCode: "en", targetCode: targetCode) {
+            packs.append(englishToTarget)
+        }
+
+        return packs.reduce(into: []) { uniquePacks, pack in
+            if !uniquePacks.contains(where: { $0.id == pack.id }) {
+                uniquePacks.append(pack)
+            }
+        }
+    }
+
     static func shouldUseWhisperEnglishTranslation(
         inputLanguage: InputLanguageChoice,
         outputLanguage: OutputLanguage
@@ -11,7 +47,13 @@ enum TranscriptionOutputPipeline {
         guard !outputLanguage.matchesInput(inputLanguage) else {
             return false
         }
-        return outputLanguage.isEnglishLanguage || outputLanguage.requiresTranslation
+        guard shouldProduceEnglishBase(outputLanguage: outputLanguage) else {
+            return false
+        }
+        guard let sourceToEnglish = TranslationPackChoice.choice(sourceCode: inputLanguage.whisperCode, targetCode: "en") else {
+            return true
+        }
+        return !TranslationStore.isInstalled(sourceToEnglish)
     }
 
     static func applyConfiguredOutputLanguage(
@@ -19,14 +61,26 @@ enum TranscriptionOutputPipeline {
         inputLanguage: InputLanguageChoice,
         outputLanguage: OutputLanguage
     ) throws -> String {
-        if outputLanguage.matchesInput(inputLanguage) || outputLanguage.isEnglishLanguage {
+        if outputLanguage.matchesInput(inputLanguage) {
             return text
         }
 
-        if outputLanguage.requiresTranslation {
-            return try LocalTranslator.translate(text, to: outputLanguage)
+        var englishBaseText = text
+        if !inputLanguage.isEnglish,
+           shouldProduceEnglishBase(outputLanguage: outputLanguage),
+           let sourceToEnglish = TranslationPackChoice.choice(sourceCode: inputLanguage.whisperCode, targetCode: "en"),
+           TranslationStore.isInstalled(sourceToEnglish) {
+            englishBaseText = try LocalTranslator.translate(text, from: inputLanguage.whisperCode, to: "en")
         }
 
-        return text
+        if outputLanguage.isEnglishLanguage || (!outputLanguage.requiresTranslation && outputLanguage.languageCode == nil) {
+            return englishBaseText
+        }
+
+        if outputLanguage.requiresTranslation {
+            return try LocalTranslator.translate(englishBaseText, to: outputLanguage)
+        }
+
+        return englishBaseText
     }
 }

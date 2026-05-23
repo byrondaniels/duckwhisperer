@@ -35,9 +35,9 @@ enum LocalWhispererError: LocalizedError {
         case .translationInstallFailed(let message):
             return "Translation install failed: \(message)"
         case .translationModelMissing(let path):
-            return "Missing local translation models at \(path). Run scripts/setup_local_translation.sh."
+            return "Missing local translation data at \(path). Install the matching translator from Speed & Accuracy."
         case .translationRuntimeMissing(let path):
-            return "Missing local translation runtime at \(path). Run scripts/setup_local_translation.sh."
+            return "Missing local translation runtime at \(path). Install a translator from Speed & Accuracy."
         case .transcriptionFailed(let message):
             return message
         }

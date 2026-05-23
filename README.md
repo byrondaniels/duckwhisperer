@@ -144,7 +144,7 @@ Run the full local verification loop before pushing changes:
 - `Undo Last Paste` for fast recovery when text lands in the wrong place
 - Local speech transcription with lazy input-language downloads
 - Built-in input choices for English, Spanish, French, Tagalog, Chinese, Hindi, Arabic, Bengali, Portuguese, Russian, Urdu, Indonesian, German, Japanese, Korean, Turkish, Vietnamese, Italian, Polish, and Dutch
-- Optional English -> French and English -> Dutch local output translation
+- Optional English -> French/Dutch output translation plus per-language input -> English translator downloads
 - Built-in British, Gen Z, Alien, Cowboy, Pirate, Robot, Shakespeare, and Duck style modes
 - Writing profiles: Smart Clean, Raw Dictation, Clean Email, Slack Casual, Meeting Notes, Code Prompt, and Bullet Notes
 - Command phrases such as "make this shorter", "turn this into bullets", "rewrite professionally", "translate to Dutch", "alien mode", "cowboy mode", and "duck mode"
@@ -165,9 +165,9 @@ Run the full local verification loop before pushing changes:
 
 ## Input Languages
 
-English input uses the smaller English-only speech model. Non-English input uses one shared multilingual Whisper model for the selected speed. DuckWhisperer does not download one pack per language; the first non-English language you choose asks for approval, then that one shared model unlocks the other non-English input languages for that speed.
+English input uses the smaller English-only speech model. Non-English input uses one shared multilingual Whisper model for the selected speed. DuckWhisperer does not download one speech pack per language; the first non-English language you choose asks for approval, then that one shared speech model unlocks the other non-English input languages for that speed.
 
-`I Speak` controls what language you speak. `Output` controls what text comes back. `Same as Input` keeps Spanish speech as Spanish text, French speech as French text, and so on. Choosing `English` while speaking a non-English input language uses Whisper's local speech-translation mode to return English text.
+`I Speak` controls what language you speak. `Output` controls what text comes back. `Same as Input` keeps Spanish speech as Spanish text, French speech as French text, and so on. Choosing `English` while speaking a non-English input language uses a dedicated local text translator when that language pair is installed, with Whisper's local speech-translation mode as the fallback.
 
 ## Models
 
@@ -200,13 +200,15 @@ Downloaded models are stored in:
 
 Output defaults to `Same as Input`. You can also choose English, French, Dutch, British, Gen Z, Alien, Cowboy, Pirate, Robot, Shakespeare, or Duck.
 
-Non-English input to English uses Whisper's local translation mode. French and Dutch output use local Argos Translate packages after the transcript is available in English. Install them from `Speed & Accuracy`, or run:
+Non-English input to English can use individual local text translators. For example, Tagalog -> English installs only the Tagalog -> English translator, then DuckWhisperer transcribes Tagalog text first and translates that text to English. If the matching translator is not installed, the app asks before downloading it.
+
+French and Dutch output use local Argos Translate packages after the transcript is available in English. Install them from `Speed & Accuracy`, or run:
 
 ```bash
 ./scripts/setup_local_translation.sh
 ```
 
-The translation setup intentionally avoids Python versions that would require native source builds. It currently looks for Python 3.13, then 3.12, then 3.11, and installs `argostranslate==1.11.0` plus `sentencepiece==0.2.1` from binary wheels.
+The translation setup intentionally avoids Python versions that would require native source builds. The Argos setup currently looks for Python 3.13, then 3.12, then 3.11, and installs `argostranslate==1.11.0` plus `sentencepiece==0.2.1` from binary wheels. Dedicated input -> English translators are lazy installs from `Speed & Accuracy`; the first one may also install a local Transformers/PyTorch runtime.
 
 Translation runtime data is stored in:
 

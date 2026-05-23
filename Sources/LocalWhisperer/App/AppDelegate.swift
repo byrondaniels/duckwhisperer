@@ -78,6 +78,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     private var canUndoLastPaste = false
     private var lastPasteWasTryIt = false
     private var downloadingSpeechModelKeys = Set<String>()
+    private var installingTranslationPackIDs = Set<String>()
 
     private var selectedModel: ModelChoice {
         ModelChoice.choice(for: UserDefaults.standard.string(forKey: selectedModelIDKey))
@@ -412,7 +413,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             let title = language.isSameAsInput
                 ? "Same as Input (\(inputLanguage.title))"
                 : language.title
+            let requiredTranslationPacks = TranscriptionOutputPipeline
+                .requiredTranslationPacks(inputLanguage: inputLanguage, outputLanguage: language)
+            let missingTranslationPacks = requiredTranslationPacks.filter { !TranslationStore.isInstalled($0) }
+            let isInstallingTranslator = requiredTranslationPacks.contains { installingTranslationPackIDs.contains($0.id) }
+            let translationSuffix = isInstallingTranslator
+                ? " - installing translator..."
+                : (missingTranslationPacks.isEmpty ? "" : " - needs translator")
             let item = NSMenuItem(title: title, action: #selector(selectOutputLanguage(_:)), keyEquivalent: "")
+            item.title = "\(title)\(translationSuffix)"
             item.target = self
             item.representedObject = language.id
             item.state = language == current || (language.isSameAsInput && current.matchesInput(inputLanguage)) ? .on : .off
@@ -609,6 +618,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         rebuildAudioDuckingMenuItem()
         rebuildPresenterModeMenuItem()
         rebuildInputLanguageMenu()
+        rebuildOutputMenu()
         rebuildProfileMenu()
         rebuildPerformanceMenu()
         rebuildHistoryMenu()
@@ -880,6 +890,89 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         }.resume()
     }
 
+    private func ensureTranslationPacks(
+        inputLanguage: InputLanguageChoice,
+        outputLanguage: OutputLanguage,
+        completion: @escaping () -> Void
+    ) {
+        let missingPacks = TranscriptionOutputPipeline
+            .requiredTranslationPacks(inputLanguage: inputLanguage, outputLanguage: outputLanguage)
+            .filter { !TranslationStore.isInstalled($0) }
+
+        guard let pack = missingPacks.first else {
+            completion()
+            return
+        }
+
+        confirmAndInstallTranslationPack(pack) { [weak self] installed in
+            guard let self else { return }
+            if installed {
+                self.ensureTranslationPacks(
+                    inputLanguage: inputLanguage,
+                    outputLanguage: outputLanguage,
+                    completion: completion
+                )
+            } else {
+                self.rebuildOutputMenu()
+                self.modelExplorer.refresh(currentModel: self.selectedModel, inputLanguage: self.selectedInputLanguage)
+            }
+        }
+    }
+
+    private func confirmAndInstallTranslationPack(
+        _ pack: TranslationPackChoice,
+        completion: @escaping (Bool) -> Void
+    ) {
+        guard !installingTranslationPackIDs.contains(pack.id) else {
+            NSSound.beep()
+            completion(false)
+            return
+        }
+
+        let alert = NSAlert()
+        alert.messageText = "Install \(pack.title)?"
+        let runtimeNote: String
+        switch pack.backend {
+        case .argos:
+            runtimeNote = "This installs one local Argos translation package."
+        case .huggingFaceMarian(_):
+            runtimeNote = "This installs one dedicated Helsinki/OPUS text translator. The first dedicated translator may also install a local Python ML runtime."
+        }
+        alert.informativeText = "\(runtimeNote) Download size: \(pack.downloadSizeText). Nothing downloads unless you choose Install."
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "Install")
+        alert.addButton(withTitle: "Cancel")
+
+        guard alert.runModal() == .alertFirstButtonReturn else {
+            completion(false)
+            return
+        }
+
+        installingTranslationPackIDs.insert(pack.id)
+        setState(.error("Installing \(pack.title)..."))
+
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            do {
+                try TranslationStore.install(pack)
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    self.installingTranslationPackIDs.remove(pack.id)
+                    self.rebuildOutputMenu()
+                    self.modelExplorer.refresh(currentModel: self.selectedModel, inputLanguage: self.selectedInputLanguage)
+                    completion(true)
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    self.installingTranslationPackIDs.remove(pack.id)
+                    self.setState(.error(error.localizedDescription))
+                    NSSound.beep()
+                    completion(false)
+                }
+            }
+        }
+    }
+
     @objc private func selectOutputLanguage(_ sender: NSMenuItem) {
         guard state != .recording, state != .transcribing else {
             NSSound.beep()
@@ -891,9 +984,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         }
 
         let language = OutputLanguage.choice(for: id)
-        UserDefaults.standard.set(language.id, forKey: selectedOutputLanguageIDKey)
-        rebuildOutputMenu()
-        setState(.ready)
+        ensureTranslationPacks(inputLanguage: selectedInputLanguage, outputLanguage: language) { [weak self] in
+            guard let self else { return }
+            UserDefaults.standard.set(language.id, forKey: selectedOutputLanguageIDKey)
+            self.rebuildOutputMenu()
+            self.setState(.ready)
+        }
     }
 
     @objc private func selectWritingProfile(_ sender: NSMenuItem) {
@@ -1038,6 +1134,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             return
         }
 
+        let missingTranslationPacks = TranscriptionOutputPipeline
+            .requiredTranslationPacks(inputLanguage: inputLanguage, outputLanguage: selectedOutputLanguage)
+            .filter { !TranslationStore.isInstalled($0) }
+        if !missingTranslationPacks.isEmpty {
+            ensureTranslationPacks(inputLanguage: inputLanguage, outputLanguage: selectedOutputLanguage) {}
+            NSSound.beep()
+            return
+        }
+
         logAccessibilityStateForRecording()
 
         do {
@@ -1049,6 +1154,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                 pasteTarget = PasteTargetDetector.captureFocusedEditableTarget()
                 activeAppName = pasteTarget?.application?.localizedName
                 applyAppDefaultsIfAvailable(for: pasteTarget?.application)
+            }
+            let postDefaultsMissingPacks = TranscriptionOutputPipeline
+                .requiredTranslationPacks(inputLanguage: inputLanguage, outputLanguage: selectedOutputLanguage)
+                .filter { !TranslationStore.isInstalled($0) }
+            if !postDefaultsMissingPacks.isEmpty {
+                ensureTranslationPacks(inputLanguage: inputLanguage, outputLanguage: selectedOutputLanguage) {}
+                NSSound.beep()
+                return
             }
             activeOutputLanguage = selectedOutputLanguage
             activeWritingProfile = selectedWritingProfile

@@ -150,7 +150,7 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
         }
 
         addSectionTitle("Translation Add-ons")
-        for pack in TranslationPackChoice.all {
+        for pack in TranslationPackChoice.visiblePacks(for: currentInputLanguage) {
             addFullWidthRow(makeTranslationPackRow(for: pack))
         }
     }
@@ -457,7 +457,14 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
     private func confirmAndInstall(_ pack: TranslationPackChoice) {
         let alert = NSAlert()
         alert.messageText = "Install \(pack.title)?"
-        alert.informativeText = "This adds \(pack.downloadSizeText) of local translation data. It stays on this Mac."
+        let runtimeNote: String
+        switch pack.backend {
+        case .argos:
+            runtimeNote = "This adds one local Argos translation package."
+        case .huggingFaceMarian(_):
+            runtimeNote = "This adds one dedicated Helsinki/OPUS text translator. The first dedicated translator may also install a local Python ML runtime."
+        }
+        alert.informativeText = "\(runtimeNote) Download size: \(pack.downloadSizeText). It stays on this Mac."
         alert.alertStyle = .informational
         alert.addButton(withTitle: "Install")
         alert.addButton(withTitle: "Cancel")
