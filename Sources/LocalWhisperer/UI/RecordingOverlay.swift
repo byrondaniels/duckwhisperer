@@ -145,9 +145,7 @@ private final class RecordingOverlayView: NSView {
             previewHeight = 84
         }
 
-        let preview = previewText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            ? "Listening..."
-            : previewText
+        let preview = previewText.trimmingCharacters(in: .whitespacesAndNewlines)
         let paragraph = NSMutableParagraphStyle()
         paragraph.lineBreakMode = .byTruncatingTail
         let previewAttributes: [NSAttributedString.Key: Any] = [
@@ -155,10 +153,12 @@ private final class RecordingOverlayView: NSView {
             .foregroundColor: NSColor.white.withAlphaComponent(0.84),
             .paragraphStyle: paragraph
         ]
-        preview.draw(
-            in: NSRect(x: textX, y: previewY, width: maxWidth, height: previewHeight),
-            withAttributes: previewAttributes
-        )
+        if !preview.isEmpty {
+            preview.draw(
+                in: NSRect(x: textX, y: previewY, width: maxWidth, height: previewHeight),
+                withAttributes: previewAttributes
+            )
+        }
 
         let hintAttributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.systemFont(ofSize: 13, weight: .medium),
@@ -206,9 +206,7 @@ private final class RecordingOverlayView: NSView {
             )
         }
 
-        let preview = previewText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            ? "Listening..."
-            : previewText
+        let preview = previewText.trimmingCharacters(in: .whitespacesAndNewlines)
         let paragraph = NSMutableParagraphStyle()
         paragraph.lineBreakMode = .byTruncatingTail
         let previewAttributes: [NSAttributedString.Key: Any] = [
@@ -218,10 +216,12 @@ private final class RecordingOverlayView: NSView {
         ]
         let previewY: CGFloat = hasContext || commandText != nil ? 56 : 38
         let previewHeight: CGFloat = hasContext || commandText != nil ? 42 : 60
-        preview.draw(
-            in: NSRect(x: textX, y: previewY, width: maxWidth, height: previewHeight),
-            withAttributes: previewAttributes
-        )
+        if !preview.isEmpty {
+            preview.draw(
+                in: NSRect(x: textX, y: previewY, width: maxWidth, height: previewHeight),
+                withAttributes: previewAttributes
+            )
+        }
 
         let hintAttributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.systemFont(ofSize: 10, weight: .medium),
