@@ -593,6 +593,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let permissionStatus = hasAutoPastePermission ? "Paste-Back Ready" : "Paste-Back Needs Permission - Click to Fix"
         autoPastePermissionMenuItem.title = permissionStatus
         autoPastePermissionMenuItem.state = hasAutoPastePermission ? .on : .off
+        autoPastePermissionMenuItem.isEnabled = !hasAutoPastePermission
         autoPastePermissionMenuItem.toolTip = hasAutoPastePermission
             ? "DuckWhisperer can paste transcripts back into the target app."
             : "DuckWhisperer needs paste-back permission to put text into other apps."
