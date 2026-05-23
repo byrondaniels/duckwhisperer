@@ -662,9 +662,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
 
     private func overlayContextText() -> String {
         let inputLanguage = activeInputLanguage ?? selectedInputLanguage
-        let profile = activeWritingProfile ?? selectedWritingProfile
         let language = activeOutputLanguage ?? selectedOutputLanguage
-        return "\(languageRouteText(inputLanguage: inputLanguage, outputLanguage: language)) • \(profile.title)"
+        return overlayLanguageRouteText(inputLanguage: inputLanguage, outputLanguage: language)
     }
 
     private func elapsedText(_ elapsed: TimeInterval) -> String {
@@ -696,6 +695,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             return "Speak \(inputLanguage.title)"
         }
         return "Speak \(inputLanguage.title) -> \(outputTitle)"
+    }
+
+    private func overlayLanguageRouteText(inputLanguage: InputLanguageChoice, outputLanguage: OutputLanguage) -> String {
+        let outputTitle = outputLanguage.effectiveTitle(for: inputLanguage)
+        guard !(inputLanguage.isEnglish && outputTitle == "English") else {
+            return ""
+        }
+        return "\(inputLanguage.title) speech -> \(outputTitle) text"
     }
 
     private func requestMicrophoneAccess() {

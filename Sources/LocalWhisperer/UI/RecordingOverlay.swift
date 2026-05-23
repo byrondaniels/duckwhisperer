@@ -184,6 +184,9 @@ private final class RecordingOverlayView: NSView {
             withAttributes: titleAttributes
         )
 
+        let trimmedContext = contextText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let hasContext = !trimmedContext.isEmpty
+
         if let commandText {
             drawCommandBadge(
                 "Command: \(commandText)",
@@ -192,12 +195,12 @@ private final class RecordingOverlayView: NSView {
                 maxWidth: maxWidth,
                 fontSize: 11
             )
-        } else {
+        } else if hasContext {
             let contextAttributes: [NSAttributedString.Key: Any] = [
                 .font: NSFont.systemFont(ofSize: 11, weight: .medium),
                 .foregroundColor: NSColor(calibratedRed: 1.0, green: 0.78, blue: 0.24, alpha: 0.9)
             ]
-            contextText.draw(
+            trimmedContext.draw(
                 in: NSRect(x: textX, y: 35, width: maxWidth, height: 16),
                 withAttributes: contextAttributes
             )
@@ -213,8 +216,10 @@ private final class RecordingOverlayView: NSView {
             .foregroundColor: NSColor.white.withAlphaComponent(0.78),
             .paragraphStyle: paragraph
         ]
+        let previewY: CGFloat = hasContext || commandText != nil ? 56 : 38
+        let previewHeight: CGFloat = hasContext || commandText != nil ? 42 : 60
         preview.draw(
-            in: NSRect(x: textX, y: 56, width: maxWidth, height: 42),
+            in: NSRect(x: textX, y: previewY, width: maxWidth, height: previewHeight),
             withAttributes: previewAttributes
         )
 
