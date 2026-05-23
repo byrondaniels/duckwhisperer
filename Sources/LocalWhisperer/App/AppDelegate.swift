@@ -372,7 +372,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         let model = selectedModel
 
         for (index, language) in InputLanguageChoice.all.enumerated() {
-            if index == 4 {
+            if index == 1 {
                 inputLanguageMenu.addItem(NSMenuItem.separator())
             }
             let asset = model.asset(for: language)
