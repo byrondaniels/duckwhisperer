@@ -71,6 +71,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     private var activeOutputLanguage: OutputLanguage?
     private var activeWritingProfile: WritingProfile?
     private var activeModelChoice: ModelChoice?
+    private var activeCommandName: String?
     private var lastUndoTarget: PasteTarget?
     private var canUndoLastPaste = false
     private var lastPasteWasTryIt = false
@@ -522,6 +523,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                 contextText: overlayContextText(),
                 previewText: "",
                 hintText: "Esc cancels",
+                commandText: activeCommandName,
                 presenterMode: presenterModeEnabled
             )
             startRecordingLevelTimer()
@@ -535,6 +537,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                 contextText: overlayContextText(),
                 previewText: "Finalizing local transcript...",
                 hintText: "Esc cancels",
+                commandText: activeCommandName,
                 presenterMode: presenterModeEnabled
             )
             toggleMenuItem.title = "Transcribing..."
@@ -581,11 +584,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             self.recordingOverlay.setAudioLevel(self.audioCapture.currentLevel())
             let elapsed = self.recordingStartedAt.map { Date().timeIntervalSince($0) } ?? 0
             let preview = self.liveTranscriptionSession?.previewText() ?? ""
+            if let detectedCommandName = CommandPhraseProcessor.detectedCommandName(in: preview) {
+                self.activeCommandName = detectedCommandName
+            }
             self.recordingOverlay.setDetails(
                 statusText: "Recording",
                 contextText: self.overlayContextText(),
                 previewText: preview,
                 hintText: "Esc cancels • \(self.elapsedText(elapsed))",
+                commandText: self.activeCommandName,
                 presenterMode: self.presenterModeEnabled
             )
         }
@@ -823,6 +830,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             }
             recordingStartedAt = nil
             audioDucker.restore()
+            activeCommandName = nil
             AppLog.write("recording cancelled with Escape")
             setState(.ready)
         case .transcribing:
@@ -831,6 +839,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             pasteTarget = nil
             stopTranscriptionProgress()
             audioDucker.restore()
+            activeCommandName = nil
             AppLog.write("transcription cancelled with Escape")
             setState(.ready)
         case .ready, .error:
@@ -849,6 +858,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         logAccessibilityStateForRecording()
 
         do {
+            activeCommandName = nil
             if tryItController.shouldReceiveTranscript {
                 pasteTarget = nil
                 activeAppName = "Try DuckWhisperer"
@@ -954,6 +964,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                         AppLog.write("ignored transcription result after cancellation")
                         return
                     }
+                    self.activeCommandName = commandResult.commandName
                     self.completeTranscriptionProgress()
                     self.recordingOverlay.show(
                         progressPercent: 100,
@@ -961,6 +972,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                         contextText: self.overlayContextText(),
                         previewText: output,
                         hintText: "Copied to clipboard",
+                        commandText: commandResult.commandName,
                         presenterMode: self.presenterModeEnabled
                     )
                     AppLog.write(String(format: "transcribed %.2fs of audio in %.2fs", Double(samples.count) / Double(WHISPER_SAMPLE_RATE), elapsed))
@@ -1220,6 +1232,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             contextText: "",
             previewText: output,
             hintText: "Ready for the next one",
+            commandText: activeCommandName,
             presenterMode: true
         )
 

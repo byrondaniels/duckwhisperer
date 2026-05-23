@@ -147,6 +147,7 @@ Run the full local verification loop before pushing changes:
 - Built-in British, Gen Z, Alien, Cowboy, Pirate, Robot, Shakespeare, and Duck style modes
 - Writing profiles: Smart Clean, Raw Dictation, Clean Email, Slack Casual, Meeting Notes, Code Prompt, and Bullet Notes
 - Command phrases such as "make this shorter", "turn this into bullets", "rewrite professionally", "translate to Dutch", "alien mode", "cowboy mode", and "duck mode"
+- Green HUD command badge when a spoken command phrase is recognized
 - Per-app defaults for model, output language, and writing profile
 - Personal dictionary replacements stored locally
 - Searchable local transcript history

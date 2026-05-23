@@ -38,6 +38,10 @@ private final class RecordingOverlayView: NSView {
         didSet { needsDisplay = true }
     }
 
+    var commandText: String? {
+        didSet { needsDisplay = true }
+    }
+
     var presenterMode = false {
         didSet { needsDisplay = true }
     }
@@ -112,6 +116,23 @@ private final class RecordingOverlayView: NSView {
             withAttributes: titleAttributes
         )
 
+        let previewY: CGFloat
+        let previewHeight: CGFloat
+        if let commandText {
+            drawCommandBadge(
+                "Command: \(commandText)",
+                x: textX,
+                y: 70,
+                maxWidth: maxWidth,
+                fontSize: 15
+            )
+            previewY = 104
+            previewHeight = 58
+        } else {
+            previewY = 78
+            previewHeight = 84
+        }
+
         let preview = previewText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             ? "Listening..."
             : previewText
@@ -123,7 +144,7 @@ private final class RecordingOverlayView: NSView {
             .paragraphStyle: paragraph
         ]
         preview.draw(
-            in: NSRect(x: textX, y: 78, width: maxWidth, height: 84),
+            in: NSRect(x: textX, y: previewY, width: maxWidth, height: previewHeight),
             withAttributes: previewAttributes
         )
 
@@ -151,14 +172,24 @@ private final class RecordingOverlayView: NSView {
             withAttributes: titleAttributes
         )
 
-        let contextAttributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 11, weight: .medium),
-            .foregroundColor: NSColor(calibratedRed: 1.0, green: 0.78, blue: 0.24, alpha: 0.9)
-        ]
-        contextText.draw(
-            in: NSRect(x: textX, y: 35, width: maxWidth, height: 16),
-            withAttributes: contextAttributes
-        )
+        if let commandText {
+            drawCommandBadge(
+                "Command: \(commandText)",
+                x: textX,
+                y: 32,
+                maxWidth: maxWidth,
+                fontSize: 11
+            )
+        } else {
+            let contextAttributes: [NSAttributedString.Key: Any] = [
+                .font: NSFont.systemFont(ofSize: 11, weight: .medium),
+                .foregroundColor: NSColor(calibratedRed: 1.0, green: 0.78, blue: 0.24, alpha: 0.9)
+            ]
+            contextText.draw(
+                in: NSRect(x: textX, y: 35, width: maxWidth, height: 16),
+                withAttributes: contextAttributes
+            )
+        }
 
         let preview = previewText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             ? "Listening..."
@@ -182,6 +213,23 @@ private final class RecordingOverlayView: NSView {
         hintText.draw(
             in: NSRect(x: textX, y: bounds.maxY - 24, width: maxWidth - 42, height: 14),
             withAttributes: hintAttributes
+        )
+    }
+
+    private func drawCommandBadge(_ text: String, x: CGFloat, y: CGFloat, maxWidth: CGFloat, fontSize: CGFloat) {
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: fontSize, weight: .semibold),
+            .foregroundColor: NSColor(calibratedRed: 0.52, green: 1.0, blue: 0.57, alpha: 0.96)
+        ]
+        let size = text.size(withAttributes: attributes)
+        let width = min(maxWidth, size.width + 18)
+        let rect = NSRect(x: x, y: y, width: width, height: fontSize + 10)
+        let path = NSBezierPath(roundedRect: rect, xRadius: 7, yRadius: 7)
+        NSColor(calibratedRed: 0.04, green: 0.26, blue: 0.10, alpha: 0.92).setFill()
+        path.fill()
+        text.draw(
+            in: NSRect(x: rect.minX + 9, y: rect.minY + 4, width: rect.width - 18, height: rect.height - 4),
+            withAttributes: attributes
         )
     }
 
@@ -363,6 +411,7 @@ final class RecordingOverlayController {
         contextText: String? = nil,
         previewText: String? = nil,
         hintText: String? = nil,
+        commandText: String? = nil,
         presenterMode: Bool? = nil
     ) {
         if let presenterMode {
@@ -381,6 +430,7 @@ final class RecordingOverlayController {
         if let hintText {
             overlayView.hintText = hintText
         }
+        overlayView.commandText = commandText
         guard !isVisible else {
             return
         }
@@ -402,6 +452,7 @@ final class RecordingOverlayController {
             overlayView.progressPercent = nil
             overlayView.audioLevel = 0
             overlayView.previewText = ""
+            overlayView.commandText = nil
             return
         }
 
@@ -409,6 +460,7 @@ final class RecordingOverlayController {
         overlayView.progressPercent = nil
         overlayView.audioLevel = 0
         overlayView.previewText = ""
+        overlayView.commandText = nil
 
         NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.18
@@ -461,6 +513,7 @@ final class RecordingOverlayController {
         contextText: String,
         previewText: String,
         hintText: String = "Esc cancels",
+        commandText: String? = nil,
         presenterMode: Bool? = nil
     ) {
         if let presenterMode {
@@ -470,6 +523,7 @@ final class RecordingOverlayController {
         overlayView.contextText = contextText
         overlayView.previewText = previewText
         overlayView.hintText = hintText
+        overlayView.commandText = commandText
     }
 
     func setAudioLevel(_ level: Float) {

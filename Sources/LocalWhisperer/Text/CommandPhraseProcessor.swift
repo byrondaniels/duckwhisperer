@@ -8,6 +8,14 @@ struct CommandPhraseResult {
 }
 
 enum CommandPhraseProcessor {
+    static func detectedCommandName(in text: String) -> String? {
+        process(
+            text,
+            outputLanguage: OutputLanguage.defaultChoice,
+            writingProfile: WritingProfile.defaultChoice
+        ).commandName
+    }
+
     static func process(
         _ text: String,
         outputLanguage: OutputLanguage,
