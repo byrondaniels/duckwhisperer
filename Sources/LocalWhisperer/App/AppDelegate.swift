@@ -374,14 +374,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         for (index, language) in InputLanguageChoice.all.enumerated() {
             if index == 1 {
                 inputLanguageMenu.addItem(NSMenuItem.separator())
+                let noteItem = NSMenuItem(title: "Non-English uses one shared multilingual model", action: nil, keyEquivalent: "")
+                noteItem.isEnabled = false
+                inputLanguageMenu.addItem(noteItem)
             }
             let asset = model.asset(for: language)
             let installed = ModelStore.isInstalled(model, inputLanguage: language)
             let suffix: String
             if downloadingSpeechModelKeys.contains(asset.filename) {
-                suffix = " - downloading..."
+                suffix = language.isEnglish ? " - downloading..." : " - downloading shared model..."
             } else {
-                suffix = installed ? "" : " - needs download"
+                suffix = installed ? "" : (language.isEnglish ? " - needs download" : " - needs shared download")
             }
             let item = NSMenuItem(title: "\(language.title)\(suffix)", action: #selector(selectInputLanguage(_:)), keyEquivalent: "")
             item.target = self
@@ -828,10 +831,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         }
 
         let alert = NSAlert()
-        alert.messageText = "Download \(inputLanguage.title)?"
+        alert.messageText = inputLanguage.isEnglish ? "Download English Speech?" : "Download Multilingual Speech?"
         let unlockText = inputLanguage.isEnglish
-            ? "This adds the local English language file for \(choice.friendlyTitle)."
-            : "This adds one local language file for \(choice.friendlyTitle). It also unlocks the other non-English input languages for this speed."
+            ? "This installs \(asset.filename), the English-only Whisper file for \(choice.friendlyTitle)."
+            : "\(inputLanguage.title) uses \(asset.filename), one shared multilingual Whisper file for \(choice.friendlyTitle). It unlocks all non-English input choices for this speed; DuckWhisperer is not downloading a separate pack for each language."
         alert.informativeText = "\(unlockText) Download size: \(asset.downloadSizeText). Nothing downloads unless you choose Download."
         alert.alertStyle = .informational
         alert.addButton(withTitle: "Download")
@@ -843,7 +846,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         }
 
         downloadingSpeechModelKeys.insert(key)
-        setState(.error("Downloading \(inputLanguage.title)..."))
+        let downloadStatus = inputLanguage.isEnglish ? "Downloading English speech..." : "Downloading multilingual speech..."
+        setState(.error(downloadStatus))
 
         URLSession.shared.downloadTask(with: choice.downloadURL(for: inputLanguage)) { [weak self] temporaryURL, response, error in
             DispatchQueue.main.async {

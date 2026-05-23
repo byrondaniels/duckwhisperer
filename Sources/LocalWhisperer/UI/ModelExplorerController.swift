@@ -138,11 +138,10 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
             view.removeFromSuperview()
         }
 
-        let inputText = makeLabel(
-            "Speaking: \(currentInputLanguage.title). Extra language files download only after approval.",
-            font: .systemFont(ofSize: 12),
-            color: .secondaryLabelColor
-        )
+        let inputSummary = currentInputLanguage.isEnglish
+            ? "Speaking: English. English uses its own smaller speech model."
+            : "Speaking: \(currentInputLanguage.title). Non-English input uses one shared multilingual speech model per speed."
+        let inputText = makeLabel(inputSummary, font: .systemFont(ofSize: 12), color: .secondaryLabelColor)
         addFullWidthRow(inputText)
 
         addSectionTitle("Speed")
@@ -405,10 +404,10 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
         let inputLanguage = currentInputLanguage
         let asset = choice.asset(for: inputLanguage)
         let alert = NSAlert()
-        alert.messageText = "Download \(choice.friendlyTitle)?"
+        alert.messageText = inputLanguage.isEnglish ? "Download \(choice.friendlyTitle)?" : "Download Multilingual Speech Model?"
         let unlockText = inputLanguage.isEnglish
-            ? "This adds the local English language file."
-            : "This adds one local language file for \(inputLanguage.title) and the other non-English input languages."
+            ? "This installs \(asset.filename), the English-only Whisper file."
+            : "\(inputLanguage.title) uses \(asset.filename), one shared multilingual Whisper file. It unlocks all non-English input choices for this speed; DuckWhisperer is not downloading a separate pack for each language."
         alert.informativeText = "\(unlockText) Download size: \(asset.downloadSizeText). Nothing downloads unless you choose Download."
         alert.alertStyle = .informational
         alert.addButton(withTitle: "Download")

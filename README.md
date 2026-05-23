@@ -165,7 +165,7 @@ Run the full local verification loop before pushing changes:
 
 ## Input Languages
 
-English input uses the smaller English-only language file. Non-English input uses one extra local language file for the selected speed. DuckWhisperer does not download every language up front; the first non-English language you choose asks for approval, then unlocks the other non-English input languages for that speed.
+English input uses the smaller English-only speech model. Non-English input uses one shared multilingual Whisper model for the selected speed. DuckWhisperer does not download one pack per language; the first non-English language you choose asks for approval, then that one shared model unlocks the other non-English input languages for that speed.
 
 `I Speak` controls what language you speak. `Output` controls what text comes back. `Same as Input` keeps Spanish speech as Spanish text, French speech as French text, and so on. Choosing `English` while speaking a non-English input language uses Whisper's local speech-translation mode to return English text.
 

@@ -69,7 +69,7 @@ struct ModelChoice: Equatable {
     }
 
     func languageScopeText(for inputLanguage: InputLanguageChoice) -> String {
-        inputLanguage.isEnglish ? "English speech" : "More languages"
+        inputLanguage.isEnglish ? "English-only speech model" : "Shared multilingual speech model"
     }
 
     var friendlyTitle: String {
