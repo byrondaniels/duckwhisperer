@@ -16,14 +16,14 @@ final class PersonalDictionaryController: NSObject {
         )
         super.init()
 
-        panel.title = "Personal Dictionary"
+        panel.title = "Saved Words"
         panel.isReleasedWhenClosed = false
         panel.level = .floating
 
         let contentView = NSView(frame: NSRect(origin: .zero, size: size))
         panel.contentView = contentView
 
-        let helpLabel = NSTextField(labelWithString: "One replacement per line. Example: open ai = OpenAI")
+        let helpLabel = NSTextField(labelWithString: "Teach DuckWhisperer your words. Example: open ai = OpenAI")
         helpLabel.translatesAutoresizingMaskIntoConstraints = false
         helpLabel.textColor = .secondaryLabelColor
         helpLabel.font = .systemFont(ofSize: 13)

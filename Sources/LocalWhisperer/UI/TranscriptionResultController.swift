@@ -2,9 +2,18 @@ import AppKit
 
 final class TranscriptionResultController: NSObject {
     private let panel: NSPanel
+    private let messageLabel = NSTextField(labelWithString: "")
     private let textView = NSTextView()
+    private let onPasteAgain: (String) -> Void
+    private let onFixPermission: () -> Void
 
-    override init() {
+    init(
+        onPasteAgain: @escaping (String) -> Void,
+        onFixPermission: @escaping () -> Void
+    ) {
+        self.onPasteAgain = onPasteAgain
+        self.onFixPermission = onFixPermission
+
         let size = NSSize(width: 560, height: 300)
         panel = NSPanel(
             contentRect: NSRect(origin: .zero, size: size),
@@ -15,7 +24,7 @@ final class TranscriptionResultController: NSObject {
 
         super.init()
 
-        panel.title = "\(appDisplayName) Transcript"
+        panel.title = "Your Text Is Safe"
         panel.isReleasedWhenClosed = false
         panel.level = .floating
         panel.collectionBehavior = [.moveToActiveSpace]
@@ -29,6 +38,11 @@ final class TranscriptionResultController: NSObject {
         scrollView.hasVerticalScroller = true
         scrollView.hasHorizontalScroller = false
         scrollView.borderType = .bezelBorder
+
+        messageLabel.translatesAutoresizingMaskIntoConstraints = false
+        messageLabel.font = NSFont.systemFont(ofSize: 13)
+        messageLabel.textColor = .secondaryLabelColor
+        messageLabel.maximumNumberOfLines = 0
 
         textView.isEditable = true
         textView.isSelectable = true
@@ -45,29 +59,51 @@ final class TranscriptionResultController: NSObject {
         copyButton.translatesAutoresizingMaskIntoConstraints = false
         copyButton.bezelStyle = .rounded
 
+        let pasteAgainButton = NSButton(title: "Paste Again", target: self, action: #selector(pasteAgain))
+        pasteAgainButton.translatesAutoresizingMaskIntoConstraints = false
+        pasteAgainButton.bezelStyle = .rounded
+
+        let fixPermissionButton = NSButton(title: "Fix Permission", target: self, action: #selector(fixPermission))
+        fixPermissionButton.translatesAutoresizingMaskIntoConstraints = false
+        fixPermissionButton.bezelStyle = .rounded
+
         let closeButton = NSButton(title: "Close", target: self, action: #selector(closePanel))
         closeButton.translatesAutoresizingMaskIntoConstraints = false
         closeButton.bezelStyle = .rounded
 
+        contentView.addSubview(messageLabel)
         contentView.addSubview(scrollView)
+        contentView.addSubview(pasteAgainButton)
+        contentView.addSubview(fixPermissionButton)
         contentView.addSubview(copyButton)
         contentView.addSubview(closeButton)
 
         NSLayoutConstraint.activate([
+            messageLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            messageLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            messageLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 14),
+
             scrollView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             scrollView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            scrollView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 16),
+            scrollView.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: 10),
             scrollView.bottomAnchor.constraint(equalTo: copyButton.topAnchor, constant: -12),
 
             closeButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             closeButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -16),
 
             copyButton.trailingAnchor.constraint(equalTo: closeButton.leadingAnchor, constant: -8),
-            copyButton.centerYAnchor.constraint(equalTo: closeButton.centerYAnchor)
+            copyButton.centerYAnchor.constraint(equalTo: closeButton.centerYAnchor),
+
+            fixPermissionButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            fixPermissionButton.centerYAnchor.constraint(equalTo: closeButton.centerYAnchor),
+
+            pasteAgainButton.leadingAnchor.constraint(equalTo: fixPermissionButton.trailingAnchor, constant: 8),
+            pasteAgainButton.centerYAnchor.constraint(equalTo: closeButton.centerYAnchor)
         ])
     }
 
-    func show(text: String) {
+    func show(text: String, reason: String = "DuckWhisperer could not paste into the current field. Your text is copied and ready below.") {
+        messageLabel.stringValue = reason
         textView.string = text
         textView.setSelectedRange(NSRange(location: text.utf16.count, length: 0))
 
@@ -78,6 +114,10 @@ final class TranscriptionResultController: NSObject {
         NSApp.activate(ignoringOtherApps: true)
         panel.makeKeyAndOrderFront(nil)
         panel.makeFirstResponder(textView)
+    }
+
+    func close() {
+        panel.orderOut(nil)
     }
 
     private func centerPanel() {
@@ -98,7 +138,15 @@ final class TranscriptionResultController: NSObject {
         NSPasteboard.general.setString(textView.string, forType: .string)
     }
 
+    @objc private func pasteAgain() {
+        onPasteAgain(textView.string)
+    }
+
+    @objc private func fixPermission() {
+        onFixPermission()
+    }
+
     @objc private func closePanel() {
-        panel.orderOut(nil)
+        close()
     }
 }

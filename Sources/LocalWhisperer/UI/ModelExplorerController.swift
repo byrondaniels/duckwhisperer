@@ -32,7 +32,7 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
             backing: .buffered,
             defer: false
         )
-        window.title = "Model Explorer"
+        window.title = "Speed & Accuracy"
         window.isReleasedWhenClosed = false
         window.minSize = NSSize(width: 300, height: 460)
         window.level = .normal
@@ -79,9 +79,9 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
         contentView.translatesAutoresizingMaskIntoConstraints = false
         window.contentView = contentView
 
-        let titleLabel = makeLabel("Model Explorer", font: .boldSystemFont(ofSize: 20))
+        let titleLabel = makeLabel("Speed & Accuracy", font: .boldSystemFont(ofSize: 20))
         let subtitleLabel = makeLabel(
-            "Downloads stay outside the app bundle and install only when you approve them.",
+            "Choose how fast DuckWhisperer should feel. Extra downloads only happen when you approve them.",
             font: .systemFont(ofSize: 13),
             color: .secondaryLabelColor
         )
@@ -134,12 +134,12 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
             view.removeFromSuperview()
         }
 
-        addSectionTitle("Speech Models")
+        addSectionTitle("Dictation Speed")
         for choice in ModelChoice.all {
             addFullWidthRow(makeModelRow(for: choice))
         }
 
-        addSectionTitle("Translation Packs")
+        addSectionTitle("Language Add-ons")
         for pack in TranslationPackChoice.all {
             addFullWidthRow(makeTranslationPackRow(for: pack))
         }
@@ -181,9 +181,9 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
         row.layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
         row.layer?.cornerRadius = 8
 
-        let title = choice == ModelChoice.defaultChoice ? "\(choice.title) - default" : choice.title
+        let title = choice.friendlyMenuTitle
         let titleLabel = makeLabel(title, font: .boldSystemFont(ofSize: 14))
-        let detailLabel = makeLabel(choice.detail, font: .systemFont(ofSize: 12), color: .secondaryLabelColor)
+        let detailLabel = makeLabel(choice.friendlyDetail, font: .systemFont(ofSize: 12), color: .secondaryLabelColor)
         let statusLabel = makeLabel(
             "\(choice.diskSizeText) · \(statusText(for: choice))",
             font: .systemFont(ofSize: 12),
@@ -392,8 +392,8 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
 
     private func confirmAndDownload(_ choice: ModelChoice) {
         let alert = NSAlert()
-        alert.messageText = "Download \(choice.title)?"
-        alert.informativeText = "This will download \(choice.downloadSizeText) to \(ModelStore.userModelsURL.path). The model will not be downloaded unless you approve this."
+        alert.messageText = "Download \(choice.friendlyTitle)?"
+        alert.informativeText = "This adds \(choice.downloadSizeText) of local dictation data. Nothing downloads unless you choose Download."
         alert.alertStyle = .informational
         alert.addButton(withTitle: "Download")
         alert.addButton(withTitle: "Cancel")
@@ -437,7 +437,7 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
     private func confirmAndInstall(_ pack: TranslationPackChoice) {
         let alert = NSAlert()
         alert.messageText = "Install \(pack.title)?"
-        alert.informativeText = "This installs \(pack.downloadSizeText) of local translation data into \(TranslationStore.supportRootURL.path). If the translator runtime is missing, \(appDisplayName) will also install it there."
+        alert.informativeText = "This adds \(pack.downloadSizeText) of local translation data. It stays on this Mac."
         alert.alertStyle = .informational
         alert.addButton(withTitle: "Install")
         alert.addButton(withTitle: "Cancel")

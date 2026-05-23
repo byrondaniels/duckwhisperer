@@ -16,7 +16,7 @@ final class TranscriptHistoryController: NSObject {
         )
         super.init()
 
-        panel.title = "Transcript History"
+        panel.title = "History"
         panel.isReleasedWhenClosed = false
         panel.level = .floating
 
@@ -24,7 +24,7 @@ final class TranscriptHistoryController: NSObject {
         panel.contentView = contentView
 
         searchField.translatesAutoresizingMaskIntoConstraints = false
-        searchField.placeholderString = "Search transcripts"
+        searchField.placeholderString = "Search your text"
         searchField.target = self
         searchField.action = #selector(rebuild)
 

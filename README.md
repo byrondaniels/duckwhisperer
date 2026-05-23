@@ -1,8 +1,24 @@
 # DuckWhisperer
 
-Native macOS dictation app powered by `whisper.cpp`.
+Private Mac dictation that feels like a normal app.
 
-DuckWhisperer records with `Option+Space`, transcribes locally, copies the transcript, and pastes it back into the app you were using. It can output English, French, Dutch, British, Gen Z, or a ridiculous Duck mode. It is built to stay small in Git: Whisper models, translation packs, and the whisper.cpp framework are downloaded outside the committed source tree.
+Press `Option+Space`, talk, press `Option+Space` again, and DuckWhisperer pastes your words into the app you were already using. Transcription runs locally on your Mac, so your voice stays on your machine. It can output English, French, Dutch, British, Gen Z, or a ridiculous Duck mode.
+
+## Quick Start
+
+If you have a packaged release:
+
+1. Unzip `DuckWhisperer`.
+2. Move `DuckWhisperer.app` to `/Applications`.
+3. Open it.
+4. In the menu-bar duck, open `Finish Setup`.
+5. Allow Microphone and paste-back permissions.
+6. Open `Try It Here...` and do your first test.
+
+Use `Option+Space` once to start recording and `Option+Space` again to stop, transcribe, and paste.
+Press `Escape` while recording or transcribing to cancel without pasting.
+
+Open the menu-bar duck for `Try It Here`, `Undo Last Paste`, `Output Style`, `Writing Style`, `Speed & Accuracy`, `History`, and `Settings`.
 
 ## Fresh Machine Setup
 
@@ -27,11 +43,6 @@ Then grant the macOS permissions:
 - Microphone: required for recording
 - Accessibility: required for automatic paste/type-back into the target app
 
-Use `Option+Space` once to start recording and `Option+Space` again to stop, transcribe, and paste.
-Press `Escape` while recording or transcribing to cancel without pasting.
-
-Open the menu-bar duck for writing profiles, transcript history, app-specific defaults, personal dictionary, audio ducking, model speed/quality, and Setup Doctor.
-
 ## What Gets Installed
 
 The app bundle is installed at:
@@ -48,7 +59,7 @@ Runtime assets are installed outside the repo and app bundle at:
 
 That folder contains downloaded speech models and optional translation runtime data. It is not committed to Git.
 
-The default install sets up transcription only. Local translation can be added later from Model Explorer or with:
+The default install sets up transcription only. Local translation can be added later from `Speed & Accuracy` or with:
 
 ```bash
 ./scripts/setup_local_translation.sh
@@ -84,7 +95,7 @@ INSTALL_DEFAULT_MODEL=0 INSTALL_TRANSLATION=0 ./scripts/build_app.sh
 
 ## Release Package
 
-Build a drag-and-drop macOS package with the default `Small English` speech model bundled inside the app:
+Build a drag-and-drop macOS package with the default `Best Accuracy` speech model bundled inside the app:
 
 ```bash
 ./scripts/package_release.sh
@@ -92,7 +103,7 @@ Build a drag-and-drop macOS package with the default `Small English` speech mode
 
 The release artifact is written to `release/`. By default this creates a `.zip`; set `PACKAGE_FORMAT=dmg` or `PACKAGE_FORMAT=both` if needed.
 
-This packaged app can transcribe English without a terminal setup or model download. macOS still requires the user to grant Microphone and Accessibility permissions after installing. French/Dutch translation remains optional and can be installed later from Model Explorer.
+This packaged app can transcribe English without a terminal setup or model download. macOS still requires the user to grant Microphone and paste-back permissions after installing. French/Dutch translation remains optional and can be installed later from `Speed & Accuracy`.
 
 The build script automatically uses a local code-signing identity when one is available, preferring `Developer ID Application` and then local Apple development identities. If no identity exists, it falls back to ad-hoc signing.
 
@@ -129,6 +140,8 @@ Run the full local verification loop before pushing changes:
 
 - Global shortcut: `Option+Space`
 - Active dictation cancel shortcut: `Escape`
+- Built-in `Try It Here` window for first-run testing
+- `Undo Last Paste` for fast recovery when text lands in the wrong place
 - Local English speech transcription
 - Optional English -> French and English -> Dutch local output translation
 - Built-in British and Gen Z style output modes
@@ -138,29 +151,30 @@ Run the full local verification loop before pushing changes:
 - Personal dictionary replacements stored locally
 - Searchable local transcript history
 - Optional audio ducking while recording
-- Speed / Quality menu for Fast, Balanced, and Accurate model choices
-- Setup Doctor for microphone, Accessibility, model, install, and signing checks
+- `Speed & Accuracy` menu for Best Accuracy, Fast, and Fastest choices
+- `Finish Setup` for microphone, paste-back, model, install, and app identity checks
+- `Presenter Mode` for camera-readable TikTok/product demos
 - Duck output that turns the transcript into assorted quacks
 - Audio-reactive duck recording overlay with live preview, elapsed time, profile/model context, cancel hint, and transcription progress percentage
-- Model Explorer for `Small English`, `Base English`, and `Tiny English`
+- Paste recovery window with `Paste Again`, `Copy`, and `Fix Permission`
 - Duck menu-bar icon and DuckWhisperer app icon
 - `Preserve Capitalization` toggle
 - Fallback transcript window when macOS does not allow auto-paste
 
 ## Models
 
-No speech model is committed to Git. Normal source builds keep speech models outside the app bundle in Application Support. Release packages created by `./scripts/package_release.sh` bundle `Small English` inside `DuckWhisperer.app` so a fresh Mac can transcribe English without a separate model download.
+No speech model is committed to Git. Normal source builds keep speech models outside the app bundle in Application Support. Release packages created by `./scripts/package_release.sh` bundle `Best Accuracy` inside `DuckWhisperer.app` so a fresh Mac can transcribe English without a separate model download.
 
 Default model:
 
-- `Small English`
+- `Best Accuracy`, internally `Small English`
 - about 487.6 MB
 - best default for English dictation
 
 Optional models:
 
-- `Base English`, about 148.0 MB
-- `Tiny English`, about 77.7 MB
+- `Fast`, internally `Base English`, about 148.0 MB
+- `Fastest`, internally `Tiny English`, about 77.7 MB
 
 Downloaded models are stored in:
 
@@ -172,7 +186,7 @@ Downloaded models are stored in:
 
 Input speech is always treated as English. Output can be English, French, Dutch, British, Gen Z, or Duck.
 
-French and Dutch output use local Argos Translate packages. Install them from Model Explorer, or run:
+French and Dutch output use local Argos Translate packages. Install them from `Speed & Accuracy`, or run:
 
 ```bash
 ./scripts/setup_local_translation.sh
@@ -206,6 +220,8 @@ Transcript history stores recent outputs locally in macOS user defaults. Use the
 Command phrases are interpreted at the start of a dictation. For example, saying "turn this into bullets follow up with Alex and ship the build" applies the Bullet Notes profile to the remaining text.
 
 Audio ducking lowers system output volume while recording and restores it afterward. It is off by default.
+
+Presenter Mode makes the recording overlay larger and hides technical context so the app reads clearly on camera. See `docs/tiktok-demo-scripts.md` for short demo ideas.
 
 ## macOS Permissions Note
 

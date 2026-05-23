@@ -13,17 +13,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let performanceMenu = NSMenu()
     private let historyMenu = NSMenu()
     private let appDefaultsMenu = NSMenu()
+    private let settingsMenu = NSMenu()
     private let statusMenuItem = NSMenuItem(title: "Starting...", action: nil, keyEquivalent: "")
-    private let autoPastePermissionMenuItem = NSMenuItem(title: "Auto-Paste Permission: Checking...", action: #selector(openAccessibilitySettings), keyEquivalent: "")
+    private let autoPastePermissionMenuItem = NSMenuItem(title: "Paste-Back: Checking...", action: #selector(openAccessibilitySettings), keyEquivalent: "")
+    private let privacyMenuItem = NSMenuItem(title: "Private: your voice stays on this Mac", action: nil, keyEquivalent: "")
     private let toggleMenuItem = NSMenuItem(title: "Start Recording", action: #selector(toggleRecordingFromMenu), keyEquivalent: "")
+    private let undoLastPasteMenuItem = NSMenuItem(title: "Undo Last Paste", action: #selector(undoLastPaste), keyEquivalent: "")
     private let copyLastMenuItem = NSMenuItem(title: "Copy Last Transcript", action: #selector(copyLastTranscript), keyEquivalent: "")
     private let preserveCapitalizationMenuItem = NSMenuItem(title: "Preserve Capitalization", action: #selector(togglePreserveCapitalization), keyEquivalent: "")
     private let audioDuckingMenuItem = NSMenuItem(title: "Audio Ducking", action: #selector(toggleAudioDucking), keyEquivalent: "")
+    private let presenterModeMenuItem = NSMenuItem(title: "Presenter Mode", action: #selector(togglePresenterMode), keyEquivalent: "")
     private let hotKeyController = HotKeyController()
     private let audioCapture = AudioCapture()
     private let audioDucker = AudioDucker()
     private let recordingOverlay = RecordingOverlayController()
-    private let transcriptionResult = TranscriptionResultController()
+    private lazy var transcriptionResult = TranscriptionResultController(
+        onPasteAgain: { [weak self] text in
+            self?.retryPaste(text)
+        },
+        onFixPermission: { [weak self] in
+            self?.openAccessibilitySettings()
+        }
+    )
+    private lazy var tryItController = TryItController()
     private lazy var personalDictionaryController = PersonalDictionaryController { [weak self] in
         self?.refreshPermissionUI()
     }
@@ -59,6 +71,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var activeOutputLanguage: OutputLanguage?
     private var activeWritingProfile: WritingProfile?
     private var activeModelChoice: ModelChoice?
+    private var lastUndoTarget: PasteTarget?
+    private var canUndoLastPaste = false
+    private var lastPasteWasTryIt = false
 
     private var selectedModel: ModelChoice {
         let choice = ModelChoice.choice(for: UserDefaults.standard.string(forKey: selectedModelIDKey))
@@ -75,6 +90,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var audioDuckingEnabled: Bool {
         UserDefaults.standard.bool(forKey: audioDuckingEnabledKey)
+    }
+
+    private var presenterModeEnabled: Bool {
+        UserDefaults.standard.bool(forKey: presenterModeEnabledKey)
     }
 
     private var personalDictionaryEntries: [PersonalDictionaryEntry] {
@@ -119,7 +138,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 setState(.ready)
                 preloadModel()
             } else {
-                setState(.error("Download Small English in Model Explorer before recording."))
+                setState(.error("Download Best Accuracy from Speed & Accuracy before recording."))
                 showModelExplorer()
             }
         } else {
@@ -183,12 +202,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem.button?.imageScaling = .scaleProportionallyDown
         statusItem.button?.toolTip = appDisplayName
         statusMenuItem.isEnabled = false
+        privacyMenuItem.isEnabled = false
         autoPastePermissionMenuItem.target = self
         toggleMenuItem.target = self
+        undoLastPasteMenuItem.target = self
+        undoLastPasteMenuItem.isEnabled = false
         copyLastMenuItem.target = self
         copyLastMenuItem.isEnabled = false
         preserveCapitalizationMenuItem.target = self
         audioDuckingMenuItem.target = self
+        presenterModeMenuItem.target = self
 
         let openMicSettings = NSMenuItem(
             title: "Open Microphone Settings",
@@ -198,54 +221,63 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         openMicSettings.target = self
 
         let openAccessibilitySettings = NSMenuItem(
-            title: "Open Accessibility Settings for Auto-Paste",
+            title: "Open Paste-Back Settings",
             action: #selector(openAccessibilitySettings),
             keyEquivalent: ""
         )
         openAccessibilitySettings.target = self
 
         menu.addItem(statusMenuItem)
+        menu.addItem(privacyMenuItem)
         menu.addItem(autoPastePermissionMenuItem)
         menu.addItem(NSMenuItem.separator())
         menu.addItem(toggleMenuItem)
+        let tryItItem = NSMenuItem(title: "Try It Here...", action: #selector(openTryIt), keyEquivalent: "")
+        tryItItem.target = self
+        menu.addItem(tryItItem)
+        menu.addItem(undoLastPasteMenuItem)
         menu.addItem(copyLastMenuItem)
         menu.addItem(historyMenuItem())
         menu.addItem(outputMenuItem())
         menu.addItem(profileMenuItem())
         menu.addItem(performanceMenuItem())
-        menu.addItem(preserveCapitalizationMenuItem)
-        menu.addItem(audioDuckingMenuItem)
-        menu.addItem(appDefaultsMenuItem())
+        menu.addItem(settingsMenuItem())
+
+        settingsMenu.addItem(preserveCapitalizationMenuItem)
+        settingsMenu.addItem(audioDuckingMenuItem)
+        settingsMenu.addItem(presenterModeMenuItem)
+        settingsMenu.addItem(appDefaultsMenuItem())
         let personalDictionaryItem = NSMenuItem(
-            title: "Personal Dictionary...",
+            title: "Saved Words...",
             action: #selector(openPersonalDictionary),
             keyEquivalent: ""
         )
         personalDictionaryItem.target = self
-        menu.addItem(personalDictionaryItem)
+        settingsMenu.addItem(personalDictionaryItem)
         let topLevelModelExplorer = NSMenuItem(
-            title: "Open Model Explorer...",
+            title: "Open Speed & Accuracy...",
             action: #selector(openModelExplorer(_:)),
             keyEquivalent: ""
         )
         topLevelModelExplorer.target = self
-        menu.addItem(topLevelModelExplorer)
-        menu.addItem(modelMenuItem())
-        menu.addItem(NSMenuItem.separator())
-        menu.addItem(openMicSettings)
-        menu.addItem(openAccessibilitySettings)
+        settingsMenu.addItem(topLevelModelExplorer)
+        settingsMenu.addItem(modelMenuItem())
+        settingsMenu.addItem(NSMenuItem.separator())
+        settingsMenu.addItem(openMicSettings)
+        settingsMenu.addItem(openAccessibilitySettings)
         let setupDoctorItem = NSMenuItem(
-            title: "Setup Doctor...",
+            title: "Finish Setup...",
             action: #selector(openSetupDoctor),
             keyEquivalent: ""
         )
         setupDoctorItem.target = self
-        menu.addItem(setupDoctorItem)
+        settingsMenu.addItem(setupDoctorItem)
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Quit \(appDisplayName)", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         statusItem.menu = menu
         rebuildPreserveCapitalizationMenuItem()
         rebuildAudioDuckingMenuItem()
+        rebuildPresenterModeMenuItem()
         rebuildOutputMenu()
         rebuildProfileMenu()
         rebuildPerformanceMenu()
@@ -256,38 +288,44 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func outputMenuItem() -> NSMenuItem {
-        let item = NSMenuItem(title: "Output Language", action: nil, keyEquivalent: "")
+        let item = NSMenuItem(title: "Output Style", action: nil, keyEquivalent: "")
         item.submenu = outputMenu
         return item
     }
 
     private func profileMenuItem() -> NSMenuItem {
-        let item = NSMenuItem(title: "Writing Profile", action: nil, keyEquivalent: "")
+        let item = NSMenuItem(title: "Writing Style", action: nil, keyEquivalent: "")
         item.submenu = profileMenu
         return item
     }
 
     private func performanceMenuItem() -> NSMenuItem {
-        let item = NSMenuItem(title: "Speed / Quality", action: nil, keyEquivalent: "")
+        let item = NSMenuItem(title: "Speed & Accuracy", action: nil, keyEquivalent: "")
         item.submenu = performanceMenu
         return item
     }
 
     private func historyMenuItem() -> NSMenuItem {
-        let item = NSMenuItem(title: "Transcript History", action: nil, keyEquivalent: "")
+        let item = NSMenuItem(title: "History", action: nil, keyEquivalent: "")
         item.submenu = historyMenu
         return item
     }
 
     private func appDefaultsMenuItem() -> NSMenuItem {
-        let item = NSMenuItem(title: "Per-App Defaults", action: nil, keyEquivalent: "")
+        let item = NSMenuItem(title: "App Defaults", action: nil, keyEquivalent: "")
         item.submenu = appDefaultsMenu
         return item
     }
 
     private func modelMenuItem() -> NSMenuItem {
-        let item = NSMenuItem(title: "Model", action: nil, keyEquivalent: "")
+        let item = NSMenuItem(title: "Advanced Model List", action: nil, keyEquivalent: "")
         item.submenu = modelMenu
+        return item
+    }
+
+    private func settingsMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(title: "Settings", action: nil, keyEquivalent: "")
+        item.submenu = settingsMenu
         return item
     }
 
@@ -320,9 +358,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func rebuildPerformanceMenu() {
         performanceMenu.removeAllItems()
         let mappings: [(title: String, model: ModelChoice)] = [
-            ("Fast - Tiny English", ModelChoice.choice(for: "tiny-en")),
-            ("Balanced - Base English", ModelChoice.choice(for: "base-en")),
-            ("Accurate - Small English", ModelChoice.choice(for: "small-en"))
+            (ModelChoice.choice(for: "tiny-en").friendlyMenuTitle, ModelChoice.choice(for: "tiny-en")),
+            (ModelChoice.choice(for: "base-en").friendlyMenuTitle, ModelChoice.choice(for: "base-en")),
+            (ModelChoice.choice(for: "small-en").friendlyMenuTitle, ModelChoice.choice(for: "small-en"))
         ]
 
         for mapping in mappings {
@@ -410,11 +448,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         audioDuckingMenuItem.state = audioDuckingEnabled ? .on : .off
     }
 
+    private func rebuildPresenterModeMenuItem() {
+        presenterModeMenuItem.state = presenterModeEnabled ? .on : .off
+        recordingOverlay.setPresenterMode(presenterModeEnabled)
+    }
+
     private func rebuildModelMenu() {
         modelMenu.removeAllItems()
         let current = selectedModel
 
-        let explorerItem = NSMenuItem(title: "Open Model Explorer...", action: #selector(openModelExplorer(_:)), keyEquivalent: "")
+        let explorerItem = NSMenuItem(title: "Open Speed & Accuracy...", action: #selector(openModelExplorer(_:)), keyEquivalent: "")
         explorerItem.target = self
         modelMenu.addItem(explorerItem)
         modelMenu.addItem(NSMenuItem.separator())
@@ -422,8 +465,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         for choice in ModelChoice.all {
             let exists = ModelStore.isInstalled(choice)
             let title = exists
-                ? "\(choice.title) - \(choice.detail)"
-                : "\(choice.title) - not installed"
+                ? "\(choice.friendlyMenuTitle) - \(choice.friendlyDetail)"
+                : "\(choice.friendlyMenuTitle) - not installed"
             let item = NSMenuItem(
                 title: title,
                 action: exists ? #selector(selectModel(_:)) : #selector(openModelExplorer(_:)),
@@ -434,15 +477,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             item.state = choice == current ? .on : .off
             modelMenu.addItem(item)
         }
-
-        modelMenu.addItem(NSMenuItem.separator())
-        let openInstalledModels = NSMenuItem(title: "Open Installed Models Folder", action: #selector(openInstalledModelsFolder), keyEquivalent: "")
-        openInstalledModels.target = self
-        modelMenu.addItem(openInstalledModels)
-
-        let openBundledModels = NSMenuItem(title: "Open Bundled Models Folder", action: #selector(openBundledModelsFolder), keyEquivalent: "")
-        openBundledModels.target = self
-        modelMenu.addItem(openBundledModels)
     }
 
     private func setState(_ newState: AppState) {
@@ -466,7 +500,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 statusText: "Recording",
                 contextText: overlayContextText(),
                 previewText: "",
-                hintText: "Esc cancels"
+                hintText: "Esc cancels",
+                presenterMode: presenterModeEnabled
             )
             startRecordingLevelTimer()
             toggleMenuItem.title = "Stop and Paste"
@@ -478,16 +513,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 statusText: "Transcribing",
                 contextText: overlayContextText(),
                 previewText: "Finalizing local transcript...",
-                hintText: "Esc cancels"
+                hintText: "Esc cancels",
+                presenterMode: presenterModeEnabled
             )
             toggleMenuItem.title = "Transcribing..."
             toggleMenuItem.isEnabled = false
         }
 
         copyLastMenuItem.isEnabled = !lastTranscript.isEmpty
+        undoLastPasteMenuItem.isEnabled = canUndoLastPaste
         refreshPermissionUI()
         rebuildPreserveCapitalizationMenuItem()
         rebuildAudioDuckingMenuItem()
+        rebuildPresenterModeMenuItem()
         rebuildProfileMenu()
         rebuildPerformanceMenu()
         rebuildHistoryMenu()
@@ -526,7 +564,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 statusText: "Recording",
                 contextText: self.overlayContextText(),
                 previewText: preview,
-                hintText: "Esc cancels • \(self.elapsedText(elapsed))"
+                hintText: "Esc cancels • \(self.elapsedText(elapsed))",
+                presenterMode: self.presenterModeEnabled
             )
         }
     }
@@ -551,17 +590,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func refreshPermissionUI() {
         let hasAutoPastePermission = AXIsProcessTrusted()
-        let permissionStatus = hasAutoPastePermission ? "Auto-Paste Permission Granted" : "Auto-Paste Permission Needed - Click to Fix"
+        let permissionStatus = hasAutoPastePermission ? "Paste-Back Ready" : "Paste-Back Needs Permission - Click to Fix"
         autoPastePermissionMenuItem.title = permissionStatus
         autoPastePermissionMenuItem.state = hasAutoPastePermission ? .on : .off
         autoPastePermissionMenuItem.toolTip = hasAutoPastePermission
             ? "DuckWhisperer can paste transcripts back into the target app."
-            : "DuckWhisperer needs Accessibility permission to paste transcripts back into the target app."
+            : "DuckWhisperer needs paste-back permission to put text into other apps."
 
-        let permissionSuffix = hasAutoPastePermission ? "" : " - Auto-Paste Permission Needed"
+        let permissionSuffix = hasAutoPastePermission ? "" : " - Paste-Back Needs Permission"
         statusItem.button?.toolTip = "\(appDisplayName): \(state.statusText)\(permissionSuffix)"
         let formattingText = preserveCapitalization ? "Caps On" : "Caps Off"
-        statusMenuItem.title = "\(state.statusText)\(permissionSuffix) - \(selectedModel.title) -> \(selectedOutputLanguage.title) - \(selectedWritingProfile.title) - \(formattingText)"
+        statusMenuItem.title = "\(state.statusText)\(permissionSuffix) - \(selectedModel.friendlyTitle) -> \(selectedOutputLanguage.title) - \(selectedWritingProfile.title) - \(formattingText)"
     }
 
     private func requestMicrophoneAccess() {
@@ -681,6 +720,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setState(state)
     }
 
+    @objc private func togglePresenterMode() {
+        UserDefaults.standard.set(!presenterModeEnabled, forKey: presenterModeEnabledKey)
+        rebuildPresenterModeMenuItem()
+        setState(state)
+    }
+
+    @objc private func openTryIt() {
+        tryItController.show()
+    }
+
     @objc private func openPersonalDictionary() {
         personalDictionaryController.show()
     }
@@ -767,7 +816,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func startRecording() {
         guard ModelStore.isInstalled(selectedModel) else {
-            setState(.error("Download a speech model in Model Explorer before recording."))
+            setState(.error("Download a dictation speed from Speed & Accuracy before recording."))
             showModelExplorer()
             NSSound.beep()
             return
@@ -776,9 +825,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         logAccessibilityStateForRecording()
 
         do {
-            pasteTarget = PasteTargetDetector.captureFocusedEditableTarget()
-            activeAppName = pasteTarget?.application?.localizedName
-            applyAppDefaultsIfAvailable(for: pasteTarget?.application)
+            if tryItController.shouldReceiveTranscript {
+                pasteTarget = nil
+                activeAppName = "Try DuckWhisperer"
+            } else {
+                pasteTarget = PasteTargetDetector.captureFocusedEditableTarget()
+                activeAppName = pasteTarget?.application?.localizedName
+                applyAppDefaultsIfAvailable(for: pasteTarget?.application)
+            }
             activeOutputLanguage = selectedOutputLanguage
             activeWritingProfile = selectedWritingProfile
             activeModelChoice = selectedModel
@@ -882,7 +936,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                         statusText: "Pasting",
                         contextText: self.overlayContextText(),
                         previewText: output,
-                        hintText: "Copied to clipboard"
+                        hintText: "Copied to clipboard",
+                        presenterMode: self.presenterModeEnabled
                     )
                     AppLog.write(String(format: "transcribed %.2fs of audio in %.2fs", Double(samples.count) / Double(WHISPER_SAMPLE_RATE), elapsed))
                     if let commandName = commandResult.commandName {
@@ -1007,34 +1062,48 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        if tryItController.shouldReceiveTranscript {
+            tryItController.insertTranscript(output)
+            finishSuccessfulDelivery(output, transcriptionID: transcriptionID, undoTarget: nil, wasTryIt: true)
+            return
+        }
+
         let target = pasteTarget
         pasteTarget = nil
 
         guard AXIsProcessTrusted() else {
             AppLog.write("delivery fallback; Accessibility not trusted, transcript copied and transcript window shown")
-            transcriptionResult.show(text: output)
+            showPasteRecovery(
+                output,
+                reason: "Your text is safe and copied. Allow paste-back in System Settings so DuckWhisperer can put it into other apps."
+            )
             finishActiveTranscription(transcriptionID)
             setState(.ready)
             return
         }
 
-        let finish: (_ allowFocusedCheckBypass: Bool) -> Void = { [weak self] allowFocusedCheckBypass in
+        let finish: (_ allowFocusedCheckBypass: Bool, _ undoTarget: PasteTarget?) -> Void = { [weak self] allowFocusedCheckBypass, undoTarget in
             guard let self else { return }
             guard self.isActiveTranscription(transcriptionID) else {
                 AppLog.write("delivery finish skipped after cancellation")
                 return
             }
             if !self.pasteClipboardIntoFocusedTarget(allowWithoutFocusedCheck: allowFocusedCheckBypass) {
-                self.transcriptionResult.show(text: output)
+                self.showPasteRecovery(
+                    output,
+                    reason: "Your text is safe and copied. Click in the field you want, then choose Paste Again."
+                )
+                self.finishActiveTranscription(transcriptionID)
+                self.setState(.ready)
+                return
             }
-            self.finishActiveTranscription(transcriptionID)
-            self.setState(.ready)
+            self.finishSuccessfulDelivery(output, transcriptionID: transcriptionID, undoTarget: undoTarget)
         }
 
         guard let target
         else {
             AppLog.write("delivery target missing; attempting focused paste")
-            finish(false)
+            finish(false, nil)
             return
         }
 
@@ -1049,11 +1118,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
                 if self.shouldUseSyntheticTyping(for: target),
                    self.typeTextWithKeyboard(output) {
-                    self.finishActiveTranscription(transcriptionID)
-                    self.setState(.ready)
+                    self.finishSuccessfulDelivery(output, transcriptionID: transcriptionID, undoTarget: target)
                     return
                 }
-                finish(true)
+                finish(true, target)
             }
             return
         }
@@ -1076,17 +1144,56 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
                 if self.shouldUseSyntheticTyping(for: target),
                    self.typeTextWithKeyboard(output) {
-                    self.finishActiveTranscription(transcriptionID)
-                    self.setState(.ready)
+                    self.finishSuccessfulDelivery(output, transcriptionID: transcriptionID, undoTarget: target)
                     return
                 }
                 if PasteTargetDetector.insertTextDirectly(output, into: target) {
-                    self.finishActiveTranscription(transcriptionID)
-                    self.setState(.ready)
+                    self.finishSuccessfulDelivery(output, transcriptionID: transcriptionID, undoTarget: target)
                     return
                 }
-                finish(restoredFocus || target.application != nil)
+                finish(restoredFocus || target.application != nil, target)
             }
+        }
+    }
+
+    private func showPasteRecovery(_ output: String, reason: String) {
+        transcriptionResult.show(text: output, reason: reason)
+    }
+
+    private func finishSuccessfulDelivery(
+        _ output: String,
+        transcriptionID: UUID?,
+        undoTarget: PasteTarget?,
+        wasTryIt: Bool = false
+    ) {
+        lastUndoTarget = undoTarget
+        lastPasteWasTryIt = wasTryIt
+        canUndoLastPaste = true
+        undoLastPasteMenuItem.isEnabled = true
+        finishActiveTranscription(transcriptionID)
+        setState(.ready)
+        showDeliverySuccessIfNeeded(output)
+    }
+
+    private func showDeliverySuccessIfNeeded(_ output: String) {
+        guard presenterModeEnabled else {
+            return
+        }
+
+        recordingOverlay.show(
+            progressPercent: 100,
+            statusText: "Pasted",
+            contextText: "",
+            previewText: output,
+            hintText: "Ready for the next one",
+            presenterMode: true
+        )
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.15) { [weak self] in
+            guard let self, self.state == .ready else {
+                return
+            }
+            self.recordingOverlay.hide()
         }
     }
 
@@ -1145,17 +1252,96 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return false
         }
 
-        let source = CGEventSource(stateID: .hidSystemState)
-        let vKeyCode: CGKeyCode = 9
-        let keyDown = CGEvent(keyboardEventSource: source, virtualKey: vKeyCode, keyDown: true)
-        let keyUp = CGEvent(keyboardEventSource: source, virtualKey: vKeyCode, keyDown: false)
-
-        keyDown?.flags = .maskCommand
-        keyUp?.flags = .maskCommand
-        keyDown?.post(tap: .cghidEventTap)
-        keyUp?.post(tap: .cghidEventTap)
+        guard postCommandShortcut(keyCode: 9) else {
+            AppLog.write("paste skipped; could not post paste shortcut")
+            return false
+        }
         AppLog.write("paste command posted")
         return true
+    }
+
+    private func postCommandShortcut(keyCode: CGKeyCode) -> Bool {
+        guard let source = CGEventSource(stateID: .hidSystemState),
+              let keyDown = CGEvent(keyboardEventSource: source, virtualKey: keyCode, keyDown: true),
+              let keyUp = CGEvent(keyboardEventSource: source, virtualKey: keyCode, keyDown: false)
+        else {
+            return false
+        }
+
+        keyDown.flags = .maskCommand
+        keyUp.flags = .maskCommand
+        keyDown.post(tap: .cghidEventTap)
+        keyUp.post(tap: .cghidEventTap)
+        return true
+    }
+
+    private func retryPaste(_ text: String) {
+        copyToClipboard(text)
+
+        guard AXIsProcessTrusted() else {
+            showPasteRecovery(
+                text,
+                reason: "Paste-back still needs permission. Your text is copied, and the Fix Permission button will open the right setting."
+            )
+            return
+        }
+
+        guard pasteClipboardIntoFocusedTarget() else {
+            showPasteRecovery(
+                text,
+                reason: "Click in the field where you want this text, then choose Paste Again."
+            )
+            return
+        }
+
+        transcriptionResult.close()
+        lastUndoTarget = nil
+        lastPasteWasTryIt = false
+        canUndoLastPaste = true
+        undoLastPasteMenuItem.isEnabled = true
+        showDeliverySuccessIfNeeded(text)
+    }
+
+    @objc private func undoLastPaste() {
+        guard canUndoLastPaste else {
+            NSSound.beep()
+            return
+        }
+
+        if lastPasteWasTryIt {
+            if tryItController.undoLastInsertion() {
+                clearUndoState()
+            } else {
+                NSSound.beep()
+            }
+            return
+        }
+
+        guard AXIsProcessTrusted() else {
+            openAccessibilitySettings()
+            return
+        }
+
+        if let lastUndoTarget {
+            _ = PasteTargetDetector.focusCapturedTarget(lastUndoTarget)
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { [weak self] in
+            guard let self else { return }
+            if self.postCommandShortcut(keyCode: 6) {
+                AppLog.write("undo last paste command posted")
+                self.clearUndoState()
+            } else {
+                NSSound.beep()
+            }
+        }
+    }
+
+    private func clearUndoState() {
+        lastUndoTarget = nil
+        lastPasteWasTryIt = false
+        canUndoLastPaste = false
+        undoLastPasteMenuItem.isEnabled = false
     }
 
     @objc private func copyLastTranscript() {

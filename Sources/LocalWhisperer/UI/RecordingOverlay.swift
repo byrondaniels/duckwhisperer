@@ -38,6 +38,10 @@ private final class RecordingOverlayView: NSView {
         didSet { needsDisplay = true }
     }
 
+    var presenterMode = false {
+        didSet { needsDisplay = true }
+    }
+
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         wantsLayer = true
@@ -60,6 +64,12 @@ private final class RecordingOverlayView: NSView {
         NSColor.black.withAlphaComponent(0.88).setFill()
         background.fill()
 
+        if presenterMode {
+            drawPresenterMode()
+            drawProgress()
+            return
+        }
+
         NSGraphicsContext.saveGraphicsState()
         let drawingTransform = NSAffineTransform()
         drawingTransform.translateX(by: 12, yBy: 30)
@@ -69,6 +79,63 @@ private final class RecordingOverlayView: NSView {
         NSGraphicsContext.restoreGraphicsState()
         drawText()
         drawProgress()
+    }
+
+    private func drawPresenterMode() {
+        NSGraphicsContext.saveGraphicsState()
+        let drawingTransform = NSAffineTransform()
+        drawingTransform.translateX(by: 20, yBy: 72)
+        drawingTransform.scale(by: 1.55)
+        drawingTransform.concat()
+        drawCrescendo()
+        drawBird(level: audioLevel)
+        NSGraphicsContext.restoreGraphicsState()
+
+        let textX: CGFloat = 225
+        let maxWidth = bounds.width - textX - 24
+        let isPasted = statusText.localizedCaseInsensitiveContains("pasted")
+
+        if isPasted {
+            let checkAttributes: [NSAttributedString.Key: Any] = [
+                .font: NSFont.systemFont(ofSize: 44, weight: .bold),
+                .foregroundColor: NSColor(calibratedRed: 1.0, green: 0.78, blue: 0.24, alpha: 1)
+            ]
+            "✓".draw(at: NSPoint(x: bounds.maxX - 70, y: 20), withAttributes: checkAttributes)
+        }
+
+        let titleAttributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 28, weight: .bold),
+            .foregroundColor: NSColor.white.withAlphaComponent(0.96)
+        ]
+        statusText.draw(
+            in: NSRect(x: textX, y: 30, width: isPasted ? maxWidth - 64 : maxWidth, height: 36),
+            withAttributes: titleAttributes
+        )
+
+        let preview = previewText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? "Listening..."
+            : previewText
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.lineBreakMode = .byTruncatingTail
+        let previewAttributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 18, weight: .medium),
+            .foregroundColor: NSColor.white.withAlphaComponent(0.84),
+            .paragraphStyle: paragraph
+        ]
+        preview.draw(
+            in: NSRect(x: textX, y: 78, width: maxWidth, height: 84),
+            withAttributes: previewAttributes
+        )
+
+        let hintAttributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 13, weight: .medium),
+            .foregroundColor: NSColor(calibratedRed: 1.0, green: 0.78, blue: 0.24, alpha: 0.72)
+        ]
+        let hint = isPasted ? "Ready for the next one" : hintText
+        hint.draw(
+            in: NSRect(x: textX, y: bounds.maxY - 38, width: maxWidth - 48, height: 18),
+            withAttributes: hintAttributes
+        )
     }
 
     private func drawText() {
@@ -262,12 +329,16 @@ private final class RecordingOverlayView: NSView {
     }
 }
 final class RecordingOverlayController {
+    private static let standardSize = NSSize(width: 360, height: 142)
+    private static let presenterSize = NSSize(width: 560, height: 220)
+
     private let panel: NSPanel
     private let overlayView: RecordingOverlayView
     private var isVisible = false
+    private var presenterMode = false
 
     init() {
-        let size = NSSize(width: 360, height: 142)
+        let size = Self.standardSize
         overlayView = RecordingOverlayView(frame: NSRect(origin: .zero, size: size))
         panel = NSPanel(
             contentRect: NSRect(origin: .zero, size: size),
@@ -291,8 +362,12 @@ final class RecordingOverlayController {
         statusText: String? = nil,
         contextText: String? = nil,
         previewText: String? = nil,
-        hintText: String? = nil
+        hintText: String? = nil,
+        presenterMode: Bool? = nil
     ) {
+        if let presenterMode {
+            setPresenterMode(presenterMode)
+        }
         overlayView.progressPercent = progressPercent
         if let statusText {
             overlayView.statusText = statusText
@@ -361,11 +436,36 @@ final class RecordingOverlayController {
         panel.setFrameOrigin(origin)
     }
 
+    func setPresenterMode(_ enabled: Bool) {
+        guard presenterMode != enabled || overlayView.presenterMode != enabled else {
+            return
+        }
+
+        presenterMode = enabled
+        overlayView.presenterMode = enabled
+        let size = enabled ? Self.presenterSize : Self.standardSize
+        overlayView.frame = NSRect(origin: .zero, size: size)
+
+        var frame = panel.frame
+        frame.size = size
+        panel.setFrame(frame, display: true)
+        positionPanel()
+    }
+
     func setProgress(_ progressPercent: Int?) {
         overlayView.progressPercent = progressPercent
     }
 
-    func setDetails(statusText: String, contextText: String, previewText: String, hintText: String = "Esc cancels") {
+    func setDetails(
+        statusText: String,
+        contextText: String,
+        previewText: String,
+        hintText: String = "Esc cancels",
+        presenterMode: Bool? = nil
+    ) {
+        if let presenterMode {
+            setPresenterMode(presenterMode)
+        }
         overlayView.statusText = statusText
         overlayView.contextText = contextText
         overlayView.previewText = previewText

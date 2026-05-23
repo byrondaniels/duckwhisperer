@@ -33,7 +33,7 @@ esac
 echo "Preparing whisper.cpp backend..."
 ./scripts/bootstrap_backend.sh
 
-echo "Building self-contained DuckWhisperer app with bundled Small English model..."
+echo "Building self-contained DuckWhisperer app with bundled Best Accuracy dictation..."
 BUNDLE_DEFAULT_MODEL=1 INSTALL_DEFAULT_MODEL=0 INSTALL_TRANSLATION=0 ./scripts/build_app.sh >/dev/null
 
 if [[ ! -f "$DEFAULT_MODEL" ]]; then
@@ -76,6 +76,6 @@ cat <<EOF
 Release package created in:
 $RELEASE_DIR
 
-This package includes the Small English speech model inside DuckWhisperer.app.
-French/Dutch translation remains optional and can be installed later from Model Explorer.
+This package includes Best Accuracy dictation inside DuckWhisperer.app.
+French/Dutch translation remains optional and can be installed later from Speed & Accuracy.
 EOF

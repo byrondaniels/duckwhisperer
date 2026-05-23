@@ -24,7 +24,7 @@ final class SetupDoctorController: NSObject {
         )
         super.init()
 
-        window.title = "DuckWhisperer Setup"
+        window.title = "Finish Setup"
         window.isReleasedWhenClosed = false
         buildWindow()
     }
@@ -44,11 +44,11 @@ final class SetupDoctorController: NSObject {
         contentView.translatesAutoresizingMaskIntoConstraints = false
         window.contentView = contentView
 
-        let title = NSTextField(labelWithString: "Setup Doctor")
+        let title = NSTextField(labelWithString: "Finish Setup")
         title.translatesAutoresizingMaskIntoConstraints = false
         title.font = .boldSystemFont(ofSize: 22)
 
-        let subtitle = NSTextField(labelWithString: "A quick check that recording, paste-back, models, and packaging are ready.")
+        let subtitle = NSTextField(labelWithString: "Make sure DuckWhisperer can listen, paste your words, and run privately on this Mac.")
         subtitle.translatesAutoresizingMaskIntoConstraints = false
         subtitle.font = .systemFont(ofSize: 13)
         subtitle.textColor = .secondaryLabelColor
@@ -101,22 +101,23 @@ final class SetupDoctorController: NSObject {
             view.removeFromSuperview()
         }
 
-        addRow(status: microphoneStatus(), actionTitle: "Microphone", action: #selector(openMicrophone))
+        addRow(status: microphoneStatus(), actionTitle: "Fix", action: #selector(openMicrophone))
         addRow(
-            status: AXIsProcessTrusted() ? "ok   Accessibility permission granted" : "warn Accessibility permission needed for auto-paste",
-            actionTitle: "Accessibility",
+            status: AXIsProcessTrusted() ? "ok   Paste-back is ready" : "warn Allow paste-back in System Settings",
+            actionTitle: "Fix",
             action: #selector(openAccessibility)
         )
         addRow(
-            status: ModelStore.isInstalled(ModelChoice.defaultChoice) ? "ok   Small English model installed" : "warn Small English model missing",
-            actionTitle: "Models",
+            status: ModelStore.isInstalled(ModelChoice.defaultChoice) ? "ok   Best Accuracy is ready" : "warn Download Best Accuracy before recording",
+            actionTitle: "Open",
             action: #selector(openModelExplorer)
         )
         addRow(
-            status: FileManager.default.fileExists(atPath: "/Applications/DuckWhisperer.app") ? "ok   App installed in /Applications" : "warn App not installed in /Applications",
+            status: FileManager.default.fileExists(atPath: "/Applications/DuckWhisperer.app") ? "ok   App is installed" : "warn Move DuckWhisperer to Applications",
             actionTitle: nil,
             action: nil
         )
+        addRow(status: "ok   Private: your voice stays on this Mac", actionTitle: nil, action: nil)
         addRow(status: signingStatus(), actionTitle: nil, action: nil)
     }
 
@@ -162,20 +163,20 @@ final class SetupDoctorController: NSObject {
     private func microphoneStatus() -> String {
         switch AVCaptureDevice.authorizationStatus(for: .audio) {
         case .authorized:
-            return "ok   Microphone permission granted"
+            return "ok   Microphone is ready"
         case .denied, .restricted:
-            return "fail Microphone permission blocked"
+            return "fail Microphone is blocked"
         case .notDetermined:
-            return "warn Microphone permission not requested yet"
+            return "warn Allow microphone access"
         @unknown default:
-            return "warn Microphone permission unknown"
+            return "warn Microphone needs attention"
         }
     }
 
     private func signingStatus() -> String {
         let appURL = URL(fileURLWithPath: "/Applications/DuckWhisperer.app")
         guard FileManager.default.fileExists(atPath: appURL.path) else {
-            return "warn Signing check skipped; app is not installed"
+            return "warn Install the app to finish setup"
         }
 
         let process = Process()
@@ -187,10 +188,10 @@ final class SetupDoctorController: NSObject {
             try process.run()
             process.waitUntilExit()
             return process.terminationStatus == 0
-                ? "ok   Installed app signature verifies"
-                : "warn Installed app signature needs attention"
+                ? "ok   App identity is stable"
+                : "warn App identity needs attention"
         } catch {
-            return "warn Could not run codesign check"
+            return "warn Could not check app identity"
         }
     }
 

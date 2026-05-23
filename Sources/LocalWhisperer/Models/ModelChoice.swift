@@ -23,6 +23,45 @@ struct ModelChoice: Equatable {
         URL(string: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/\(filename)")!
     }
 
+    var friendlyTitle: String {
+        switch id {
+        case "small-en":
+            return "Best Accuracy"
+        case "base-en":
+            return "Fast"
+        case "tiny-en":
+            return "Fastest"
+        default:
+            return title
+        }
+    }
+
+    var friendlyDetail: String {
+        switch id {
+        case "small-en":
+            return "recommended for everyday dictation"
+        case "base-en":
+            return "quicker, still solid"
+        case "tiny-en":
+            return "quick tests and short notes"
+        default:
+            return detail
+        }
+    }
+
+    var friendlyMenuTitle: String {
+        switch id {
+        case "small-en":
+            return "Best Accuracy - Recommended"
+        case "base-en":
+            return "Fast - Smaller Download"
+        case "tiny-en":
+            return "Fastest - Rough Drafts"
+        default:
+            return title
+        }
+    }
+
     static let all: [ModelChoice] = [
         ModelChoice(
             id: "small-en",
