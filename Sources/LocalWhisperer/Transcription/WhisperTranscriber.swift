@@ -3,6 +3,7 @@ import whisper
 
 final class WhisperTranscriber {
     private var modelURL: URL
+    private var languageCode = "en"
     private var context: OpaquePointer?
     private let lock = NSLock()
 
@@ -29,6 +30,13 @@ final class WhisperTranscriber {
             self.context = nil
         }
         modelURL = newModelURL
+    }
+
+    func setLanguageCode(_ newLanguageCode: String) {
+        lock.lock()
+        defer { lock.unlock() }
+
+        languageCode = newLanguageCode
     }
 
     func transcribe(samples: [Float], initialPrompt: String? = nil, singleSegment: Bool = false) throws -> String {
@@ -58,7 +66,7 @@ final class WhisperTranscriber {
         let runTranscription: (UnsafePointer<CChar>?) -> Int32 = { promptPointer in
             params.initial_prompt = promptPointer
 
-            let language = "en"
+            let language = self.languageCode
             return language.withCString { languagePointer in
                 params.language = languagePointer
                 params.detect_language = false

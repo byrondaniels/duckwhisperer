@@ -2,7 +2,7 @@
 
 Private Mac dictation that feels like a normal app.
 
-Press `Option+Space`, talk, press `Option+Space` again, and DuckWhisperer pastes your words into the app you were already using. Transcription runs locally on your Mac, so your voice stays on your machine. It can output English, French, Dutch, British, Gen Z, Alien, Cowboy, Pirate, Robot, Shakespeare, or a ridiculous Duck mode.
+Press `Option+Space`, talk, press `Option+Space` again, and DuckWhisperer pastes your words into the app you were already using. Transcription runs locally on your Mac, so your voice stays on your machine. It can listen in English by default, with optional local input support for Spanish, French, Tagalog, and other common languages. It can output English, French, Dutch, British, Gen Z, Alien, Cowboy, Pirate, Robot, Shakespeare, or a ridiculous Duck mode.
 
 ## Quick Start
 
@@ -18,7 +18,7 @@ If you have a packaged release:
 Use `Option+Space` once to start recording and `Option+Space` again to stop, transcribe, and paste.
 Press `Escape` while recording or transcribing to cancel without pasting.
 
-Open the menu-bar duck for `Try It Here`, `Undo Last Paste`, `Language`, `Writing Style`, `Speed & Accuracy`, `History`, and `Settings`.
+Open the menu-bar duck for `Try It Here`, `Undo Last Paste`, `Input Language`, `Language`, `Writing Style`, `Speed & Accuracy`, `History`, and `Settings`.
 
 ## Fresh Machine Setup
 
@@ -142,7 +142,8 @@ Run the full local verification loop before pushing changes:
 - Active dictation cancel shortcut: `Escape`
 - Built-in `Try It Here` window for first-run testing
 - `Undo Last Paste` for fast recovery when text lands in the wrong place
-- Local English speech transcription
+- Local speech transcription with lazy input-language downloads
+- Built-in input choices for English, Spanish, French, Tagalog, Chinese, Hindi, Arabic, Bengali, Portuguese, Russian, Urdu, Indonesian, German, Japanese, Korean, Turkish, Vietnamese, Italian, Polish, and Dutch
 - Optional English -> French and English -> Dutch local output translation
 - Built-in British, Gen Z, Alien, Cowboy, Pirate, Robot, Shakespeare, and Duck style modes
 - Writing profiles: Smart Clean, Raw Dictation, Clean Email, Slack Casual, Meeting Notes, Code Prompt, and Bullet Notes
@@ -162,6 +163,12 @@ Run the full local verification loop before pushing changes:
 - `Preserve Capitalization` toggle
 - Fallback transcript window when macOS does not allow auto-paste
 
+## Input Languages
+
+English input uses the smaller English-only Whisper models. Non-English input uses the matching multilingual Whisper model for the selected speed. DuckWhisperer does not download every language up front; the first non-English language you choose prompts for one shared multilingual model for that speed, and that model unlocks the other non-English input languages.
+
+Input language controls what language you speak. The `Language` menu controls output mode, such as English, French, Dutch, British, Gen Z, Alien, Cowboy, Pirate, Robot, Shakespeare, or Duck.
+
 ## Models
 
 No speech model is committed to Git. Normal source builds keep speech models outside the app bundle in Application Support. Release packages created by `./scripts/package_release.sh` bundle `Best Accuracy` inside `DuckWhisperer.app` so a fresh Mac can transcribe English without a separate model download.
@@ -177,6 +184,12 @@ Optional models:
 - `Fast`, internally `Base English`, about 148.0 MB
 - `Fastest`, internally `Tiny English`, about 77.7 MB
 
+Non-English input model sizes:
+
+- `Best Accuracy`, internally `Small multilingual`, about 488.0 MB
+- `Fast`, internally `Base multilingual`, about 148.0 MB
+- `Fastest`, internally `Tiny multilingual`, about 77.7 MB
+
 Downloaded models are stored in:
 
 ```text
@@ -185,9 +198,9 @@ Downloaded models are stored in:
 
 ## Translation
 
-Input speech is always treated as English. Output can be English, French, Dutch, British, Gen Z, Alien, Cowboy, Pirate, Robot, Shakespeare, or Duck.
+Output can be English, French, Dutch, British, Gen Z, Alien, Cowboy, Pirate, Robot, Shakespeare, or Duck.
 
-French and Dutch output use local Argos Translate packages. Install them from `Speed & Accuracy`, or run:
+French and Dutch output translation currently assumes English input and uses local Argos Translate packages. Install them from `Speed & Accuracy`, or run:
 
 ```bash
 ./scripts/setup_local_translation.sh

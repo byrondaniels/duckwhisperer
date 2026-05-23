@@ -4,6 +4,7 @@ let hotKeySignature = fourCharCode("LWSP")
 let recordHotKeyIdentifier: UInt32 = 1
 let cancelHotKeyIdentifier: UInt32 = 3
 let selectedModelIDKey = "SelectedModelID"
+let selectedInputLanguageIDKey = "SelectedInputLanguageID"
 let selectedOutputLanguageIDKey = "SelectedOutputLanguageID"
 let selectedWritingProfileIDKey = "SelectedWritingProfileID"
 let preserveCapitalizationKey = "PreserveCapitalization"

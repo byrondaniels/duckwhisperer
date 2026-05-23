@@ -8,6 +8,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     private let menu = NSMenu()
     private let modelMenu = NSMenu()
+    private let inputLanguageMenu = NSMenu()
     private let outputMenu = NSMenu()
     private let profileMenu = NSMenu()
     private let performanceMenu = NSMenu()
@@ -68,6 +69,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     private var activeTranscriptionID: UUID?
     private var recordingStartedAt: Date?
     private var activeAppName: String?
+    private var activeInputLanguage: InputLanguageChoice?
     private var activeOutputLanguage: OutputLanguage?
     private var activeWritingProfile: WritingProfile?
     private var activeModelChoice: ModelChoice?
@@ -75,10 +77,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     private var lastUndoTarget: PasteTarget?
     private var canUndoLastPaste = false
     private var lastPasteWasTryIt = false
+    private var downloadingSpeechModelKeys = Set<String>()
 
     private var selectedModel: ModelChoice {
-        let choice = ModelChoice.choice(for: UserDefaults.standard.string(forKey: selectedModelIDKey))
-        return ModelStore.isInstalled(choice) ? choice : ModelChoice.defaultChoice
+        ModelChoice.choice(for: UserDefaults.standard.string(forKey: selectedModelIDKey))
+    }
+
+    private var selectedInputLanguage: InputLanguageChoice {
+        InputLanguageChoice.choice(for: UserDefaults.standard.string(forKey: selectedInputLanguageIDKey))
     }
 
     private var selectedOutputLanguage: OutputLanguage {
@@ -109,7 +115,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     }
 
     private var modelURL: URL {
-        ModelStore.installedURL(for: selectedModel)
+        ModelStore.installedURL(for: selectedModel, inputLanguage: selectedInputLanguage)
+            ?? ModelStore.installedURL(for: selectedModel)
             ?? ModelStore.installedURL(for: ModelChoice.defaultChoice)
             ?? ModelStore.bundledURL(for: ModelChoice.defaultChoice)
     }
@@ -120,6 +127,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         AppLog.write("launched \(buildMarker); axTrusted=\(AXIsProcessTrusted())")
 
         setupMenu()
+        transcriber.setLanguageCode(selectedInputLanguage.whisperCode)
         requestMicrophoneAccess()
         startPermissionRefreshTimer()
 
@@ -135,12 +143,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         }
 
         if hotKeyStatus == noErr {
-            if ModelStore.isInstalled(selectedModel) {
+            if ModelStore.isInstalled(selectedModel, inputLanguage: selectedInputLanguage) {
                 setState(.ready)
                 preloadModel()
             } else {
-                setState(.error("Download Best Accuracy from Speed & Accuracy before recording."))
-                showModelExplorer()
+                setState(.error("Choose Input Language or Speed & Accuracy to download speech support."))
             }
         } else {
             setState(.error(LocalWhispererError.hotKeyFailed(hotKeyStatus).localizedDescription))
@@ -240,6 +247,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         menu.addItem(undoLastPasteMenuItem)
         menu.addItem(copyLastMenuItem)
         menu.addItem(historyMenuItem())
+        menu.addItem(inputLanguageMenuItem())
         menu.addItem(outputMenuItem())
         menu.addItem(profileMenuItem())
         menu.addItem(performanceMenuItem())
@@ -280,6 +288,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         rebuildPreserveCapitalizationMenuItem()
         rebuildAudioDuckingMenuItem()
         rebuildPresenterModeMenuItem()
+        rebuildInputLanguageMenu()
         rebuildOutputMenu()
         rebuildProfileMenu()
         rebuildPerformanceMenu()
@@ -307,6 +316,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             return state != .transcribing
         }
         return menuItem.isEnabled
+    }
+
+    private func inputLanguageMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(title: "Input Language", action: nil, keyEquivalent: "")
+        item.submenu = inputLanguageMenu
+        return item
     }
 
     private func outputMenuItem() -> NSMenuItem {
@@ -351,6 +366,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         return item
     }
 
+    private func rebuildInputLanguageMenu() {
+        inputLanguageMenu.removeAllItems()
+        let current = selectedInputLanguage
+        let model = selectedModel
+
+        for language in InputLanguageChoice.all {
+            let asset = model.asset(for: language)
+            let installed = ModelStore.isInstalled(model, inputLanguage: language)
+            let suffix: String
+            if downloadingSpeechModelKeys.contains(asset.filename) {
+                suffix = " - downloading..."
+            } else {
+                suffix = installed ? "" : " - downloads \(asset.downloadSizeText)"
+            }
+            let item = NSMenuItem(title: "\(language.title)\(suffix)", action: #selector(selectInputLanguage(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = language.id
+            item.state = language == current ? .on : .off
+            item.isEnabled = !downloadingSpeechModelKeys.contains(asset.filename)
+            inputLanguageMenu.addItem(item)
+        }
+    }
+
     private func rebuildOutputMenu() {
         outputMenu.removeAllItems()
         let current = selectedOutputLanguage
@@ -379,6 +417,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
 
     private func rebuildPerformanceMenu() {
         performanceMenu.removeAllItems()
+        let inputLanguage = selectedInputLanguage
         let mappings: [(title: String, model: ModelChoice)] = [
             (ModelChoice.choice(for: "tiny-en").friendlyMenuTitle, ModelChoice.choice(for: "tiny-en")),
             (ModelChoice.choice(for: "base-en").friendlyMenuTitle, ModelChoice.choice(for: "base-en")),
@@ -386,7 +425,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         ]
 
         for mapping in mappings {
-            let installed = ModelStore.isInstalled(mapping.model)
+            let installed = ModelStore.isInstalled(mapping.model, inputLanguage: inputLanguage)
             let title = installed ? mapping.title : "\(mapping.title) - not installed"
             let item = NSMenuItem(
                 title: title,
@@ -478,6 +517,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     private func rebuildModelMenu() {
         modelMenu.removeAllItems()
         let current = selectedModel
+        let inputLanguage = selectedInputLanguage
 
         let explorerItem = NSMenuItem(title: "Open Speed & Accuracy...", action: #selector(openModelExplorer(_:)), keyEquivalent: "")
         explorerItem.target = self
@@ -485,7 +525,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         modelMenu.addItem(NSMenuItem.separator())
 
         for choice in ModelChoice.all {
-            let exists = ModelStore.isInstalled(choice)
+            let exists = ModelStore.isInstalled(choice, inputLanguage: inputLanguage)
             let title = exists
                 ? "\(choice.friendlyMenuTitle) - \(choice.friendlyDetail)"
                 : "\(choice.friendlyMenuTitle) - not installed"
@@ -550,6 +590,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         rebuildPreserveCapitalizationMenuItem()
         rebuildAudioDuckingMenuItem()
         rebuildPresenterModeMenuItem()
+        rebuildInputLanguageMenu()
         rebuildProfileMenu()
         rebuildPerformanceMenu()
         rebuildHistoryMenu()
@@ -606,9 +647,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
 
     private func overlayContextText() -> String {
         let model = activeModelChoice ?? selectedModel
+        let inputLanguage = activeInputLanguage ?? selectedInputLanguage
         let profile = activeWritingProfile ?? selectedWritingProfile
         let language = activeOutputLanguage ?? selectedOutputLanguage
-        return "\(model.title) • \(profile.title) • \(language.title)"
+        return "\(model.friendlyTitle) • \(inputLanguage.title) input • \(profile.title) • \(language.title)"
     }
 
     private func elapsedText(_ elapsed: TimeInterval) -> String {
@@ -631,7 +673,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         let permissionSuffix = hasAutoPastePermission ? "" : " - Paste-Back Needs Permission"
         statusItem.button?.toolTip = "\(appDisplayName): \(state.statusText)\(permissionSuffix)"
         let formattingText = preserveCapitalization ? "Caps On" : "Caps Off"
-        statusMenuItem.title = "\(state.statusText)\(permissionSuffix) - \(selectedModel.friendlyTitle) -> \(selectedOutputLanguage.title) - \(selectedWritingProfile.title) - \(formattingText)"
+        statusMenuItem.title = "\(state.statusText)\(permissionSuffix) - \(selectedModel.friendlyTitle) - \(selectedInputLanguage.title) input -> \(selectedOutputLanguage.title) - \(selectedWritingProfile.title) - \(formattingText)"
     }
 
     private func requestMicrophoneAccess() {
@@ -677,28 +719,132 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             return
         }
 
-        guard let modelURL = ModelStore.installedURL(for: choice) else {
+        let inputLanguage = selectedInputLanguage
+        guard let modelURL = ModelStore.installedURL(for: choice, inputLanguage: inputLanguage) else {
             showModelExplorer()
             return
         }
 
         UserDefaults.standard.set(choice.id, forKey: selectedModelIDKey)
+        transcriber.setLanguageCode(inputLanguage.whisperCode)
         transcriber.setModelURL(modelURL)
+        rebuildInputLanguageMenu()
         rebuildModelMenu()
-        modelExplorer.refresh(currentModel: selectedModel)
+        modelExplorer.refresh(currentModel: selectedModel, inputLanguage: selectedInputLanguage)
         setState(.ready)
         preloadModel()
     }
 
     private func handleModelsChanged() {
+        let inputLanguage = selectedInputLanguage
         rebuildModelMenu()
-        modelExplorer.refresh(currentModel: selectedModel)
-        if ModelStore.isInstalled(selectedModel) {
+        modelExplorer.refresh(currentModel: selectedModel, inputLanguage: inputLanguage)
+        if ModelStore.isInstalled(selectedModel, inputLanguage: inputLanguage) {
             setState(.ready)
             preloadModel()
         } else {
             setState(state)
         }
+    }
+
+    @objc private func selectInputLanguage(_ sender: NSMenuItem) {
+        guard state != .recording, state != .transcribing else {
+            NSSound.beep()
+            return
+        }
+
+        guard let id = sender.representedObject as? String else {
+            return
+        }
+
+        let language = InputLanguageChoice.choice(for: id)
+        ensureSpeechModel(for: selectedModel, inputLanguage: language) { [weak self] in
+            self?.applyInputLanguage(language)
+        }
+    }
+
+    private func applyInputLanguage(_ language: InputLanguageChoice) {
+        guard let modelURL = ModelStore.installedURL(for: selectedModel, inputLanguage: language) else {
+            setState(.error("Download \(language.title) input support before recording."))
+            NSSound.beep()
+            return
+        }
+
+        UserDefaults.standard.set(language.id, forKey: selectedInputLanguageIDKey)
+        transcriber.setLanguageCode(language.whisperCode)
+        transcriber.setModelURL(modelURL)
+        rebuildInputLanguageMenu()
+        rebuildPerformanceMenu()
+        rebuildModelMenu()
+        modelExplorer.refresh(currentModel: selectedModel, inputLanguage: language)
+        setState(.ready)
+        preloadModel()
+    }
+
+    private func ensureSpeechModel(
+        for choice: ModelChoice,
+        inputLanguage: InputLanguageChoice,
+        completion: @escaping () -> Void
+    ) {
+        if ModelStore.isInstalled(choice, inputLanguage: inputLanguage) {
+            completion()
+            return
+        }
+
+        let asset = choice.asset(for: inputLanguage)
+        let key = asset.filename
+        guard !downloadingSpeechModelKeys.contains(key) else {
+            NSSound.beep()
+            return
+        }
+
+        let alert = NSAlert()
+        alert.messageText = "Download \(inputLanguage.title) input support?"
+        let unlockText = inputLanguage.isEnglish
+            ? "This downloads \(asset.downloadSizeText) once for English dictation."
+            : "This downloads \(asset.downloadSizeText) once and also unlocks the other non-English input languages for this speed."
+        alert.informativeText = "DuckWhisperer needs the \(choice.languageScopeText(for: inputLanguage)) for \(choice.friendlyTitle). \(unlockText)"
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "Download")
+        alert.addButton(withTitle: "Cancel")
+
+        guard alert.runModal() == .alertFirstButtonReturn else {
+            rebuildInputLanguageMenu()
+            return
+        }
+
+        downloadingSpeechModelKeys.insert(key)
+        setState(.error("Downloading \(inputLanguage.title) input support..."))
+
+        URLSession.shared.downloadTask(with: choice.downloadURL(for: inputLanguage)) { [weak self] temporaryURL, response, error in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                self.downloadingSpeechModelKeys.remove(key)
+
+                do {
+                    if let error {
+                        throw LocalWhispererError.modelDownloadFailed(error.localizedDescription)
+                    }
+                    if let response = response as? HTTPURLResponse,
+                       !(200...299).contains(response.statusCode) {
+                        throw LocalWhispererError.modelDownloadFailed("HTTP \(response.statusCode) while downloading \(asset.filename).")
+                    }
+                    guard let temporaryURL else {
+                        throw LocalWhispererError.modelDownloadFailed("No downloaded file was returned.")
+                    }
+
+                    try ModelStore.installDownloadedModel(from: temporaryURL, for: choice, inputLanguage: inputLanguage)
+                    completion()
+                } catch {
+                    self.setState(.error(error.localizedDescription))
+                    NSSound.beep()
+                }
+
+                self.rebuildInputLanguageMenu()
+                self.rebuildPerformanceMenu()
+                self.rebuildModelMenu()
+            }
+        }.resume()
     }
 
     @objc private func selectOutputLanguage(_ sender: NSMenuItem) {
@@ -831,6 +977,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             recordingStartedAt = nil
             audioDucker.restore()
             activeCommandName = nil
+            activeInputLanguage = nil
             AppLog.write("recording cancelled with Escape")
             setState(.ready)
         case .transcribing:
@@ -840,6 +987,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             stopTranscriptionProgress()
             audioDucker.restore()
             activeCommandName = nil
+            activeInputLanguage = nil
             AppLog.write("transcription cancelled with Escape")
             setState(.ready)
         case .ready, .error:
@@ -848,9 +996,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     }
 
     private func startRecording() {
-        guard ModelStore.isInstalled(selectedModel) else {
-            setState(.error("Download a dictation speed from Speed & Accuracy before recording."))
-            showModelExplorer()
+        let inputLanguage = selectedInputLanguage
+        guard let activeModelURL = ModelStore.installedURL(for: selectedModel, inputLanguage: inputLanguage) else {
+            ensureSpeechModel(for: selectedModel, inputLanguage: inputLanguage) { [weak self] in
+                self?.applyInputLanguage(inputLanguage)
+            }
             NSSound.beep()
             return
         }
@@ -870,6 +1020,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             activeOutputLanguage = selectedOutputLanguage
             activeWritingProfile = selectedWritingProfile
             activeModelChoice = selectedModel
+            activeInputLanguage = inputLanguage
+            transcriber.setLanguageCode(inputLanguage.whisperCode)
+            transcriber.setModelURL(activeModelURL)
             try audioCapture.start()
             recordingStartedAt = Date()
             audioDucker.duckIfNeeded(enabled: audioDuckingEnabled)
@@ -890,7 +1043,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         }
 
         let model = ModelChoice.choice(for: appDefault.modelID)
-        if let modelURL = ModelStore.installedURL(for: model) {
+        if let modelURL = ModelStore.installedURL(for: model, inputLanguage: selectedInputLanguage) {
             UserDefaults.standard.set(model.id, forKey: selectedModelIDKey)
             transcriber.setModelURL(modelURL)
             rebuildModelMenu()
@@ -924,6 +1077,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         activeTranscriptionID = transcriptionID
         setState(.transcribing)
         startTranscriptionProgress(audioDuration: Double(samples.count) / Double(WHISPER_SAMPLE_RATE))
+        let inputLanguage = activeInputLanguage ?? selectedInputLanguage
         let outputLanguage = activeOutputLanguage ?? selectedOutputLanguage
         let writingProfile = activeWritingProfile ?? selectedWritingProfile
         let modelChoice = activeModelChoice ?? selectedModel
@@ -945,10 +1099,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                 )
                 let dictionaryOutput = PersonalDictionary.apply(dictionaryEntries, to: commandResult.text)
                 let translatedOutput: String
-                do {
-                    translatedOutput = try LocalTranslator.translate(dictionaryOutput, to: commandResult.outputLanguage)
-                } catch {
-                    AppLog.write("translation failed for \(commandResult.outputLanguage.title); falling back to English transcript: \(error.localizedDescription)")
+                if inputLanguage.isEnglish {
+                    do {
+                        translatedOutput = try LocalTranslator.translate(dictionaryOutput, to: commandResult.outputLanguage)
+                    } catch {
+                        AppLog.write("translation failed for \(commandResult.outputLanguage.title); falling back to English transcript: \(error.localizedDescription)")
+                        translatedOutput = dictionaryOutput
+                    }
+                } else {
                     translatedOutput = dictionaryOutput
                 }
                 let languageOutput = self.applyLanguageOutput(to: translatedOutput, outputLanguage: commandResult.outputLanguage)
@@ -1416,7 +1574,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             AppLog.write("presenting model explorer after menu close")
-            self.modelExplorer.show(currentModel: self.selectedModel)
+            self.modelExplorer.show(currentModel: self.selectedModel, inputLanguage: self.selectedInputLanguage)
         }
     }
 

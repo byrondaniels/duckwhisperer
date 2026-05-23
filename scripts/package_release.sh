@@ -77,5 +77,5 @@ Release package created in:
 $RELEASE_DIR
 
 This package includes Best Accuracy dictation inside DuckWhisperer.app.
-French/Dutch translation remains optional and can be installed later from Speed & Accuracy.
+Non-English input models and French/Dutch translation remain optional and install only after user approval.
 EOF

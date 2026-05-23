@@ -12,9 +12,10 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
     private let documentView = FlippedDocumentView()
     private let stackView = NSStackView()
     private var currentModel: ModelChoice
+    private var currentInputLanguage: InputLanguageChoice
     private let onUseModel: (ModelChoice) -> Void
     private let onModelsChanged: () -> Void
-    private var downloadingModelIDs = Set<String>()
+    private var downloadingModelKeys = Set<String>()
     private var installingTranslationPackIDs = Set<String>()
 
     init(
@@ -23,6 +24,7 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
         onModelsChanged: @escaping () -> Void
     ) {
         self.currentModel = currentModel
+        self.currentInputLanguage = .defaultChoice
         self.onUseModel = onUseModel
         self.onModelsChanged = onModelsChanged
 
@@ -44,8 +46,9 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
         rebuild()
     }
 
-    func show(currentModel: ModelChoice) {
+    func show(currentModel: ModelChoice, inputLanguage: InputLanguageChoice) {
         self.currentModel = currentModel
+        self.currentInputLanguage = inputLanguage
         rebuild()
         scrollToTop()
 
@@ -69,8 +72,9 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
         NSApp.setActivationPolicy(.accessory)
     }
 
-    func refresh(currentModel: ModelChoice) {
+    func refresh(currentModel: ModelChoice, inputLanguage: InputLanguageChoice) {
         self.currentModel = currentModel
+        self.currentInputLanguage = inputLanguage
         rebuild()
     }
 
@@ -134,6 +138,13 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
             view.removeFromSuperview()
         }
 
+        let inputText = makeLabel(
+            "Input: \(currentInputLanguage.title). Non-English input uses a shared multilingual model, downloaded only after approval.",
+            font: .systemFont(ofSize: 12),
+            color: .secondaryLabelColor
+        )
+        addFullWidthRow(inputText)
+
         addSectionTitle("Dictation Speed")
         for choice in ModelChoice.all {
             addFullWidthRow(makeModelRow(for: choice))
@@ -185,7 +196,7 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
         let titleLabel = makeLabel(title, font: .boldSystemFont(ofSize: 14))
         let detailLabel = makeLabel(choice.friendlyDetail, font: .systemFont(ofSize: 12), color: .secondaryLabelColor)
         let statusLabel = makeLabel(
-            "\(choice.diskSizeText) · \(statusText(for: choice))",
+            "\(choice.diskSizeText(for: currentInputLanguage)) · \(choice.languageScopeText(for: currentInputLanguage)) · \(statusText(for: choice))",
             font: .systemFont(ofSize: 12),
             color: .secondaryLabelColor
         )
@@ -317,30 +328,30 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
     }
 
     private func statusText(for choice: ModelChoice) -> String {
-        if downloadingModelIDs.contains(choice.id) {
+        if downloadingModelKeys.contains(downloadKey(for: choice)) {
             return "Downloading..."
         }
-        if ModelStore.installedURL(for: choice) != nil {
+        if ModelStore.installedURL(for: choice, inputLanguage: currentInputLanguage) != nil {
             return "Installed"
         }
         return "Not installed"
     }
 
     private func actionTitle(for choice: ModelChoice) -> String {
-        if downloadingModelIDs.contains(choice.id) {
+        if downloadingModelKeys.contains(downloadKey(for: choice)) {
             return "Downloading..."
         }
-        guard ModelStore.isInstalled(choice) else {
+        guard ModelStore.isInstalled(choice, inputLanguage: currentInputLanguage) else {
             return "Download"
         }
         return choice == currentModel ? "Selected" : "Use"
     }
 
     private func canAct(on choice: ModelChoice) -> Bool {
-        if downloadingModelIDs.contains(choice.id) {
+        if downloadingModelKeys.contains(downloadKey(for: choice)) {
             return false
         }
-        if ModelStore.isInstalled(choice), choice == currentModel {
+        if ModelStore.isInstalled(choice, inputLanguage: currentInputLanguage), choice == currentModel {
             return false
         }
         return true
@@ -370,7 +381,7 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
         }
         let choice = ModelChoice.choice(for: id)
 
-        if ModelStore.isInstalled(choice) {
+        if ModelStore.isInstalled(choice, inputLanguage: currentInputLanguage) {
             currentModel = choice
             onUseModel(choice)
             rebuild()
@@ -391,9 +402,14 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
     }
 
     private func confirmAndDownload(_ choice: ModelChoice) {
+        let inputLanguage = currentInputLanguage
+        let asset = choice.asset(for: inputLanguage)
         let alert = NSAlert()
         alert.messageText = "Download \(choice.friendlyTitle)?"
-        alert.informativeText = "This adds \(choice.downloadSizeText) of local dictation data. Nothing downloads unless you choose Download."
+        let unlockText = inputLanguage.isEnglish
+            ? "This adds English dictation data."
+            : "This adds the shared multilingual dictation data for \(inputLanguage.title) and the other non-English input languages."
+        alert.informativeText = "\(unlockText) Download size: \(asset.downloadSizeText). Nothing downloads unless you choose Download."
         alert.alertStyle = .informational
         alert.addButton(withTitle: "Download")
         alert.addButton(withTitle: "Cancel")
@@ -402,13 +418,14 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
             return
         }
 
-        downloadingModelIDs.insert(choice.id)
+        let key = downloadKey(for: choice)
+        downloadingModelKeys.insert(key)
         rebuild()
 
-        URLSession.shared.downloadTask(with: choice.downloadURL) { [weak self] temporaryURL, response, error in
+        URLSession.shared.downloadTask(with: choice.downloadURL(for: inputLanguage)) { [weak self] temporaryURL, response, error in
             DispatchQueue.main.async {
                 guard let self else { return }
-                self.downloadingModelIDs.remove(choice.id)
+                self.downloadingModelKeys.remove(key)
 
                 do {
                     if let error {
@@ -416,12 +433,12 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
                     }
                     if let response = response as? HTTPURLResponse,
                        !(200...299).contains(response.statusCode) {
-                        throw LocalWhispererError.modelDownloadFailed("HTTP \(response.statusCode) while downloading \(choice.filename).")
+                        throw LocalWhispererError.modelDownloadFailed("HTTP \(response.statusCode) while downloading \(asset.filename).")
                     }
                     guard let temporaryURL else {
                         throw LocalWhispererError.modelDownloadFailed("No downloaded file was returned.")
                     }
-                    try ModelStore.installDownloadedModel(from: temporaryURL, for: choice)
+                    try ModelStore.installDownloadedModel(from: temporaryURL, for: choice, inputLanguage: inputLanguage)
                     self.currentModel = choice
                     self.onUseModel(choice)
                     self.onModelsChanged()
@@ -432,6 +449,10 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
                 self.rebuild()
             }
         }.resume()
+    }
+
+    private func downloadKey(for choice: ModelChoice) -> String {
+        choice.filename(for: currentInputLanguage)
     }
 
     private func confirmAndInstall(_ pack: TranslationPackChoice) {

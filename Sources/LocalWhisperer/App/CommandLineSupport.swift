@@ -25,6 +25,13 @@ func runSmokeTranscriptionIfRequested() {
         } else {
             outputLanguageID = nil
         }
+        let inputLanguageID: String?
+        if let inputIndex = arguments.firstIndex(of: "--input-language"),
+           arguments.indices.contains(inputIndex + 1) {
+            inputLanguageID = arguments[inputIndex + 1]
+        } else {
+            inputLanguageID = nil
+        }
         let writingProfileID: String?
         if let profileIndex = arguments.firstIndex(of: "--writing-profile"),
            arguments.indices.contains(profileIndex + 1) {
@@ -33,15 +40,22 @@ func runSmokeTranscriptionIfRequested() {
             writingProfileID = nil
         }
         let choice = ModelChoice.choice(for: modelID)
+        let inputLanguage = InputLanguageChoice.choice(for: inputLanguageID)
         let outputLanguage = OutputLanguage.choice(for: outputLanguageID)
         let writingProfile = WritingProfile.choice(for: writingProfileID)
-        guard let modelURL = ModelStore.installedURL(for: choice) else {
-            throw LocalWhispererError.modelMissing(ModelStore.userURL(for: choice).path)
+        guard let modelURL = ModelStore.installedURL(for: choice, inputLanguage: inputLanguage) else {
+            throw LocalWhispererError.modelMissing(ModelStore.userURL(for: choice, inputLanguage: inputLanguage).path)
         }
         let transcriber = WhisperTranscriber(modelURL: modelURL)
+        transcriber.setLanguageCode(inputLanguage.whisperCode)
         let samples = try AudioCapture.samples(from: audioURL)
         let transcript = try transcriber.transcribe(samples: samples)
-        let translatedOutput = try LocalTranslator.translate(transcript, to: outputLanguage)
+        let translatedOutput: String
+        if inputLanguage.isEnglish {
+            translatedOutput = try LocalTranslator.translate(transcript, to: outputLanguage)
+        } else {
+            translatedOutput = transcript
+        }
         let output: String
         if translatedOutput.unicodeScalars.contains(where: { CharacterSet.alphanumerics.contains($0) }) {
             switch outputLanguage.id {
