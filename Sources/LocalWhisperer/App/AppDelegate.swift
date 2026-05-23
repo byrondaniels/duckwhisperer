@@ -4,7 +4,7 @@ import AVFoundation
 import Foundation
 import whisper
 
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemValidation {
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     private let menu = NSMenu()
     private let modelMenu = NSMenu()
@@ -196,6 +196,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func setupMenu() {
+        menu.delegate = self
         statusItem.button?.title = ""
         statusItem.button?.image = DuckIcon.menuBarImage()
         statusItem.button?.imagePosition = .imageOnly
@@ -285,6 +286,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         rebuildAppDefaultsMenu()
         rebuildModelMenu()
         refreshPermissionUI()
+    }
+
+    func menuWillOpen(_ menu: NSMenu) {
+        refreshPermissionUI()
+    }
+
+    func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        if menuItem === autoPastePermissionMenuItem {
+            return !AXIsProcessTrusted()
+        }
+        if menuItem === undoLastPasteMenuItem {
+            return canUndoLastPaste
+        }
+        if menuItem === copyLastMenuItem {
+            return !lastTranscript.isEmpty
+        }
+        if menuItem === toggleMenuItem {
+            return state != .transcribing
+        }
+        return menuItem.isEnabled
     }
 
     private func outputMenuItem() -> NSMenuItem {
@@ -594,6 +615,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         autoPastePermissionMenuItem.title = permissionStatus
         autoPastePermissionMenuItem.state = hasAutoPastePermission ? .on : .off
         autoPastePermissionMenuItem.isEnabled = !hasAutoPastePermission
+        autoPastePermissionMenuItem.target = hasAutoPastePermission ? nil : self
+        autoPastePermissionMenuItem.action = hasAutoPastePermission ? nil : #selector(openAccessibilitySettings)
         autoPastePermissionMenuItem.toolTip = hasAutoPastePermission
             ? "DuckWhisperer can paste transcripts back into the target app."
             : "DuckWhisperer needs paste-back permission to put text into other apps."
