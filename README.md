@@ -18,7 +18,7 @@ If you have a packaged release:
 Use `Option+Space` once to start recording and `Option+Space` again to stop, transcribe, and paste.
 Press `Escape` while recording or transcribing to cancel without pasting.
 
-Open the menu-bar duck for `Try It Here`, `Undo Last Paste`, `Input Language`, `Language`, `Writing Style`, `Speed & Accuracy`, `History`, and `Settings`.
+Open the menu-bar duck for `Try It Here`, `Undo Last Paste`, `I Speak`, `Output`, `Writing Style`, `Speed & Accuracy`, `History`, and `Settings`.
 
 ## Fresh Machine Setup
 
@@ -165,9 +165,9 @@ Run the full local verification loop before pushing changes:
 
 ## Input Languages
 
-English input uses the smaller English-only Whisper models. Non-English input uses the matching multilingual Whisper model for the selected speed. DuckWhisperer does not download every language up front; the first non-English language you choose prompts for one shared multilingual model for that speed, and that model unlocks the other non-English input languages.
+English input uses the smaller English-only language file. Non-English input uses one extra local language file for the selected speed. DuckWhisperer does not download every language up front; the first non-English language you choose asks for approval, then unlocks the other non-English input languages for that speed.
 
-Input language controls what language you speak. The `Language` menu controls what text comes back. `Same as Input` keeps Spanish speech as Spanish text, French speech as French text, and so on. Choosing `English` while speaking a non-English input language uses Whisper's local speech-translation mode to return English text.
+`I Speak` controls what language you speak. `Output` controls what text comes back. `Same as Input` keeps Spanish speech as Spanish text, French speech as French text, and so on. Choosing `English` while speaking a non-English input language uses Whisper's local speech-translation mode to return English text.
 
 ## Models
 
@@ -184,11 +184,11 @@ Optional models:
 - `Fast`, internally `Base English`, about 148.0 MB
 - `Fastest`, internally `Tiny English`, about 77.7 MB
 
-Non-English input model sizes:
+Extra language file sizes:
 
-- `Best Accuracy`, internally `Small multilingual`, about 488.0 MB
-- `Fast`, internally `Base multilingual`, about 148.0 MB
-- `Fastest`, internally `Tiny multilingual`, about 77.7 MB
+- `Best Accuracy`, about 488.0 MB
+- `Fast`, about 148.0 MB
+- `Fastest`, about 77.7 MB
 
 Downloaded models are stored in:
 

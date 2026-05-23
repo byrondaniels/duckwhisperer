@@ -319,13 +319,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     }
 
     private func inputLanguageMenuItem() -> NSMenuItem {
-        let item = NSMenuItem(title: "Input Language", action: nil, keyEquivalent: "")
+        let item = NSMenuItem(title: "I Speak", action: nil, keyEquivalent: "")
         item.submenu = inputLanguageMenu
         return item
     }
 
     private func outputMenuItem() -> NSMenuItem {
-        let item = NSMenuItem(title: "Language", action: nil, keyEquivalent: "")
+        let item = NSMenuItem(title: "Output", action: nil, keyEquivalent: "")
         item.submenu = outputMenu
         return item
     }
@@ -371,14 +371,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         let current = selectedInputLanguage
         let model = selectedModel
 
-        for language in InputLanguageChoice.all {
+        for (index, language) in InputLanguageChoice.all.enumerated() {
+            if index == 4 {
+                inputLanguageMenu.addItem(NSMenuItem.separator())
+            }
             let asset = model.asset(for: language)
             let installed = ModelStore.isInstalled(model, inputLanguage: language)
             let suffix: String
             if downloadingSpeechModelKeys.contains(asset.filename) {
                 suffix = " - downloading..."
             } else {
-                suffix = installed ? "" : " - downloads \(asset.downloadSizeText)"
+                suffix = installed ? "" : " - needs download"
             }
             let item = NSMenuItem(title: "\(language.title)\(suffix)", action: #selector(selectInputLanguage(_:)), keyEquivalent: "")
             item.target = self
@@ -393,10 +396,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         outputMenu.removeAllItems()
         let current = selectedOutputLanguage
         let inputLanguage = selectedInputLanguage
+        var insertedStyleSeparator = false
 
-        for (index, language) in OutputLanguage.all.enumerated() {
-            if index == 4 {
+        for language in OutputLanguage.all {
+            if !language.isSameAsInput, language.languageCode == inputLanguage.whisperCode {
+                continue
+            }
+            if !insertedStyleSeparator, !language.isSameAsInput, language.languageCode == nil {
                 outputMenu.addItem(NSMenuItem.separator())
+                insertedStyleSeparator = true
             }
             let title = language.isSameAsInput
                 ? "Same as Input (\(inputLanguage.title))"
@@ -404,7 +412,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             let item = NSMenuItem(title: title, action: #selector(selectOutputLanguage(_:)), keyEquivalent: "")
             item.target = self
             item.representedObject = language.id
-            item.state = language == current ? .on : .off
+            item.state = language == current || (language.isSameAsInput && current.matchesInput(inputLanguage)) ? .on : .off
             outputMenu.addItem(item)
         }
     }
@@ -653,11 +661,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     }
 
     private func overlayContextText() -> String {
-        let model = activeModelChoice ?? selectedModel
         let inputLanguage = activeInputLanguage ?? selectedInputLanguage
         let profile = activeWritingProfile ?? selectedWritingProfile
         let language = activeOutputLanguage ?? selectedOutputLanguage
-        return "\(model.friendlyTitle) • \(inputLanguage.title) input • \(profile.title) • \(language.effectiveTitle(for: inputLanguage))"
+        return "\(languageRouteText(inputLanguage: inputLanguage, outputLanguage: language)) • \(profile.title)"
     }
 
     private func elapsedText(_ elapsed: TimeInterval) -> String {
@@ -680,8 +687,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         let permissionSuffix = hasAutoPastePermission ? "" : " - Paste-Back Needs Permission"
         statusItem.button?.toolTip = "\(appDisplayName): \(state.statusText)\(permissionSuffix)"
         let formattingText = preserveCapitalization ? "Caps On" : "Caps Off"
-        let outputTitle = selectedOutputLanguage.effectiveTitle(for: selectedInputLanguage)
-        statusMenuItem.title = "\(state.statusText)\(permissionSuffix) - \(selectedModel.friendlyTitle) - \(selectedInputLanguage.title) input -> \(outputTitle) - \(selectedWritingProfile.title) - \(formattingText)"
+        statusMenuItem.title = "\(state.statusText)\(permissionSuffix) - \(languageRouteText(inputLanguage: selectedInputLanguage, outputLanguage: selectedOutputLanguage)) - \(selectedModel.friendlyTitle) - \(selectedWritingProfile.title) - \(formattingText)"
+    }
+
+    private func languageRouteText(inputLanguage: InputLanguageChoice, outputLanguage: OutputLanguage) -> String {
+        let outputTitle = outputLanguage.effectiveTitle(for: inputLanguage)
+        if outputTitle == inputLanguage.title {
+            return "Speak \(inputLanguage.title)"
+        }
+        return "Speak \(inputLanguage.title) -> \(outputTitle)"
     }
 
     private func requestMicrophoneAccess() {
@@ -807,11 +821,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         }
 
         let alert = NSAlert()
-        alert.messageText = "Download \(inputLanguage.title) input support?"
+        alert.messageText = "Download \(inputLanguage.title)?"
         let unlockText = inputLanguage.isEnglish
-            ? "This downloads \(asset.downloadSizeText) once for English dictation."
-            : "This downloads \(asset.downloadSizeText) once and also unlocks the other non-English input languages for this speed."
-        alert.informativeText = "DuckWhisperer needs the \(choice.languageScopeText(for: inputLanguage)) for \(choice.friendlyTitle). \(unlockText)"
+            ? "This adds the local English language file for \(choice.friendlyTitle)."
+            : "This adds one local language file for \(choice.friendlyTitle). It also unlocks the other non-English input languages for this speed."
+        alert.informativeText = "\(unlockText) Download size: \(asset.downloadSizeText). Nothing downloads unless you choose Download."
         alert.alertStyle = .informational
         alert.addButton(withTitle: "Download")
         alert.addButton(withTitle: "Cancel")
@@ -822,7 +836,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         }
 
         downloadingSpeechModelKeys.insert(key)
-        setState(.error("Downloading \(inputLanguage.title) input support..."))
+        setState(.error("Downloading \(inputLanguage.title)..."))
 
         URLSession.shared.downloadTask(with: choice.downloadURL(for: inputLanguage)) { [weak self] temporaryURL, response, error in
             DispatchQueue.main.async {

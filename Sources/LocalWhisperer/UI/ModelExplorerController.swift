@@ -139,18 +139,18 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
         }
 
         let inputText = makeLabel(
-            "Input: \(currentInputLanguage.title). Non-English input uses a shared multilingual model, downloaded only after approval.",
+            "Speaking: \(currentInputLanguage.title). Extra language files download only after approval.",
             font: .systemFont(ofSize: 12),
             color: .secondaryLabelColor
         )
         addFullWidthRow(inputText)
 
-        addSectionTitle("Dictation Speed")
+        addSectionTitle("Speed")
         for choice in ModelChoice.all {
             addFullWidthRow(makeModelRow(for: choice))
         }
 
-        addSectionTitle("Language Add-ons")
+        addSectionTitle("Translation Add-ons")
         for pack in TranslationPackChoice.all {
             addFullWidthRow(makeTranslationPackRow(for: pack))
         }
@@ -407,8 +407,8 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
         let alert = NSAlert()
         alert.messageText = "Download \(choice.friendlyTitle)?"
         let unlockText = inputLanguage.isEnglish
-            ? "This adds English dictation data."
-            : "This adds the shared multilingual dictation data for \(inputLanguage.title) and the other non-English input languages."
+            ? "This adds the local English language file."
+            : "This adds one local language file for \(inputLanguage.title) and the other non-English input languages."
         alert.informativeText = "\(unlockText) Download size: \(asset.downloadSizeText). Nothing downloads unless you choose Download."
         alert.alertStyle = .informational
         alert.addButton(withTitle: "Download")
