@@ -77,5 +77,5 @@ Release package created in:
 $RELEASE_DIR
 
 This package includes Best Accuracy dictation inside DuckWhisperer.app.
-Non-English speech models and translator add-ons remain optional and install only after user approval.
+Non-English speech models, translator add-ons, and Enhanced Robot assets remain optional and install only after user approval.
 EOF

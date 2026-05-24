@@ -17,6 +17,7 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
     private let onModelsChanged: () -> Void
     private var downloadingModelKeys = Set<String>()
     private var installingTranslationPackIDs = Set<String>()
+    private var installingStyleRewritePackIDs = Set<String>()
 
     init(
         currentModel: ModelChoice,
@@ -153,6 +154,9 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
         for pack in TranslationPackChoice.visiblePacks(for: currentInputLanguage) {
             addFullWidthRow(makeTranslationPackRow(for: pack))
         }
+
+        addSectionTitle("Style Add-ons")
+        addFullWidthRow(makeStyleRewritePackRow(for: .enhancedRobot))
     }
 
     private func scrollToTop() {
@@ -297,6 +301,57 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
         return row
     }
 
+    private func makeStyleRewritePackRow(for pack: StyleRewritePack) -> NSView {
+        let row = NSView()
+        row.translatesAutoresizingMaskIntoConstraints = false
+        row.wantsLayer = true
+        row.layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
+        row.layer?.cornerRadius = 8
+
+        let titleLabel = makeLabel(pack.title, font: .boldSystemFont(ofSize: 14))
+        let detailLabel = makeLabel(pack.detail, font: .systemFont(ofSize: 12), color: .secondaryLabelColor)
+        let statusLabel = makeLabel(
+            "\(styleRewriteStatusText(for: pack)) · \(pack.totalSizeText)",
+            font: .systemFont(ofSize: 12),
+            color: .secondaryLabelColor
+        )
+
+        let actionButton = NSButton(title: styleRewriteActionTitle(for: pack), target: self, action: #selector(handleStyleRewritePackAction(_:)))
+        actionButton.translatesAutoresizingMaskIntoConstraints = false
+        actionButton.bezelStyle = .rounded
+        actionButton.identifier = NSUserInterfaceItemIdentifier(pack.id)
+        actionButton.isEnabled = canAct(on: pack)
+
+        row.addSubview(titleLabel)
+        row.addSubview(detailLabel)
+        row.addSubview(statusLabel)
+        row.addSubview(actionButton)
+
+        NSLayoutConstraint.activate([
+            row.heightAnchor.constraint(greaterThanOrEqualToConstant: 82),
+
+            titleLabel.leadingAnchor.constraint(equalTo: row.leadingAnchor, constant: 12),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: actionButton.leadingAnchor, constant: -8),
+            titleLabel.topAnchor.constraint(equalTo: row.topAnchor, constant: 11),
+            titleLabel.centerYAnchor.constraint(equalTo: actionButton.centerYAnchor),
+
+            actionButton.trailingAnchor.constraint(equalTo: row.trailingAnchor, constant: -12),
+            actionButton.topAnchor.constraint(equalTo: row.topAnchor, constant: 8),
+            actionButton.widthAnchor.constraint(equalToConstant: 96),
+
+            detailLabel.leadingAnchor.constraint(equalTo: row.leadingAnchor, constant: 12),
+            detailLabel.trailingAnchor.constraint(equalTo: row.trailingAnchor, constant: -12),
+            detailLabel.topAnchor.constraint(equalTo: actionButton.bottomAnchor, constant: 6),
+
+            statusLabel.leadingAnchor.constraint(equalTo: row.leadingAnchor, constant: 12),
+            statusLabel.trailingAnchor.constraint(equalTo: row.trailingAnchor, constant: -12),
+            statusLabel.topAnchor.constraint(equalTo: detailLabel.bottomAnchor, constant: 4),
+            statusLabel.bottomAnchor.constraint(lessThanOrEqualTo: row.bottomAnchor, constant: -10)
+        ])
+
+        return row
+    }
+
     private func makeLabel(_ text: String, font: NSFont, color: NSColor = .labelColor) -> NSTextField {
         let label = NSTextField(labelWithString: text)
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -374,6 +429,24 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
         !installingTranslationPackIDs.contains(pack.id) && !TranslationStore.isInstalled(pack)
     }
 
+    private func styleRewriteStatusText(for pack: StyleRewritePack) -> String {
+        if installingStyleRewritePackIDs.contains(pack.id) {
+            return "Installing..."
+        }
+        return StyleRewriteStore.statusText(for: pack)
+    }
+
+    private func styleRewriteActionTitle(for pack: StyleRewritePack) -> String {
+        if installingStyleRewritePackIDs.contains(pack.id) {
+            return "Installing..."
+        }
+        return StyleRewriteStore.isInstalled(pack) ? "Installed" : "Install"
+    }
+
+    private func canAct(on pack: StyleRewritePack) -> Bool {
+        !installingStyleRewritePackIDs.contains(pack.id) && !StyleRewriteStore.isInstalled(pack)
+    }
+
     @objc private func handleModelAction(_ sender: NSButton) {
         guard let id = sender.identifier?.rawValue else {
             return
@@ -398,6 +471,16 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
         }
 
         confirmAndInstall(pack)
+    }
+
+    @objc private func handleStyleRewritePackAction(_ sender: NSButton) {
+        guard sender.identifier?.rawValue == StyleRewritePack.enhancedRobot.id,
+              !StyleRewriteStore.isInstalled(.enhancedRobot)
+        else {
+            return
+        }
+
+        confirmAndInstall(.enhancedRobot)
     }
 
     private func confirmAndDownload(_ choice: ModelChoice) {
@@ -486,6 +569,38 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
             } catch {
                 DispatchQueue.main.async {
                     self?.installingTranslationPackIDs.remove(pack.id)
+                    self?.showError(error)
+                    self?.rebuild()
+                }
+            }
+        }
+    }
+
+    private func confirmAndInstall(_ pack: StyleRewritePack) {
+        let alert = NSAlert()
+        alert.messageText = "Install \(pack.title)?"
+        alert.informativeText = "This installs a local llama.cpp runner and \(pack.modelFilename). Download size: \(pack.totalSizeText). It stays on this Mac."
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "Install")
+        alert.addButton(withTitle: "Cancel")
+
+        guard alert.runModal() == .alertFirstButtonReturn else {
+            return
+        }
+
+        installingStyleRewritePackIDs.insert(pack.id)
+        rebuild()
+
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            do {
+                try StyleRewriteStore.install(pack)
+                DispatchQueue.main.async {
+                    self?.installingStyleRewritePackIDs.remove(pack.id)
+                    self?.rebuild()
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    self?.installingStyleRewritePackIDs.remove(pack.id)
                     self?.showError(error)
                     self?.rebuild()
                 }

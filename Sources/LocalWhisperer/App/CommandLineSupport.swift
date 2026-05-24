@@ -64,26 +64,7 @@ func runSmokeTranscriptionIfRequested() {
         )
         let output: String
         if translatedOutput.unicodeScalars.contains(where: { CharacterSet.alphanumerics.contains($0) }) {
-            switch outputLanguage.id {
-            case "british":
-                output = StyledSpeech.british(translatedOutput)
-            case "genz":
-                output = StyledSpeech.genZ(translatedOutput)
-            case "alien":
-                output = StyledSpeech.alien(translatedOutput)
-            case "cowboy":
-                output = StyledSpeech.cowboy(translatedOutput)
-            case "pirate":
-                output = StyledSpeech.pirate(translatedOutput)
-            case "robot":
-                output = StyledSpeech.robot(translatedOutput)
-            case "shakespeare":
-                output = StyledSpeech.shakespeare(translatedOutput)
-            case "duck":
-                output = DuckSpeech.render(translatedOutput)
-            default:
-                output = translatedOutput
-            }
+            output = LanguageOutputRenderer.render(translatedOutput, outputLanguage: outputLanguage)
         } else {
             output = translatedOutput
         }

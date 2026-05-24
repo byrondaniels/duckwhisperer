@@ -8,6 +8,9 @@ enum LocalWhispererError: LocalizedError {
     case modelMissing(String)
     case noRecording
     case recordingFailed
+    case styleRewriteFailed(String)
+    case styleRewriteInstallFailed(String)
+    case styleRewriteRuntimeMissing(String)
     case translationFailed(String)
     case translationInstallFailed(String)
     case translationModelMissing(String)
@@ -30,6 +33,12 @@ enum LocalWhispererError: LocalizedError {
             return "No active recording."
         case .recordingFailed:
             return "The microphone did not start recording."
+        case .styleRewriteFailed(let message):
+            return "Style rewrite failed: \(message)"
+        case .styleRewriteInstallFailed(let message):
+            return "Style rewrite install failed: \(message)"
+        case .styleRewriteRuntimeMissing(let message):
+            return "Missing local style runner: \(message)"
         case .translationFailed(let message):
             return "Translation failed: \(message)"
         case .translationInstallFailed(let message):

@@ -79,6 +79,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     private var lastPasteWasTryIt = false
     private var downloadingSpeechModelKeys = Set<String>()
     private var installingTranslationPackIDs = Set<String>()
+    private var installingStyleRewritePackIDs = Set<String>()
 
     private var selectedModel: ModelChoice {
         ModelChoice.choice(for: UserDefaults.standard.string(forKey: selectedModelIDKey))
@@ -420,8 +421,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             let translationSuffix = isInstallingTranslator
                 ? " - installing translator..."
                 : (missingTranslationPacks.isEmpty ? "" : " - needs translator")
-            let item = NSMenuItem(title: title, action: #selector(selectOutputLanguage(_:)), keyEquivalent: "")
-            item.title = "\(title)\(translationSuffix)"
+            let styleSuffix: String
+            if language.id == "robot", installingStyleRewritePackIDs.contains(StyleRewritePack.enhancedRobot.id) {
+                styleSuffix = " - installing enhanced mode..."
+            } else if language.id == "robot", !StyleRewriteStore.isInstalled(.enhancedRobot) {
+                styleSuffix = " - basic mode"
+            } else {
+                styleSuffix = ""
+            }
+            let item = NSMenuItem(title: "\(title)\(translationSuffix)\(styleSuffix)", action: #selector(selectOutputLanguage(_:)), keyEquivalent: "")
             item.target = self
             item.representedObject = language.id
             item.state = language == current || (language.isSameAsInput && current.matchesInput(inputLanguage)) ? .on : .off
@@ -987,6 +995,60 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         }
     }
 
+    private func confirmEnhancedRobotInstall(completion: @escaping (Bool) -> Void) {
+        let pack = StyleRewritePack.enhancedRobot
+        guard !installingStyleRewritePackIDs.contains(pack.id) else {
+            NSSound.beep()
+            completion(false)
+            return
+        }
+
+        let alert = NSAlert()
+        alert.messageText = "Install Enhanced Robot?"
+        alert.informativeText = "This installs a local llama.cpp runner and \(pack.modelFilename). Download size: \(pack.totalSizeText). Robot mode still works in basic mode if you skip this."
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "Install")
+        alert.addButton(withTitle: "Use Basic")
+        alert.addButton(withTitle: "Cancel")
+
+        let response = alert.runModal()
+        if response == .alertSecondButtonReturn {
+            completion(true)
+            return
+        }
+        guard response == .alertFirstButtonReturn else {
+            completion(false)
+            return
+        }
+
+        installingStyleRewritePackIDs.insert(pack.id)
+        setState(.error("Installing Enhanced Robot..."))
+        rebuildOutputMenu()
+        modelExplorer.refresh(currentModel: selectedModel, inputLanguage: selectedInputLanguage)
+
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            do {
+                try StyleRewriteStore.install(pack)
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    self.installingStyleRewritePackIDs.remove(pack.id)
+                    self.rebuildOutputMenu()
+                    self.modelExplorer.refresh(currentModel: self.selectedModel, inputLanguage: self.selectedInputLanguage)
+                    completion(true)
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    self.installingStyleRewritePackIDs.remove(pack.id)
+                    self.setState(.error(error.localizedDescription))
+                    self.modelExplorer.refresh(currentModel: self.selectedModel, inputLanguage: self.selectedInputLanguage)
+                    NSSound.beep()
+                    completion(false)
+                }
+            }
+        }
+    }
+
     @objc private func selectOutputLanguage(_ sender: NSMenuItem) {
         guard state != .recording, state != .transcribing else {
             NSSound.beep()
@@ -998,12 +1060,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         }
 
         let language = OutputLanguage.choice(for: id)
-        ensureTranslationPacks(inputLanguage: selectedInputLanguage, outputLanguage: language) { [weak self] in
-            guard let self else { return }
-            UserDefaults.standard.set(language.id, forKey: selectedOutputLanguageIDKey)
-            self.rebuildOutputMenu()
-            self.setState(.ready)
+        if language.id == "robot", !StyleRewriteStore.isInstalled(.enhancedRobot) {
+            confirmEnhancedRobotInstall { [weak self] shouldSelectRobot in
+                if shouldSelectRobot {
+                    self?.setSelectedOutputLanguage(language)
+                }
+            }
+            return
         }
+
+        ensureTranslationPacks(inputLanguage: selectedInputLanguage, outputLanguage: language) { [weak self] in
+            self?.setSelectedOutputLanguage(language)
+        }
+    }
+
+    private func setSelectedOutputLanguage(_ language: OutputLanguage) {
+        UserDefaults.standard.set(language.id, forKey: selectedOutputLanguageIDKey)
+        rebuildOutputMenu()
+        setState(.ready)
     }
 
     @objc private func selectWritingProfile(_ sender: NSMenuItem) {
@@ -1402,30 +1476,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     }
 
     private func applyLanguageOutput(to text: String, outputLanguage: OutputLanguage) -> String {
-        guard text.unicodeScalars.contains(where: { CharacterSet.alphanumerics.contains($0) }) else {
-            return text
-        }
-
-        switch outputLanguage.id {
-        case "british":
-            return StyledSpeech.british(text)
-        case "genz":
-            return StyledSpeech.genZ(text)
-        case "alien":
-            return StyledSpeech.alien(text)
-        case "cowboy":
-            return StyledSpeech.cowboy(text)
-        case "pirate":
-            return StyledSpeech.pirate(text)
-        case "robot":
-            return StyledSpeech.robot(text)
-        case "shakespeare":
-            return StyledSpeech.shakespeare(text)
-        case "duck":
-            return DuckSpeech.render(text)
-        default:
-            return text
-        }
+        LanguageOutputRenderer.render(text, outputLanguage: outputLanguage)
     }
 
     private func applyOutputFormatting(to text: String, preserveCapitalization: Bool) -> String {
