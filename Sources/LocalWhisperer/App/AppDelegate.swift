@@ -275,6 +275,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         settingsMenu.addItem(topLevelModelExplorer)
         settingsMenu.addItem(modelMenuItem())
         settingsMenu.addItem(NSMenuItem.separator())
+        let userGuideItem = NSMenuItem(
+            title: "Open User Guide...",
+            action: #selector(openUserGuide),
+            keyEquivalent: ""
+        )
+        userGuideItem.target = self
+        settingsMenu.addItem(userGuideItem)
         settingsMenu.addItem(openMicSettings)
         settingsMenu.addItem(openAccessibilitySettings)
         let setupDoctorItem = NSMenuItem(
@@ -1130,6 +1137,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
 
     @objc private func openTranscriptHistory() {
         transcriptHistoryController.show()
+    }
+
+    @objc private func openUserGuide() {
+        guard let url = Bundle.main.url(forResource: "UserGuide", withExtension: "html") else {
+            setState(.error("User guide is missing from this build."))
+            NSSound.beep()
+            return
+        }
+        NSWorkspace.shared.open(url)
     }
 
     @objc private func clearTranscriptHistory() {

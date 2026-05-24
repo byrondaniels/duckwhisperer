@@ -8,8 +8,8 @@ Press `Option+Space`, talk naturally, press `Option+Space` again, and Plume turn
 
 If you have a packaged release:
 
-1. Unzip `Plume`.
-2. Move `Plume.app` to `/Applications`.
+1. Open the Plume DMG.
+2. Drag `Plume.app` to `Applications`.
 3. Open it.
 4. In the menu-bar icon, open `Finish Setup`.
 5. Allow Microphone and paste-back permissions.
@@ -101,9 +101,11 @@ Build a drag-and-drop macOS package with the default `Best Accuracy` speech mode
 ./scripts/package_release.sh
 ```
 
-The release artifact is written to `release/`. By default this creates a `.zip`; set `PACKAGE_FORMAT=dmg` or `PACKAGE_FORMAT=both` if needed.
+The release artifact is written to `release/`. By default this creates a `.dmg` with `Plume.app`, an `Applications` shortcut, and `Start Here.html`. Set `PACKAGE_FORMAT=zip` or `PACKAGE_FORMAT=both` if needed.
 
 This packaged app can transcribe English without a terminal setup or model download. macOS still requires the user to grant Microphone and paste-back permissions after installing. French/Dutch translation remains optional and can be installed later from `Speed & Accuracy`.
+
+See `docs/release-workflow.md` for the full non-developer install test, signing notes, and release checklist.
 
 The build script automatically uses a local code-signing identity when one is available, preferring `Developer ID Application` and then local Apple development identities. If no identity exists, it falls back to ad-hoc signing.
 
@@ -111,6 +113,12 @@ For release packages meant for other Macs, use a Developer ID certificate:
 
 ```bash
 SIGNING_IDENTITY="Developer ID Application: Your Name (TEAMID)" ./scripts/package_release.sh
+```
+
+Then notarize the DMG:
+
+```bash
+NOTARYTOOL_PROFILE=plume-release ./scripts/notarize_release.sh
 ```
 
 To force an ad-hoc local build:

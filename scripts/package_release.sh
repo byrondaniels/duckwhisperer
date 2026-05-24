@@ -5,11 +5,12 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_DIR="$ROOT_DIR/dist/Plume.app"
 RELEASE_DIR="$ROOT_DIR/release"
 STAGING_ROOT="$ROOT_DIR/build/release-staging"
-PACKAGE_FORMAT="${PACKAGE_FORMAT:-zip}"
+PACKAGE_FORMAT="${PACKAGE_FORMAT:-dmg}"
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$ROOT_DIR/Info.plist")"
 BUILD="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$ROOT_DIR/Info.plist")"
 ARTIFACT_BASE="Plume-${VERSION}-${BUILD}"
 DEFAULT_MODEL="$APP_DIR/Contents/Resources/Models/ggml-small.en.bin"
+RELEASE_NOTES="$RELEASE_DIR/$ARTIFACT_BASE-release-notes.md"
 
 cd "$ROOT_DIR"
 
@@ -30,6 +31,118 @@ case "$PACKAGE_FORMAT" in
     ;;
 esac
 
+write_start_here() {
+  local output_path="$1"
+  cat >"$output_path" <<'EOF'
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Start Here - Plume</title>
+  <style>
+    color-scheme: light dark;
+    body {
+      margin: 0;
+      font: 16px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+      background: Canvas;
+      color: CanvasText;
+    }
+    main {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 44px 28px 56px;
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-size: 3rem;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+    h2 {
+      margin: 28px 0 8px;
+      font-size: 1.15rem;
+      letter-spacing: 0;
+    }
+    p {
+      margin: 0 0 12px;
+      max-width: 660px;
+    }
+    li + li {
+      margin-top: 8px;
+    }
+    code {
+      padding: 0.1rem 0.32rem;
+      border-radius: 6px;
+      background: rgba(127, 127, 127, 0.16);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.92em;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Install Plume</h1>
+    <p>Drag <code>Plume.app</code> onto <code>Applications</code>, then open it from Applications.</p>
+
+    <h2>First Run</h2>
+    <ol>
+      <li>Open the menu-bar Plume icon.</li>
+      <li>Choose <code>Finish Setup...</code>.</li>
+      <li>Grant Microphone and Paste-Back permissions.</li>
+      <li>Choose <code>Try It Here...</code> for a quick test.</li>
+    </ol>
+
+    <h2>Shortcut</h2>
+    <p>Press <code>Option+Space</code> to start recording, then press <code>Option+Space</code> again to stop and paste. Press <code>Escape</code> to cancel.</p>
+
+    <h2>What Is Included</h2>
+    <p>This app includes Best Accuracy English dictation. Extra language and style assets are optional downloads inside Plume.</p>
+  </main>
+</body>
+</html>
+EOF
+}
+
+write_release_notes() {
+  local package_list="$1"
+  cat >"$RELEASE_NOTES" <<EOF
+# Plume $VERSION ($BUILD) Release Notes
+
+## Artifacts
+
+$package_list
+
+## User Install Flow
+
+1. Open the DMG.
+2. Drag Plume.app to Applications.
+3. Open Plume from Applications.
+4. Open Finish Setup from the menu-bar icon.
+5. Grant Microphone and Paste-Back permissions.
+6. Press Option+Space to start and stop dictation.
+
+## Included Assets
+
+- Bundled default speech model: Best Accuracy English (ggml-small.en.bin).
+- Bundled user guide: Resources/UserGuide.html.
+- Optional non-English speech, translation, and Enhanced Robot assets are not included. Plume asks before downloading them.
+
+## Signing
+
+The app was signed by scripts/build_app.sh. Use SIGNING_IDENTITY="Developer ID Application: Your Name (TEAMID)" for public releases. Ad-hoc builds are fine for local testing but may trigger macOS permission prompts after rebuilds.
+
+## Verification
+
+Run these before publishing:
+
+- ./scripts/verify.sh
+- ./scripts/package_release.sh
+- Mount the DMG and drag Plume.app into Applications on a clean user account or a second Mac.
+- Open Try It Here..., record once, and confirm paste-back works in TextEdit or Notes after Accessibility is enabled.
+EOF
+}
+
 echo "Preparing whisper.cpp backend..."
 ./scripts/bootstrap_backend.sh
 
@@ -45,6 +158,7 @@ echo "Verifying app signature..."
 codesign --verify --deep --strict "$APP_DIR"
 
 mkdir -p "$RELEASE_DIR"
+created_packages=()
 
 if [[ "$PACKAGE_FORMAT" == "zip" || "$PACKAGE_FORMAT" == "both" ]]; then
   ZIP_PATH="$RELEASE_DIR/$ARTIFACT_BASE.zip"
@@ -52,6 +166,7 @@ if [[ "$PACKAGE_FORMAT" == "zip" || "$PACKAGE_FORMAT" == "both" ]]; then
   echo "Creating $ZIP_PATH..."
   ditto -c -k --sequesterRsrc --keepParent "$APP_DIR" "$ZIP_PATH"
   du -h "$ZIP_PATH"
+  created_packages+=("- $ZIP_PATH")
 fi
 
 if [[ "$PACKAGE_FORMAT" == "dmg" || "$PACKAGE_FORMAT" == "both" ]]; then
@@ -60,6 +175,7 @@ if [[ "$PACKAGE_FORMAT" == "dmg" || "$PACKAGE_FORMAT" == "both" ]]; then
   mkdir -p "$STAGING_DIR"
   ditto "$APP_DIR" "$STAGING_DIR/Plume.app"
   ln -s /Applications "$STAGING_DIR/Applications"
+  write_start_here "$STAGING_DIR/Start Here.html"
   rm -f "$DMG_PATH"
   echo "Creating $DMG_PATH..."
   hdiutil create \
@@ -69,12 +185,18 @@ if [[ "$PACKAGE_FORMAT" == "dmg" || "$PACKAGE_FORMAT" == "both" ]]; then
     -format UDZO \
     "$DMG_PATH"
   du -h "$DMG_PATH"
+  created_packages+=("- $DMG_PATH")
 fi
+
+write_release_notes "$(printf '%s\n' "${created_packages[@]}")"
 
 cat <<EOF
 
 Release package created in:
 $RELEASE_DIR
+
+Release notes:
+$RELEASE_NOTES
 
 This package includes Best Accuracy dictation inside Plume.app.
 Non-English speech models, translator add-ons, and Enhanced Robot assets remain optional and install only after user approval.

@@ -85,6 +85,9 @@ swift \
   -module-cache-path "$MODULE_CACHE_DIR/icon-script" \
   "$ROOT_DIR/scripts/generate_plume_icon.swift" \
   "$RESOURCES_DIR/Plume.icns"
+if [[ -f "$ROOT_DIR/Resources/UserGuide.html" ]]; then
+  cp "$ROOT_DIR/Resources/UserGuide.html" "$RESOURCES_DIR/UserGuide.html"
+fi
 ditto "$FRAMEWORK_SRC" "$FRAMEWORKS_DIR/whisper.framework"
 find "$MODEL_DST_DIR" -maxdepth 1 -type f -name 'ggml-*.bin' -delete
 cp "$ROOT_DIR/translation/translate_local.py" "$TRANSLATION_DST_DIR/translate_local.py"
