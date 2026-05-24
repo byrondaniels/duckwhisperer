@@ -91,7 +91,7 @@ private final class RecordingOverlayView: NSView {
         drawingTransform.translateX(by: 12, yBy: 30)
         drawingTransform.concat()
         drawCrescendo()
-        drawBird(level: audioLevel)
+        drawPlumeMark(level: audioLevel)
         NSGraphicsContext.restoreGraphicsState()
         drawText()
         drawProgress()
@@ -104,7 +104,7 @@ private final class RecordingOverlayView: NSView {
         drawingTransform.scale(by: 1.55)
         drawingTransform.concat()
         drawCrescendo()
-        drawBird(level: audioLevel)
+        drawPlumeMark(level: audioLevel)
         NSGraphicsContext.restoreGraphicsState()
 
         let textX: CGFloat = 225
@@ -302,7 +302,7 @@ private final class RecordingOverlayView: NSView {
         }
     }
 
-    private func drawBird(level: CGFloat) {
+    private func drawPlumeMark(level: CGFloat) {
         let center = NSPoint(x: 68, y: 40)
         let energy = max(0, min(1, level))
         let scale = 1 + energy * 0.045
@@ -321,91 +321,71 @@ private final class RecordingOverlayView: NSView {
         dropShadow.shadowOffset = NSSize(width: 0, height: 4)
         dropShadow.set()
 
-        let tail = NSBezierPath()
-        tail.move(to: NSPoint(x: 47, y: 39))
-        tail.line(to: NSPoint(x: 30, y: 29))
-        tail.line(to: NSPoint(x: 36, y: 42))
-        tail.line(to: NSPoint(x: 30, y: 53))
-        tail.line(to: NSPoint(x: 49, y: 50))
-        tail.close()
-        NSColor(calibratedWhite: 0.92, alpha: 1).setFill()
-        tail.fill()
-
-        let body = NSBezierPath(ovalIn: NSRect(x: 43, y: 31, width: 47, height: 28))
+        let feather = NSBezierPath()
+        feather.move(to: NSPoint(x: 36, y: 58))
+        feather.curve(
+            to: NSPoint(x: 101, y: 17),
+            controlPoint1: NSPoint(x: 39, y: 28),
+            controlPoint2: NSPoint(x: 80, y: 9)
+        )
+        feather.curve(
+            to: NSPoint(x: 49, y: 66),
+            controlPoint1: NSPoint(x: 75, y: 18),
+            controlPoint2: NSPoint(x: 42, y: 39)
+        )
+        feather.curve(
+            to: NSPoint(x: 36, y: 58),
+            controlPoint1: NSPoint(x: 45, y: 66),
+            controlPoint2: NSPoint(x: 39, y: 63)
+        )
+        feather.close()
         NSGradient(
             colors: [
                 NSColor(calibratedWhite: 1.0, alpha: 1),
-                NSColor(calibratedWhite: 0.84, alpha: 1)
+                NSColor(calibratedRed: 1.0, green: 0.78, blue: 0.28, alpha: 1)
             ]
-        )?.draw(in: body, angle: 265)
-        NSColor(calibratedWhite: 1.0, alpha: 0.72).setStroke()
-        body.lineWidth = 1
-        body.stroke()
-
-        let head = NSBezierPath(ovalIn: NSRect(x: 75, y: 18, width: 26, height: 26))
-        NSGradient(
-            colors: [
-                NSColor(calibratedWhite: 1.0, alpha: 1),
-                NSColor(calibratedWhite: 0.88, alpha: 1)
-            ]
-        )?.draw(in: head, angle: 250)
-        NSColor(calibratedWhite: 1.0, alpha: 0.70).setStroke()
-        head.lineWidth = 1
-        head.stroke()
+        )?.draw(in: feather, angle: 245)
+        NSColor.white.withAlphaComponent(0.62).setStroke()
+        feather.lineWidth = 1
+        feather.stroke()
 
         let noShadow = NSShadow()
         noShadow.shadowBlurRadius = 0
         noShadow.shadowOffset = .zero
         noShadow.set()
 
-        let beak = NSBezierPath()
-        beak.move(to: NSPoint(x: 98, y: 27))
-        beak.line(to: NSPoint(x: 114, y: 31.5))
-        beak.line(to: NSPoint(x: 98, y: 36.5))
-        beak.close()
-        NSColor(calibratedRed: 1.0, green: 0.66, blue: 0.14, alpha: 1).setFill()
-        beak.fill()
-        NSColor(calibratedRed: 0.70, green: 0.36, blue: 0.05, alpha: 0.24).setStroke()
-        beak.lineWidth = 0.8
-        beak.stroke()
-
-        NSColor(calibratedWhite: 0.08, alpha: 1).setFill()
-        NSBezierPath(ovalIn: NSRect(x: 88.5, y: 26.2, width: 4.4, height: 4.4)).fill()
-        NSColor.white.withAlphaComponent(0.8).setFill()
-        NSBezierPath(ovalIn: NSRect(x: 90.2, y: 27.1, width: 1.2, height: 1.2)).fill()
-
-        let wing = NSBezierPath()
-        wing.move(to: NSPoint(x: 57, y: 43))
-        wing.curve(
-            to: NSPoint(x: 79, y: 40),
-            controlPoint1: NSPoint(x: 62, y: 33),
-            controlPoint2: NSPoint(x: 74, y: 32)
+        let shaft = NSBezierPath()
+        shaft.lineWidth = 3
+        shaft.lineCapStyle = .round
+        shaft.move(to: NSPoint(x: 38, y: 60))
+        shaft.curve(
+            to: NSPoint(x: 98, y: 18),
+            controlPoint1: NSPoint(x: 52, y: 45),
+            controlPoint2: NSPoint(x: 76, y: 26)
         )
-        wing.curve(
-            to: NSPoint(x: 57, y: 43),
-            controlPoint1: NSPoint(x: 75, y: 51),
-            controlPoint2: NSPoint(x: 64, y: 52)
-        )
-        NSGradient(
-            colors: [
-                NSColor(calibratedWhite: 0.78, alpha: 1),
-                NSColor(calibratedWhite: 0.62, alpha: 1)
-            ]
-        )?.draw(in: wing, angle: 260)
-        NSColor.white.withAlphaComponent(0.34).setStroke()
-        wing.lineWidth = 0.8
-        wing.stroke()
+        NSColor(calibratedRed: 0.54, green: 0.31, blue: 0.10, alpha: 0.42).setStroke()
+        shaft.stroke()
 
-        NSColor(calibratedRed: 1.0, green: 0.69, blue: 0.18, alpha: 0.95).setStroke()
-        let feet: [(CGFloat, CGFloat, CGFloat, CGFloat)] = [(62, 58, 57, 63), (75, 58, 80, 63)]
-        for foot in feet {
+        let barbs: [(CGFloat, CGFloat, CGFloat, CGFloat)] = [
+            (54, 47, 36, 43),
+            (62, 40, 43, 34),
+            (70, 34, 53, 27),
+            (76, 29, 91, 24),
+            (66, 41, 84, 40)
+        ]
+        NSColor.white.withAlphaComponent(0.30 + energy * 0.18).setStroke()
+        for barb in barbs {
             let path = NSBezierPath()
-            path.lineWidth = 2.1
+            path.lineWidth = 1.4
             path.lineCapStyle = .round
-            path.move(to: NSPoint(x: foot.0, y: foot.1))
-            path.line(to: NSPoint(x: foot.2, y: foot.3))
+            path.move(to: NSPoint(x: barb.0, y: barb.1))
+            path.line(to: NSPoint(x: barb.2, y: barb.3))
             path.stroke()
         }
+
+        let sparkle = NSBezierPath(ovalIn: NSRect(x: 82, y: 21, width: 5, height: 5))
+        NSColor.white.withAlphaComponent(0.78).setFill()
+        sparkle.fill()
 
         NSGraphicsContext.restoreGraphicsState()
     }

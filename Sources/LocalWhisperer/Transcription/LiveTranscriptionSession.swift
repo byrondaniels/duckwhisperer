@@ -10,7 +10,7 @@ final class LiveTranscriptionSession {
 
     private let audioCapture: AudioCapture
     private let transcriber: WhisperTranscriber
-    private let queue = DispatchQueue(label: "com.byrondaniels.duckwhisperer.live-transcription", qos: .userInitiated)
+    private let queue = DispatchQueue(label: "com.byrondaniels.plume.live-transcription", qos: .userInitiated)
     private var generation = UUID()
     private var isRunning = false
     private var nextChunkStartSample = 0

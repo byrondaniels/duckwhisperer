@@ -194,9 +194,7 @@ enum ModelStore {
     }
 
     static var userModelsURL: URL {
-        let supportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        return supportURL
-            .appendingPathComponent(supportDirectoryName, isDirectory: true)
+        appSupportRootURL()
             .appendingPathComponent("Models", isDirectory: true)
     }
 

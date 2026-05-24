@@ -16,7 +16,7 @@ final class TryItController: NSObject, NSWindowDelegate {
 
         super.init()
 
-        window.title = "Try DuckWhisperer"
+        window.title = "Try Plume"
         window.isReleasedWhenClosed = false
         window.minSize = NSSize(width: 420, height: 280)
         window.delegate = self

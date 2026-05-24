@@ -38,8 +38,7 @@ enum StyleRewriteStore {
     }
 
     static var supportRootURL: URL {
-        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent(supportDirectoryName, isDirectory: true)
+        appSupportRootURL()
             .appendingPathComponent("StyleRewriter", isDirectory: true)
     }
 
@@ -109,6 +108,7 @@ enum StyleRewriteStore {
     private static func fallbackRunnerURL() -> URL? {
         let environment = ProcessInfo.processInfo.environment
         let candidates = [
+            environment["PLUME_LLAMA_CLI"],
             environment["DUCKWHISPERER_LLAMA_CLI"],
             "/opt/homebrew/bin/llama-cli",
             "/usr/local/bin/llama-cli",

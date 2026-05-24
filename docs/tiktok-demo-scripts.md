@@ -1,13 +1,13 @@
 # TikTok Demo Scripts
 
-DuckWhisperer demos should look like a normal person using their Mac, not a developer walking through settings. Record vertical 9:16, keep the menu bar duck visible when possible, and show the paste moment clearly.
+Plume demos should look like a normal person using their Mac, not a developer walking through settings. Record vertical 9:16, keep the menu-bar plume visible when possible, and show the paste moment clearly.
 
 ## 1. The Hook
 
 On-screen text: "I got tired of Mac dictation missing my words."
 
 Action:
-Open a blank text field, hit `Option+Space`, say one natural sentence, hit `Option+Space` again, and show DuckWhisperer pasting it.
+Open a blank text field, hit `Option+Space`, say one natural sentence, hit `Option+Space` again, and show Plume pasting it.
 
 Voiceover:
 "This runs locally on my Mac and pastes straight into whatever field I'm using."
@@ -30,7 +30,7 @@ Action:
 Say: "turn this into bullets follow up with Alex about the design, send the draft to Priya, and ship the build Friday."
 
 Voiceover:
-"You can start with a command phrase, and DuckWhisperer formats the rest."
+"You can start with a command phrase, and Plume formats the rest."
 
 ## 4. Works Offline
 
@@ -72,22 +72,22 @@ Turn on `Settings -> Presenter Mode`, record, and show the larger HUD with the p
 Voiceover:
 "Presenter Mode makes the recording overlay easier to see on video."
 
-## 8. Duck Mode
+## 8. Quack Mode
 
 On-screen text: "Completely necessary feature"
 
 Action:
-Choose `Language -> Duck`, dictate a serious sentence, show it become quacks.
+Choose `Output -> Quack`, dictate a serious sentence, show it become quacks.
 
 Voiceover:
-"And, because software should have one silly button, Duck mode exists."
+"And, because software should have one silly button, Quack mode exists."
 
 ## 9. Fun Mode Speedrun
 
 On-screen text: "Same sentence, different moods"
 
 Action:
-Dictate the same sentence with `Language -> Alien`, `Cowboy`, `Robot`, and `Shakespeare`.
+Dictate the same sentence with `Output -> Alien`, `Cowboy`, `Robot`, and `Shakespeare`.
 
 Voiceover:
 "The fun modes are local too, so they are instant and do not need another download."

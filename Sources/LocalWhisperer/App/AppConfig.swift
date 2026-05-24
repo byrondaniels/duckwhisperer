@@ -1,6 +1,6 @@
 import Foundation
 
-let hotKeySignature = fourCharCode("LWSP")
+let hotKeySignature = fourCharCode("PLUM")
 let recordHotKeyIdentifier: UInt32 = 1
 let cancelHotKeyIdentifier: UInt32 = 3
 let selectedModelIDKey = "SelectedModelID"
@@ -15,11 +15,25 @@ let personalDictionaryTextKey = "PersonalDictionaryText"
 let transcriptHistoryKey = "TranscriptHistory"
 let dictationStatsKey = "DictationStats"
 let hasSeenOnboardingKey = "HasSeenOnboarding"
-let appDisplayName = "DuckWhisperer"
-let supportDirectoryName = "Local Whisperer"
-let logFilename = "duckwhisperer.log"
-let buildMarker = "duckwhisperer-2026-05-22-tiktok-polish"
+let appDisplayName = "Plume"
+let supportDirectoryName = "Plume"
+let legacySupportDirectoryName = "Local Whisperer"
+let logFilename = "plume.log"
+let buildMarker = "plume-2026-05-24-rebrand"
 var debugPasteText: String?
+
+func appSupportRootURL() -> URL {
+    let applicationSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+    let currentURL = applicationSupportURL.appendingPathComponent(supportDirectoryName, isDirectory: true)
+    let legacyURL = applicationSupportURL.appendingPathComponent(legacySupportDirectoryName, isDirectory: true)
+
+    if !FileManager.default.fileExists(atPath: currentURL.path),
+       FileManager.default.fileExists(atPath: legacyURL.path) {
+        try? FileManager.default.copyItem(at: legacyURL, to: currentURL)
+    }
+
+    return currentURL
+}
 
 private func fourCharCode(_ value: String) -> OSType {
     var result: UInt32 = 0

@@ -23,7 +23,7 @@ final class PersonalDictionaryController: NSObject {
         let contentView = NSView(frame: NSRect(origin: .zero, size: size))
         panel.contentView = contentView
 
-        let helpLabel = NSTextField(labelWithString: "Teach DuckWhisperer your words. Example: open ai = OpenAI")
+        let helpLabel = NSTextField(labelWithString: "Teach Plume your words. Example: open ai = OpenAI")
         helpLabel.translatesAutoresizingMaskIntoConstraints = false
         helpLabel.textColor = .secondaryLabelColor
         helpLabel.font = .systemFont(ofSize: 13)

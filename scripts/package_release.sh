@@ -2,13 +2,13 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-APP_DIR="$ROOT_DIR/dist/DuckWhisperer.app"
+APP_DIR="$ROOT_DIR/dist/Plume.app"
 RELEASE_DIR="$ROOT_DIR/release"
 STAGING_ROOT="$ROOT_DIR/build/release-staging"
 PACKAGE_FORMAT="${PACKAGE_FORMAT:-zip}"
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$ROOT_DIR/Info.plist")"
 BUILD="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$ROOT_DIR/Info.plist")"
-ARTIFACT_BASE="DuckWhisperer-${VERSION}-${BUILD}"
+ARTIFACT_BASE="Plume-${VERSION}-${BUILD}"
 DEFAULT_MODEL="$APP_DIR/Contents/Resources/Models/ggml-small.en.bin"
 
 cd "$ROOT_DIR"
@@ -33,7 +33,7 @@ esac
 echo "Preparing whisper.cpp backend..."
 ./scripts/bootstrap_backend.sh
 
-echo "Building self-contained DuckWhisperer app with bundled Best Accuracy dictation..."
+echo "Building self-contained Plume app with bundled Best Accuracy dictation..."
 BUNDLE_DEFAULT_MODEL=1 INSTALL_DEFAULT_MODEL=0 INSTALL_TRANSLATION=0 ./scripts/build_app.sh >/dev/null
 
 if [[ ! -f "$DEFAULT_MODEL" ]]; then
@@ -58,12 +58,12 @@ if [[ "$PACKAGE_FORMAT" == "dmg" || "$PACKAGE_FORMAT" == "both" ]]; then
   STAGING_DIR="$STAGING_ROOT/$ARTIFACT_BASE"
   DMG_PATH="$RELEASE_DIR/$ARTIFACT_BASE.dmg"
   mkdir -p "$STAGING_DIR"
-  ditto "$APP_DIR" "$STAGING_DIR/DuckWhisperer.app"
+  ditto "$APP_DIR" "$STAGING_DIR/Plume.app"
   ln -s /Applications "$STAGING_DIR/Applications"
   rm -f "$DMG_PATH"
   echo "Creating $DMG_PATH..."
   hdiutil create \
-    -volname "DuckWhisperer" \
+    -volname "Plume" \
     -srcfolder "$STAGING_DIR" \
     -ov \
     -format UDZO \
@@ -76,6 +76,6 @@ cat <<EOF
 Release package created in:
 $RELEASE_DIR
 
-This package includes Best Accuracy dictation inside DuckWhisperer.app.
+This package includes Best Accuracy dictation inside Plume.app.
 Non-English speech models, translator add-ons, and Enhanced Robot assets remain optional and install only after user approval.
 EOF

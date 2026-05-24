@@ -6,7 +6,8 @@ PYTHON_BIN="${PYTHON_BIN:-}"
 REQUESTED_PYTHON_BIN="$PYTHON_BIN"
 ARGOS_TRANSLATE_SPEC="${ARGOS_TRANSLATE_SPEC:-argostranslate==1.11.0}"
 SENTENCEPIECE_SPEC="${SENTENCEPIECE_SPEC:-sentencepiece==0.2.1}"
-SUPPORT_ROOT="${DUCKWHISPERER_SUPPORT_DIR:-${LOCAL_WHISPERER_SUPPORT_DIR:-$HOME/Library/Application Support/Local Whisperer}}"
+SUPPORT_ROOT="${PLUME_SUPPORT_DIR:-${DUCKWHISPERER_SUPPORT_DIR:-${LOCAL_WHISPERER_SUPPORT_DIR:-$HOME/Library/Application Support/Plume}}}"
+LEGACY_SUPPORT_ROOT="$HOME/Library/Application Support/Local Whisperer"
 TRANSLATION_DIR="$SUPPORT_ROOT/Translation"
 VENV_DIR="$TRANSLATION_DIR/.venv"
 PACKAGE_DIR="$TRANSLATION_DIR/Packages"
@@ -66,6 +67,11 @@ find_supported_python() {
   return 1
 }
 
+if [[ ! -d "$SUPPORT_ROOT" && -d "$LEGACY_SUPPORT_ROOT" ]]; then
+  mkdir -p "$(dirname "$SUPPORT_ROOT")"
+  ditto "$LEGACY_SUPPORT_ROOT" "$SUPPORT_ROOT"
+fi
+
 if [[ -n "$PYTHON_BIN" && ! -x "$PYTHON_BIN" ]]; then
   resolved_python_bin="$(command -v "$PYTHON_BIN" 2>/dev/null || true)"
   if [[ -n "$resolved_python_bin" ]]; then
@@ -83,7 +89,7 @@ fi
 
 if ! PYTHON_BIN="$(find_supported_python)"; then
   cat >&2 <<'EOF'
-DuckWhisperer translation needs Python 3.11, 3.12, or 3.13.
+Plume translation needs Python 3.11, 3.12, or 3.13.
 
 Install one with Homebrew, for example:
   brew install python@3.13
@@ -148,7 +154,7 @@ if ! "$VENV_DIR/bin/python" -c 'import argostranslate' >/dev/null 2>&1; then
     "$ARGOS_TRANSLATE_SPEC" \
     "$SENTENCEPIECE_SPEC"; then
     cat >&2 <<EOF
-DuckWhisperer could not install the local translation runtime from binary wheels.
+Plume could not install the local translation runtime from binary wheels.
 
 Python used:
   $("$VENV_DIR/bin/python" -c 'import sys; print(sys.version)')

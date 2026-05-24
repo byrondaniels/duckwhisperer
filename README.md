@@ -1,24 +1,24 @@
-# DuckWhisperer
+# Plume
 
-Private Mac dictation that feels like a normal app.
+Private voice typing for every Mac app.
 
-Press `Option+Space`, talk, press `Option+Space` again, and DuckWhisperer pastes your words into the app you were already using. Transcription runs locally on your Mac, so your voice stays on your machine. It can listen in English by default, with optional local input support for Spanish, French, Tagalog, and other common languages. Output defaults to `Same as Input`, or you can choose English, French, Dutch, British, Gen Z, Alien, Cowboy, Pirate, Robot, Shakespeare, or a ridiculous Duck mode.
+Press `Option+Space`, talk naturally, press `Option+Space` again, and Plume turns your voice into polished text anywhere your cursor already is. Transcription runs locally on your Mac, so your voice stays on your machine. It can listen in English by default, with optional local input support for Spanish, French, Tagalog, and other common languages. Output defaults to `Same as Input`, or you can choose English, French, Dutch, British, Gen Z, Alien, Cowboy, Pirate, Robot, Shakespeare, or a ridiculous Quack mode.
 
 ## Quick Start
 
 If you have a packaged release:
 
-1. Unzip `DuckWhisperer`.
-2. Move `DuckWhisperer.app` to `/Applications`.
+1. Unzip `Plume`.
+2. Move `Plume.app` to `/Applications`.
 3. Open it.
-4. In the menu-bar duck, open `Finish Setup`.
+4. In the menu-bar icon, open `Finish Setup`.
 5. Allow Microphone and paste-back permissions.
 6. Open `Try It Here...` and do your first test.
 
 Use `Option+Space` once to start recording and `Option+Space` again to stop, transcribe, and paste.
 Press `Escape` while recording or transcribing to cancel without pasting.
 
-Open the menu-bar duck for `Try It Here`, `Undo Last Paste`, `I Speak`, `Output`, `Writing Style`, `Speed & Accuracy`, `History`, and `Settings`.
+Open the menu-bar icon for `Try It Here`, `Undo Last Paste`, `I Speak`, `Output`, `Writing Style`, `Speed & Accuracy`, `History`, and `Settings`.
 
 ## Fresh Machine Setup
 
@@ -32,8 +32,8 @@ Requirements:
 Install:
 
 ```bash
-git clone https://github.com/byrondaniels/duckwhisperer.git duckwhisperer
-cd duckwhisperer
+git clone https://github.com/byrondaniels/duckwhisperer.git plume
+cd plume
 ./scripts/doctor.sh
 ./scripts/install_app.sh
 ```
@@ -48,13 +48,13 @@ Then grant the macOS permissions:
 The app bundle is installed at:
 
 ```text
-/Applications/DuckWhisperer.app
+/Applications/Plume.app
 ```
 
 Runtime assets are installed outside the repo and app bundle at:
 
 ```text
-~/Library/Application Support/Local Whisperer
+~/Library/Application Support/Plume
 ```
 
 That folder contains downloaded speech models, optional translation runtime data, and optional local style-rewrite assets. It is not committed to Git.
@@ -76,7 +76,7 @@ INSTALL_TRANSLATION=1 ./scripts/install_app.sh
 ```bash
 ./scripts/bootstrap_backend.sh
 ./scripts/build_app.sh
-open dist/DuckWhisperer.app
+open dist/Plume.app
 ```
 
 After the first setup, use this faster path when changing app code and reinstalling on the same machine:
@@ -85,7 +85,7 @@ After the first setup, use this faster path when changing app code and reinstall
 ./scripts/reinstall_app.sh
 ```
 
-It rebuilds and replaces `/Applications/DuckWhisperer.app` without reinstalling speech models or translation runtime data.
+It rebuilds and replaces `/Applications/Plume.app` without reinstalling speech models or translation runtime data.
 
 To build only the lightweight app bundle without installing the default model or translation runtime:
 
@@ -145,10 +145,10 @@ Run the full local verification loop before pushing changes:
 - Local speech transcription with lazy input-language downloads
 - Built-in input choices for English, Spanish, French, Tagalog, Chinese, Hindi, Arabic, Bengali, Portuguese, Russian, Urdu, Indonesian, German, Japanese, Korean, Turkish, Vietnamese, Italian, Polish, and Dutch
 - Optional English -> French/Dutch output translation plus per-language input -> English translator downloads
-- Built-in British, Gen Z, Alien, Cowboy, Pirate, Robot, Shakespeare, and Duck style modes
-- Optional Enhanced Robot mode with a DuckWhisperer-managed local llama.cpp runner
+- Built-in British, Gen Z, Alien, Cowboy, Pirate, Robot, Shakespeare, and Quack style modes
+- Optional Enhanced Robot mode with a Plume-managed local llama.cpp runner
 - Writing profiles: Smart Clean, Raw Dictation, Clean Email, Slack Casual, Meeting Notes, Code Prompt, and Bullet Notes
-- Command phrases such as "make this shorter", "turn this into bullets", "rewrite professionally", "translate to Dutch", "alien mode", "cowboy mode", and "duck mode"
+- Command phrases such as "make this shorter", "turn this into bullets", "rewrite professionally", "translate to Dutch", "alien mode", "cowboy mode", and "quack mode"
 - Green HUD command badge when a spoken command phrase is recognized
 - Per-app defaults for model, output language, and writing profile
 - Personal dictionary replacements stored locally
@@ -159,21 +159,21 @@ Run the full local verification loop before pushing changes:
 - `Finish Setup` for microphone, paste-back, model, install, and app identity checks
 - `Presenter Mode` for camera-readable TikTok/product demos
 - Fun language modes that transform the transcript locally without extra downloads
-- Audio-reactive duck recording overlay with live preview, elapsed time, profile/model context, cancel hint, and transcription progress percentage
+- Audio-reactive plume recording overlay with live preview, elapsed time, profile/model context, cancel hint, and transcription progress percentage
 - Paste recovery window with `Paste Again`, `Copy`, and `Fix Permission`
-- Duck menu-bar icon and DuckWhisperer app icon
+- Plume menu-bar icon and app icon
 - `Preserve Capitalization` toggle
 - Fallback transcript window when macOS does not allow auto-paste
 
 ## Input Languages
 
-English input uses the smaller English-only speech model. Non-English input uses one shared multilingual Whisper model for the selected speed. DuckWhisperer does not download one speech pack per language; the first non-English language you choose asks for approval, then that one shared speech model unlocks the other non-English input languages for that speed.
+English input uses the smaller English-only speech model. Non-English input uses one shared multilingual Whisper model for the selected speed. Plume does not download one speech pack per language; the first non-English language you choose asks for approval, then that one shared speech model unlocks the other non-English input languages for that speed.
 
 `I Speak` controls what language you speak. `Output` controls what text comes back. `Same as Input` keeps Spanish speech as Spanish text, French speech as French text, and so on. Choosing `English` while speaking a non-English input language uses a dedicated local text translator when that language pair is installed, with Whisper's local speech-translation mode as the fallback.
 
 ## Models
 
-No speech model is committed to Git. Normal source builds keep speech models outside the app bundle in Application Support. Release packages created by `./scripts/package_release.sh` bundle `Best Accuracy` inside `DuckWhisperer.app` so a fresh Mac can transcribe English without a separate model download.
+No speech model is committed to Git. Normal source builds keep speech models outside the app bundle in Application Support. Release packages created by `./scripts/package_release.sh` bundle `Best Accuracy` inside `Plume.app` so a fresh Mac can transcribe English without a separate model download.
 
 Default model:
 
@@ -195,14 +195,14 @@ Extra language file sizes:
 Downloaded models are stored in:
 
 ```text
-~/Library/Application Support/Local Whisperer/Models
+~/Library/Application Support/Plume/Models
 ```
 
 ## Translation
 
-Output defaults to `Same as Input`. You can also choose English, French, Dutch, British, Gen Z, Alien, Cowboy, Pirate, Robot, Shakespeare, or Duck.
+Output defaults to `Same as Input`. You can also choose English, French, Dutch, British, Gen Z, Alien, Cowboy, Pirate, Robot, Shakespeare, or Quack.
 
-Non-English input to English can use individual local text translators. For example, Tagalog -> English installs only the Tagalog -> English translator, then DuckWhisperer transcribes Tagalog text first and translates that text to English. If the matching translator is not installed, the app asks before downloading it.
+Non-English input to English can use individual local text translators. For example, Tagalog -> English installs only the Tagalog -> English translator, then Plume transcribes Tagalog text first and translates that text to English. If the matching translator is not installed, the app asks before downloading it.
 
 French and Dutch output use local Argos Translate packages after the transcript is available in English. Install them from `Speed & Accuracy`, or run:
 
@@ -215,17 +215,17 @@ The translation setup intentionally avoids Python versions that would require na
 Translation runtime data is stored in:
 
 ```text
-~/Library/Application Support/Local Whisperer/Translation
+~/Library/Application Support/Plume/Translation
 ```
 
-Fun modes are built into the app. British, Gen Z, Alien, Cowboy, Pirate, Shakespeare, and Duck output do not require a model, package, or network call. Robot works immediately in basic mode, and can optionally be upgraded to Enhanced Robot from `Speed & Accuracy`.
+Fun modes are built into the app. British, Gen Z, Alien, Cowboy, Pirate, Shakespeare, and Quack output do not require a model, package, or network call. Robot works immediately in basic mode, and can optionally be upgraded to Enhanced Robot from `Speed & Accuracy`.
 
 Enhanced Robot installs its own local llama.cpp runner plus `qwen2.5-0.5b-instruct-q4_k_m.gguf`. It does not require Ollama, a server process, or a cloud API. The optional download is about 491 MB for the model plus about 8 MB for the runner, and it is only downloaded after you approve the install.
 
 Enhanced Robot assets are stored in:
 
 ```text
-~/Library/Application Support/Local Whisperer/StyleRewriter
+~/Library/Application Support/Plume/StyleRewriter
 ```
 
 ## Product Features
@@ -236,7 +236,7 @@ The personal dictionary is a local text list of replacements, one per line:
 
 ```text
 open ai = OpenAI
-duck whisperer = DuckWhisperer
+plume = Plume
 ```
 
 Transcript history stores recent outputs locally in macOS user defaults. Use the history menu to copy recent transcripts or open the searchable history window.
@@ -249,9 +249,9 @@ Presenter Mode makes the recording overlay larger and hides technical context so
 
 ## macOS Permissions Note
 
-macOS ties Accessibility permission to the app's code-signing requirement. DuckWhisperer will use a stable local signing identity when one exists; that makes paste permission more likely to survive rebuilds. Ad-hoc builds are identified by a changing code hash, so macOS may reset Accessibility trust after rebuilding or reinstalling the app.
+macOS ties Accessibility permission to the app's code-signing requirement. Plume will use a stable local signing identity when one exists; that makes paste permission more likely to survive rebuilds. Ad-hoc builds are identified by a changing code hash, so macOS may reset Accessibility trust after rebuilding or reinstalling the app.
 
-If automatic paste stops working, toggle `DuckWhisperer` off and on in:
+If automatic paste stops working, toggle `Plume` off and on in:
 
 ```text
 System Settings -> Privacy & Security -> Accessibility

@@ -5,10 +5,16 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MODEL_FILE="ggml-small.en.bin"
 EXPECTED_SHA="db8a495a91d927739e50b3fc1cc4c6b8f6c2d022"
 MODEL_URL="https://huggingface.co/ggerganov/whisper.cpp/resolve/main/$MODEL_FILE"
-SUPPORT_ROOT="${DUCKWHISPERER_SUPPORT_DIR:-${LOCAL_WHISPERER_SUPPORT_DIR:-$HOME/Library/Application Support/Local Whisperer}}"
+SUPPORT_ROOT="${PLUME_SUPPORT_DIR:-${DUCKWHISPERER_SUPPORT_DIR:-${LOCAL_WHISPERER_SUPPORT_DIR:-$HOME/Library/Application Support/Plume}}}"
+LEGACY_SUPPORT_ROOT="$HOME/Library/Application Support/Local Whisperer"
 MODEL_DIR="$SUPPORT_ROOT/Models"
 DEST="$MODEL_DIR/$MODEL_FILE"
 CACHE_SRC="$ROOT_DIR/Resources/Models/$MODEL_FILE"
+
+if [[ ! -d "$SUPPORT_ROOT" && -d "$LEGACY_SUPPORT_ROOT" ]]; then
+  mkdir -p "$(dirname "$SUPPORT_ROOT")"
+  ditto "$LEGACY_SUPPORT_ROOT" "$SUPPORT_ROOT"
+fi
 
 mkdir -p "$MODEL_DIR"
 

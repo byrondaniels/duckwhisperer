@@ -22,7 +22,7 @@ enum LanguageOutputRenderer {
         case "shakespeare":
             return StyledSpeech.shakespeare(text)
         case "duck":
-            return DuckSpeech.render(text)
+            return QuackSpeech.render(text)
         default:
             return text
         }

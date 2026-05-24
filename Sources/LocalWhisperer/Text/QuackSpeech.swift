@@ -1,6 +1,6 @@
 import Foundation
 
-enum DuckSpeech {
+enum QuackSpeech {
     private static let quacks = [
         "quack",
         "quaack",

@@ -94,12 +94,12 @@ enum CommandPhraseProcessor {
             )
         }
 
-        if let body = stripPrefix(["duck mode", "make this duck"], from: normalized) {
+        if let body = stripPrefix(["quack mode", "make this quack", "duck mode", "make this duck"], from: normalized) {
             return CommandPhraseResult(
                 text: body,
                 outputLanguage: OutputLanguage.choice(for: "duck"),
                 writingProfile: writingProfile,
-                commandName: "Duck"
+                commandName: "Quack"
             )
         }
 

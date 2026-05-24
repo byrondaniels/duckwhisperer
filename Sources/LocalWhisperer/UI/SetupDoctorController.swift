@@ -48,7 +48,7 @@ final class SetupDoctorController: NSObject {
         title.translatesAutoresizingMaskIntoConstraints = false
         title.font = .boldSystemFont(ofSize: 22)
 
-        let subtitle = NSTextField(labelWithString: "Make sure DuckWhisperer can listen, paste your words, and run privately on this Mac.")
+        let subtitle = NSTextField(labelWithString: "Make sure Plume can listen, paste your words, and run privately on this Mac.")
         subtitle.translatesAutoresizingMaskIntoConstraints = false
         subtitle.font = .systemFont(ofSize: 13)
         subtitle.textColor = .secondaryLabelColor
@@ -113,7 +113,7 @@ final class SetupDoctorController: NSObject {
             action: #selector(openModelExplorer)
         )
         addRow(
-            status: FileManager.default.fileExists(atPath: "/Applications/DuckWhisperer.app") ? "ok   App is installed" : "warn Move DuckWhisperer to Applications",
+            status: FileManager.default.fileExists(atPath: "/Applications/Plume.app") ? "ok   App is installed" : "warn Move Plume to Applications",
             actionTitle: nil,
             action: nil
         )
@@ -174,7 +174,7 @@ final class SetupDoctorController: NSObject {
     }
 
     private func signingStatus() -> String {
-        let appURL = URL(fileURLWithPath: "/Applications/DuckWhisperer.app")
+        let appURL = URL(fileURLWithPath: "/Applications/Plume.app")
         guard FileManager.default.fileExists(atPath: appURL.path) else {
             return "warn Install the app to finish setup"
         }

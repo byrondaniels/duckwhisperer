@@ -197,7 +197,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     }
 
     private func installApplicationIcon() {
-        guard let iconURL = Bundle.main.url(forResource: "DuckWhisperer", withExtension: "icns"),
+        guard let iconURL = Bundle.main.url(forResource: "Plume", withExtension: "icns"),
               let icon = NSImage(contentsOf: iconURL)
         else {
             return
@@ -208,7 +208,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     private func setupMenu() {
         menu.delegate = self
         statusItem.button?.title = ""
-        statusItem.button?.image = DuckIcon.menuBarImage()
+        statusItem.button?.image = PlumeIcon.menuBarImage()
         statusItem.button?.imagePosition = .imageOnly
         statusItem.button?.imageScaling = .scaleProportionallyDown
         statusItem.button?.toolTip = appDisplayName
@@ -594,7 +594,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         state = newState
         updateCancelHotKey(for: newState)
         statusItem.button?.title = ""
-        statusItem.button?.image = DuckIcon.menuBarImage()
+        statusItem.button?.image = PlumeIcon.menuBarImage()
 
         switch newState {
         case .ready, .error:
@@ -715,8 +715,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         autoPastePermissionMenuItem.target = hasAutoPastePermission ? nil : self
         autoPastePermissionMenuItem.action = hasAutoPastePermission ? nil : #selector(openAccessibilitySettings)
         autoPastePermissionMenuItem.toolTip = hasAutoPastePermission
-            ? "DuckWhisperer can paste transcripts back into the target app."
-            : "DuckWhisperer needs paste-back permission to put text into other apps."
+            ? "Plume can paste transcripts back into the target app."
+            : "Plume needs paste-back permission to put text into other apps."
 
         let permissionSuffix = hasAutoPastePermission ? "" : " - Paste-Back Needs Permission"
         statusItem.button?.toolTip = "\(appDisplayName): \(state.statusText)\(permissionSuffix)"
@@ -866,7 +866,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         alert.messageText = inputLanguage.isEnglish ? "Download English Speech?" : "Download Multilingual Speech?"
         let unlockText = inputLanguage.isEnglish
             ? "This installs \(asset.filename), the English-only Whisper file for \(choice.friendlyTitle)."
-            : "\(inputLanguage.title) uses \(asset.filename), one shared multilingual Whisper file for \(choice.friendlyTitle). It unlocks all non-English input choices for this speed; DuckWhisperer is not downloading a separate pack for each language."
+            : "\(inputLanguage.title) uses \(asset.filename), one shared multilingual Whisper file for \(choice.friendlyTitle). It unlocks all non-English input choices for this speed; Plume is not downloading a separate pack for each language."
         alert.informativeText = "\(unlockText) Download size: \(asset.downloadSizeText). Nothing downloads unless you choose Download."
         alert.alertStyle = .informational
         alert.addButton(withTitle: "Download")
@@ -1237,7 +1237,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             activeCommandName = nil
             if tryItController.shouldReceiveTranscript {
                 pasteTarget = nil
-                activeAppName = "Try DuckWhisperer"
+                activeAppName = "Try Plume"
             } else {
                 pasteTarget = PasteTargetDetector.captureFocusedEditableTarget()
                 activeAppName = pasteTarget?.application?.localizedName
@@ -1505,7 +1505,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             AppLog.write("delivery fallback; Accessibility not trusted, transcript copied and transcript window shown")
             showPasteRecovery(
                 output,
-                reason: "Your text is safe and copied. Allow paste-back in System Settings so DuckWhisperer can put it into other apps."
+                reason: "Your text is safe and copied. Allow paste-back in System Settings so Plume can put it into other apps."
             )
             finishActiveTranscription(transcriptionID)
             setState(.ready)

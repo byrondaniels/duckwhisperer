@@ -171,8 +171,7 @@ enum TranslationStore {
     private static let sacremosesRequirement = "sacremoses>=0.1,<1"
 
     static var supportRootURL: URL {
-        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent(supportDirectoryName, isDirectory: true)
+        appSupportRootURL()
             .appendingPathComponent("Translation", isDirectory: true)
     }
 

@@ -102,7 +102,7 @@ final class TranscriptionResultController: NSObject {
         ])
     }
 
-    func show(text: String, reason: String = "DuckWhisperer could not paste into the current field. Your text is copied and ready below.") {
+    func show(text: String, reason: String = "Plume could not paste into the current field. Your text is copied and ready below.") {
         messageLabel.stringValue = reason
         textView.string = text
         textView.setSelectedRange(NSRange(location: text.utf16.count, length: 0))

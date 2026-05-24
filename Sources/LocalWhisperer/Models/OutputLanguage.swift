@@ -45,7 +45,7 @@ struct OutputLanguage: Equatable {
         OutputLanguage(id: "pirate", title: "Pirate", translationTargetCode: nil),
         OutputLanguage(id: "robot", title: "Robot", translationTargetCode: nil),
         OutputLanguage(id: "shakespeare", title: "Shakespeare", translationTargetCode: nil),
-        OutputLanguage(id: "duck", title: "Duck", translationTargetCode: nil)
+        OutputLanguage(id: "duck", title: "Quack", translationTargetCode: nil)
     ]
 
     static var defaultChoice: OutputLanguage {

@@ -2,8 +2,7 @@ import Foundation
 
 enum AppLog {
     static func write(_ message: String) {
-        let supportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent(supportDirectoryName, isDirectory: true)
+        let supportURL = appSupportRootURL()
         let logURL = supportURL.appendingPathComponent(logFilename)
         let line = "\(ISO8601DateFormatter().string(from: Date())) \(message)\n"
 

@@ -2,11 +2,12 @@
 set -u
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SUPPORT_ROOT="${DUCKWHISPERER_SUPPORT_DIR:-${LOCAL_WHISPERER_SUPPORT_DIR:-$HOME/Library/Application Support/Local Whisperer}}"
+SUPPORT_ROOT="${PLUME_SUPPORT_DIR:-${DUCKWHISPERER_SUPPORT_DIR:-${LOCAL_WHISPERER_SUPPORT_DIR:-$HOME/Library/Application Support/Plume}}}"
+LEGACY_SUPPORT_ROOT="$HOME/Library/Application Support/Local Whisperer"
 TRANSLATION_DIR="$SUPPORT_ROOT/Translation"
 STYLE_REWRITER_DIR="$SUPPORT_ROOT/StyleRewriter"
 MODEL_DIR="$SUPPORT_ROOT/Models"
-APP_PATH="${DUCKWHISPERER_INSTALL_DIR:-/Applications}/DuckWhisperer.app"
+APP_PATH="${PLUME_INSTALL_DIR:-${DUCKWHISPERER_INSTALL_DIR:-/Applications}}/Plume.app"
 FRAMEWORK_DIR="$ROOT_DIR/vendor/whisper-xcframework/build-apple/whisper.xcframework"
 
 failures=0
@@ -37,6 +38,18 @@ require_command() {
     pass "$name is available"
   else
     fail "$name is missing. $hint"
+  fi
+}
+
+resolve_support_root() {
+  if [[ -d "$SUPPORT_ROOT" ]]; then
+    return
+  fi
+  if [[ -d "$LEGACY_SUPPORT_ROOT" ]]; then
+    SUPPORT_ROOT="$LEGACY_SUPPORT_ROOT"
+    TRANSLATION_DIR="$SUPPORT_ROOT/Translation"
+    STYLE_REWRITER_DIR="$SUPPORT_ROOT/StyleRewriter"
+    MODEL_DIR="$SUPPORT_ROOT/Models"
   fi
 }
 
@@ -93,7 +106,7 @@ find_supported_python() {
 
 check_macos() {
   if [[ "$(uname -s)" != "Darwin" ]]; then
-    fail "DuckWhisperer requires macOS."
+    fail "Plume requires macOS."
     return
   fi
 
@@ -221,6 +234,7 @@ check_installed_app_signature() {
   fi
 }
 
+resolve_support_root
 check_macos
 require_command swift "Install Xcode Command Line Tools: xcode-select --install"
 require_command swiftc "Install Xcode Command Line Tools: xcode-select --install"
@@ -240,8 +254,8 @@ check_installed_app_signature
 
 printf '\n'
 if (( failures > 0 )); then
-  printf 'DuckWhisperer doctor found %d failure(s) and %d warning(s).\n' "$failures" "$warnings"
+  printf 'Plume doctor found %d failure(s) and %d warning(s).\n' "$failures" "$warnings"
   exit 1
 fi
 
-printf 'DuckWhisperer doctor passed with %d warning(s).\n' "$warnings"
+printf 'Plume doctor passed with %d warning(s).\n' "$warnings"

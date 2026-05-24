@@ -88,7 +88,9 @@ enum LocalTranslator {
             )
         ]
 
-        if let overrideRoot = ProcessInfo.processInfo.environment["DUCKWHISPERER_TRANSLATION_ROOT"],
+        let overrideRoot = ProcessInfo.processInfo.environment["PLUME_TRANSLATION_ROOT"]
+            ?? ProcessInfo.processInfo.environment["DUCKWHISPERER_TRANSLATION_ROOT"]
+        if let overrideRoot = overrideRoot,
            !overrideRoot.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             let overrideRootURL = URL(fileURLWithPath: overrideRoot, isDirectory: true)
             candidates.insert(

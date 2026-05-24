@@ -2,7 +2,7 @@ import AppKit
 import Foundation
 
 guard CommandLine.arguments.count == 2 else {
-    fputs("Usage: swift generate_duck_icon.swift /path/to/DuckWhisperer.icns\n", stderr)
+    fputs("Usage: swift generate_plume_icon.swift /path/to/Plume.icns\n", stderr)
     exit(EXIT_FAILURE)
 }
 
@@ -35,7 +35,7 @@ for spec in specs {
     let image = NSImage(size: NSSize(width: pixels, height: pixels))
     image.lockFocus()
     NSGraphicsContext.current?.imageInterpolation = .high
-    drawDuckIcon(in: NSRect(x: 0, y: 0, width: pixels, height: pixels))
+    drawPlumeIcon(in: NSRect(x: 0, y: 0, width: pixels, height: pixels))
     image.unlockFocus()
 
     guard let tiffData = image.tiffRepresentation,
@@ -91,7 +91,7 @@ private func writeICNS(chunks: [(type: String, data: Data)], to outputURL: URL) 
         guard let typeData = chunk.type.data(using: .ascii),
               typeData.count == 4
         else {
-            throw NSError(domain: "DuckIcon", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid ICNS chunk type \(chunk.type)."])
+            throw NSError(domain: "PlumeIcon", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid ICNS chunk type \(chunk.type)."])
         }
 
         data.append(typeData)
@@ -109,7 +109,7 @@ private func appendBigEndian(_ value: UInt32, to data: inout Data) {
     }
 }
 
-private func drawDuckIcon(in rect: NSRect) {
+private func drawPlumeIcon(in rect: NSRect) {
     let w = rect.width
     let h = rect.height
 
@@ -117,60 +117,61 @@ private func drawDuckIcon(in rect: NSRect) {
     rect.fill()
 
     let background = NSBezierPath(roundedRect: rect.insetBy(dx: w * 0.045, dy: h * 0.045), xRadius: w * 0.22, yRadius: h * 0.22)
-    NSColor(calibratedRed: 0.07, green: 0.18, blue: 0.20, alpha: 1).setFill()
-    background.fill()
+    NSGradient(colors: [
+        NSColor(calibratedRed: 0.035, green: 0.095, blue: 0.105, alpha: 1),
+        NSColor(calibratedRed: 0.075, green: 0.165, blue: 0.180, alpha: 1)
+    ])?.draw(in: background, angle: 270)
 
-    let water = NSBezierPath(roundedRect: NSRect(x: w * 0.16, y: h * 0.18, width: w * 0.68, height: h * 0.15), xRadius: h * 0.075, yRadius: h * 0.075)
-    NSColor(calibratedRed: 0.15, green: 0.58, blue: 0.66, alpha: 1).setFill()
-    water.fill()
+    let glow = NSBezierPath(ovalIn: NSRect(x: w * 0.20, y: h * 0.12, width: w * 0.68, height: h * 0.68))
+    NSColor(calibratedRed: 1.0, green: 0.70, blue: 0.22, alpha: 0.16).setFill()
+    glow.fill()
 
-    let shadow = NSBezierPath(ovalIn: NSRect(x: w * 0.25, y: h * 0.24, width: w * 0.45, height: h * 0.075))
-    NSColor(calibratedWhite: 0, alpha: 0.20).setFill()
-    shadow.fill()
+    let shadow = NSShadow()
+    shadow.shadowColor = NSColor.black.withAlphaComponent(0.26)
+    shadow.shadowBlurRadius = w * 0.035
+    shadow.shadowOffset = NSSize(width: 0, height: -w * 0.012)
+    shadow.set()
 
-    let duckYellow = NSColor(calibratedRed: 1.0, green: 0.78, blue: 0.20, alpha: 1)
-    let duckGold = NSColor(calibratedRed: 0.94, green: 0.60, blue: 0.10, alpha: 1)
-    let beakOrange = NSColor(calibratedRed: 1.0, green: 0.43, blue: 0.12, alpha: 1)
-
-    let body = NSBezierPath(ovalIn: NSRect(x: w * 0.19, y: h * 0.30, width: w * 0.48, height: h * 0.29))
-    duckYellow.setFill()
-    body.fill()
-
-    let chest = NSBezierPath(ovalIn: NSRect(x: w * 0.41, y: h * 0.31, width: w * 0.30, height: h * 0.25))
-    duckYellow.setFill()
-    chest.fill()
-
-    let head = NSBezierPath(ovalIn: NSRect(x: w * 0.54, y: h * 0.52, width: w * 0.24, height: h * 0.24))
-    duckYellow.setFill()
-    head.fill()
-
-    let beak = NSBezierPath()
-    beak.move(to: NSPoint(x: w * 0.75, y: h * 0.61))
-    beak.line(to: NSPoint(x: w * 0.91, y: h * 0.56))
-    beak.line(to: NSPoint(x: w * 0.75, y: h * 0.51))
-    beak.close()
-    beakOrange.setFill()
-    beak.fill()
-
-    let wing = NSBezierPath()
-    wing.move(to: NSPoint(x: w * 0.31, y: h * 0.44))
-    wing.curve(
-        to: NSPoint(x: w * 0.55, y: h * 0.43),
-        controlPoint1: NSPoint(x: w * 0.36, y: h * 0.57),
-        controlPoint2: NSPoint(x: w * 0.50, y: h * 0.57)
+    let feather = NSBezierPath()
+    feather.move(to: NSPoint(x: w * 0.24, y: h * 0.77))
+    feather.curve(
+        to: NSPoint(x: w * 0.79, y: h * 0.17),
+        controlPoint1: NSPoint(x: w * 0.26, y: h * 0.31),
+        controlPoint2: NSPoint(x: w * 0.62, y: h * 0.10)
     )
-    wing.curve(
-        to: NSPoint(x: w * 0.31, y: h * 0.44),
-        controlPoint1: NSPoint(x: w * 0.51, y: h * 0.33),
-        controlPoint2: NSPoint(x: w * 0.38, y: h * 0.31)
+    feather.curve(
+        to: NSPoint(x: w * 0.31, y: h * 0.84),
+        controlPoint1: NSPoint(x: w * 0.47, y: h * 0.20),
+        controlPoint2: NSPoint(x: w * 0.20, y: h * 0.50)
     )
-    duckGold.setFill()
-    wing.fill()
+    feather.curve(
+        to: NSPoint(x: w * 0.24, y: h * 0.77),
+        controlPoint1: NSPoint(x: w * 0.28, y: h * 0.84),
+        controlPoint2: NSPoint(x: w * 0.25, y: h * 0.80)
+    )
+    feather.close()
+    NSGradient(colors: [
+        NSColor(calibratedRed: 1.0, green: 0.94, blue: 0.78, alpha: 1),
+        NSColor(calibratedRed: 0.98, green: 0.66, blue: 0.22, alpha: 1)
+    ])?.draw(in: feather, angle: 245)
 
-    NSColor(calibratedWhite: 0.08, alpha: 1).setFill()
-    NSBezierPath(ovalIn: NSRect(x: w * 0.665, y: h * 0.635, width: w * 0.035, height: h * 0.035)).fill()
+    let shaft = NSBezierPath()
+    shaft.lineWidth = max(3, w * 0.045)
+    shaft.lineCapStyle = .round
+    shaft.move(to: NSPoint(x: w * 0.26, y: h * 0.81))
+    shaft.line(to: NSPoint(x: w * 0.78, y: h * 0.17))
+    NSColor(calibratedRed: 0.58, green: 0.34, blue: 0.12, alpha: 0.44).setStroke()
+    shaft.stroke()
 
-    let highlight = NSBezierPath(ovalIn: NSRect(x: w * 0.59, y: h * 0.66, width: w * 0.055, height: h * 0.035))
-    NSColor(calibratedWhite: 1, alpha: 0.30).setFill()
+    let notch = NSBezierPath()
+    notch.move(to: NSPoint(x: w * 0.43, y: h * 0.62))
+    notch.line(to: NSPoint(x: w * 0.23, y: h * 0.58))
+    notch.line(to: NSPoint(x: w * 0.47, y: h * 0.53))
+    notch.close()
+    NSColor(calibratedRed: 0.05, green: 0.12, blue: 0.13, alpha: 0.44).setFill()
+    notch.fill()
+
+    let highlight = NSBezierPath(ovalIn: NSRect(x: w * 0.51, y: h * 0.50, width: w * 0.08, height: h * 0.20))
+    NSColor(calibratedWhite: 1, alpha: 0.22).setFill()
     highlight.fill()
 }

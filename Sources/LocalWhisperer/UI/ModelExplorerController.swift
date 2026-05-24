@@ -86,7 +86,7 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
 
         let titleLabel = makeLabel("Speed & Accuracy", font: .boldSystemFont(ofSize: 20))
         let subtitleLabel = makeLabel(
-            "Choose how fast DuckWhisperer should feel. Extra downloads only happen when you approve them.",
+            "Choose how fast Plume should feel. Extra downloads only happen when you approve them.",
             font: .systemFont(ofSize: 13),
             color: .secondaryLabelColor
         )
@@ -490,7 +490,7 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
         alert.messageText = inputLanguage.isEnglish ? "Download \(choice.friendlyTitle)?" : "Download Multilingual Speech Model?"
         let unlockText = inputLanguage.isEnglish
             ? "This installs \(asset.filename), the English-only Whisper file."
-            : "\(inputLanguage.title) uses \(asset.filename), one shared multilingual Whisper file. It unlocks all non-English input choices for this speed; DuckWhisperer is not downloading a separate pack for each language."
+            : "\(inputLanguage.title) uses \(asset.filename), one shared multilingual Whisper file. It unlocks all non-English input choices for this speed; Plume is not downloading a separate pack for each language."
         alert.informativeText = "\(unlockText) Download size: \(asset.downloadSizeText). Nothing downloads unless you choose Download."
         alert.alertStyle = .informational
         alert.addButton(withTitle: "Download")
