@@ -7,12 +7,12 @@ struct WritingProfile: Equatable {
 
     static let all: [WritingProfile] = [
         WritingProfile(id: "smart", title: "Smart Clean", detail: "default polished dictation"),
-        WritingProfile(id: "raw", title: "Raw Dictation", detail: "minimal cleanup"),
         WritingProfile(id: "clean-email", title: "Clean Email", detail: "clear paragraphs for email"),
-        WritingProfile(id: "slack-casual", title: "Slack Casual", detail: "short, casual workplace tone"),
+        WritingProfile(id: "slack-casual", title: "Slack / Teams", detail: "short, casual workplace tone"),
         WritingProfile(id: "meeting-notes", title: "Meeting Notes", detail: "scannable meeting bullets"),
-        WritingProfile(id: "code-prompt", title: "Code Prompt", detail: "developer-ready task wording"),
-        WritingProfile(id: "bullet-notes", title: "Bullet Notes", detail: "simple bullet list")
+        WritingProfile(id: "bullet-notes", title: "Bullet Points", detail: "simple bullet list"),
+        WritingProfile(id: "raw", title: "Raw Dictation", detail: "minimal cleanup"),
+        WritingProfile(id: "code-prompt", title: "AI Prompt", detail: "clear prompt for ChatGPT or Claude")
     ]
 
     static var defaultChoice: WritingProfile {
@@ -111,12 +111,13 @@ enum WritingProfileRenderer {
 
     private static func codePrompt(_ text: String) -> String {
         let trimmed = ensureFinalPeriod(text)
-        if trimmed.localizedCaseInsensitiveContains("implement") ||
-            trimmed.localizedCaseInsensitiveContains("fix") ||
-            trimmed.localizedCaseInsensitiveContains("refactor") {
+        if trimmed.localizedCaseInsensitiveContains("please") ||
+            trimmed.localizedCaseInsensitiveContains("compare") ||
+            trimmed.localizedCaseInsensitiveContains("summarize") ||
+            trimmed.localizedCaseInsensitiveContains("recommend") {
             return trimmed
         }
-        return "Please implement this: \(lowercaseFirst(trimmed))"
+        return "Please help with this: \(lowercaseFirst(trimmed))"
     }
 
     private static func sentenceParts(_ text: String) -> [String] {

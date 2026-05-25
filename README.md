@@ -19,6 +19,7 @@ Use `Option+Space` once to start recording and `Option+Space` again to stop, tra
 Press `Escape` while recording or transcribing to cancel without pasting.
 
 Open the menu-bar icon for `Try It Here`, `Undo Last Paste`, `Writing Mode`, `Saved Words`, `History`, `Finish Setup`, and `Settings`. Technical choices such as input language, output language, model downloads, translation, and fun modes are under `Settings -> Advanced`.
+`Finish Setup` is the first-run setup wizard and paste-back dashboard. It checks Microphone, paste-back permission, model availability, install location, and app identity, then gives users a safe `Try It Here` path.
 
 ## Fresh Machine Setup
 
@@ -151,7 +152,9 @@ Run the full local verification loop before pushing changes:
 - Global shortcut: `Option+Space`
 - Active dictation cancel shortcut: `Escape`
 - Built-in `Try It Here` window for first-run testing
+- First-run setup wizard with Microphone, paste-back, model, install, and signing checks
 - `Undo Last Paste` for fast recovery when text lands in the wrong place
+- Paste-back dashboard with plain-language diagnostics when macOS blocks insertion
 - Local speech transcription with lazy input-language downloads
 - Built-in input choices for English, Spanish, French, Tagalog, Chinese, Hindi, Arabic, Bengali, Portuguese, Russian, Urdu, Indonesian, German, Japanese, Korean, Turkish, Vietnamese, Italian, Polish, and Dutch
 - Optional English -> French/Dutch output translation plus per-language input -> English translator downloads
@@ -162,8 +165,9 @@ Run the full local verification loop before pushing changes:
 - Green HUD command badge when a spoken command phrase is recognized
 - Per-app defaults for model, output language, and writing profile
 - Personal dictionary replacements stored locally
+- Saved-word examples for names, brands, acronyms, and work vocabulary
 - Searchable local transcript history
-- Local time-saved tracker based on words dictated, speaking time, and estimated typing time
+- Local time-saved tracker based on words dictated, speaking time, and estimated typing time, visible from the main menu and History
 - Optional audio ducking while recording
 - Simplified office-worker menu with model, language, translation, and fun modes tucked under `Settings -> Advanced`
 - `Speed & Accuracy` menu for Best Accuracy, Fast, and Fastest choices
@@ -172,6 +176,9 @@ Run the full local verification loop before pushing changes:
 - Fun language modes that transform the transcript locally without extra downloads
 - Audio-reactive plume recording overlay with live preview, elapsed time, profile/model context, cancel hint, and transcription progress percentage
 - Paste recovery window with `Paste Again`, `Copy`, and `Fix Permission`
+- Paste recovery window with `Paste Again`, `Copy`, `Fix Permission`, and `Try In Plume`
+- Support bundle export for debugging installs without including transcript history
+- Manual update check from `Settings`
 - Plume menu-bar icon and app icon
 - `Preserve Capitalization` toggle
 - Fallback transcript window when macOS does not allow auto-paste

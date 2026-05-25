@@ -1,9 +1,13 @@
 import Foundation
 
 enum AppLog {
+    static var url: URL {
+        appSupportRootURL().appendingPathComponent(logFilename)
+    }
+
     static func write(_ message: String) {
         let supportURL = appSupportRootURL()
-        let logURL = supportURL.appendingPathComponent(logFilename)
+        let logURL = url
         let line = "\(ISO8601DateFormatter().string(from: Date())) \(message)\n"
 
         do {

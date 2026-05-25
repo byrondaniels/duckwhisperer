@@ -6,13 +6,16 @@ final class TranscriptionResultController: NSObject {
     private let textView = NSTextView()
     private let onPasteAgain: (String) -> Void
     private let onFixPermission: () -> Void
+    private let onTryHere: (String) -> Void
 
     init(
         onPasteAgain: @escaping (String) -> Void,
-        onFixPermission: @escaping () -> Void
+        onFixPermission: @escaping () -> Void,
+        onTryHere: @escaping (String) -> Void
     ) {
         self.onPasteAgain = onPasteAgain
         self.onFixPermission = onFixPermission
+        self.onTryHere = onTryHere
 
         let size = NSSize(width: 560, height: 300)
         panel = NSPanel(
@@ -67,6 +70,10 @@ final class TranscriptionResultController: NSObject {
         fixPermissionButton.translatesAutoresizingMaskIntoConstraints = false
         fixPermissionButton.bezelStyle = .rounded
 
+        let tryHereButton = NSButton(title: "Try In Plume", target: self, action: #selector(tryHere))
+        tryHereButton.translatesAutoresizingMaskIntoConstraints = false
+        tryHereButton.bezelStyle = .rounded
+
         let closeButton = NSButton(title: "Close", target: self, action: #selector(closePanel))
         closeButton.translatesAutoresizingMaskIntoConstraints = false
         closeButton.bezelStyle = .rounded
@@ -75,6 +82,7 @@ final class TranscriptionResultController: NSObject {
         contentView.addSubview(scrollView)
         contentView.addSubview(pasteAgainButton)
         contentView.addSubview(fixPermissionButton)
+        contentView.addSubview(tryHereButton)
         contentView.addSubview(copyButton)
         contentView.addSubview(closeButton)
 
@@ -98,7 +106,11 @@ final class TranscriptionResultController: NSObject {
             fixPermissionButton.centerYAnchor.constraint(equalTo: closeButton.centerYAnchor),
 
             pasteAgainButton.leadingAnchor.constraint(equalTo: fixPermissionButton.trailingAnchor, constant: 8),
-            pasteAgainButton.centerYAnchor.constraint(equalTo: closeButton.centerYAnchor)
+            pasteAgainButton.centerYAnchor.constraint(equalTo: closeButton.centerYAnchor),
+
+            tryHereButton.leadingAnchor.constraint(equalTo: pasteAgainButton.trailingAnchor, constant: 8),
+            tryHereButton.centerYAnchor.constraint(equalTo: closeButton.centerYAnchor),
+            tryHereButton.trailingAnchor.constraint(lessThanOrEqualTo: copyButton.leadingAnchor, constant: -8)
         ])
     }
 
@@ -144,6 +156,11 @@ final class TranscriptionResultController: NSObject {
 
     @objc private func fixPermission() {
         onFixPermission()
+    }
+
+    @objc private func tryHere() {
+        onTryHere(textView.string)
+        close()
     }
 
     @objc private func closePanel() {

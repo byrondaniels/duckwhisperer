@@ -19,6 +19,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     private let statusMenuItem = NSMenuItem(title: "Starting...", action: nil, keyEquivalent: "")
     private let autoPastePermissionMenuItem = NSMenuItem(title: "Paste-Back: Checking...", action: #selector(openAccessibilitySettings), keyEquivalent: "")
     private let privacyMenuItem = NSMenuItem(title: "Private: your voice stays on this Mac", action: nil, keyEquivalent: "")
+    private let timeSavedMenuItem = NSMenuItem(title: "Time Saved: 0s typing", action: nil, keyEquivalent: "")
     private let toggleMenuItem = NSMenuItem(title: "Start Voice Typing", action: #selector(toggleRecordingFromMenu), keyEquivalent: "")
     private let undoLastPasteMenuItem = NSMenuItem(title: "Undo Last Paste", action: #selector(undoLastPaste), keyEquivalent: "")
     private let copyLastMenuItem = NSMenuItem(title: "Copy Last Text", action: #selector(copyLastTranscript), keyEquivalent: "")
@@ -35,6 +36,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         },
         onFixPermission: { [weak self] in
             self?.openAccessibilitySettings()
+        },
+        onTryHere: { [weak self] text in
+            self?.openTryItWithRecoveredText(text)
         }
     )
     private lazy var tryItController = TryItController()
@@ -45,7 +49,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     private lazy var setupDoctorController = SetupDoctorController(
         onOpenMicrophone: { [weak self] in self?.openMicrophoneSettings() },
         onOpenAccessibility: { [weak self] in self?.openAccessibilitySettings() },
-        onOpenModelExplorer: { [weak self] in self?.showModelExplorer() }
+        onOpenModelExplorer: { [weak self] in self?.showModelExplorer() },
+        onOpenTryIt: { [weak self] in self?.openTryIt() },
+        onExportSupportBundle: { [weak self] in self?.exportSupportBundle() }
     )
     private lazy var transcriber = WhisperTranscriber(modelURL: modelURL)
     private lazy var modelExplorer = ModelExplorerController(
@@ -216,7 +222,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         statusItem.button?.toolTip = appDisplayName
         statusMenuItem.isEnabled = false
         privacyMenuItem.isEnabled = false
+        timeSavedMenuItem.isEnabled = false
         autoPastePermissionMenuItem.target = self
+        autoPastePermissionMenuItem.action = #selector(openSetupDoctor)
         toggleMenuItem.target = self
         undoLastPasteMenuItem.target = self
         undoLastPasteMenuItem.isEnabled = false
@@ -242,6 +250,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
 
         menu.addItem(statusMenuItem)
         menu.addItem(privacyMenuItem)
+        menu.addItem(timeSavedMenuItem)
         menu.addItem(autoPastePermissionMenuItem)
         menu.addItem(NSMenuItem.separator())
         menu.addItem(toggleMenuItem)
@@ -280,6 +289,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         settingsMenu.addItem(appDefaultsMenuItem())
         settingsMenu.addItem(NSMenuItem.separator())
         settingsMenu.addItem(userGuideItem)
+        let exportSupportItem = NSMenuItem(
+            title: "Export Support Bundle...",
+            action: #selector(exportSupportBundle),
+            keyEquivalent: ""
+        )
+        exportSupportItem.target = self
+        settingsMenu.addItem(exportSupportItem)
+        let checkForUpdatesItem = NSMenuItem(
+            title: "Check For Updates...",
+            action: #selector(checkForUpdates),
+            keyEquivalent: ""
+        )
+        checkForUpdatesItem.target = self
+        settingsMenu.addItem(checkForUpdatesItem)
         settingsMenu.addItem(openMicSettings)
         settingsMenu.addItem(openAccessibilitySettings)
         settingsMenu.addItem(NSMenuItem.separator())
@@ -321,7 +344,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
 
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         if menuItem === autoPastePermissionMenuItem {
-            return !AXIsProcessTrusted()
+            return true
         }
         if menuItem === undoLastPasteMenuItem {
             return canUndoLastPaste
@@ -463,10 +486,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         let current = selectedWritingProfile
 
         for profile in WritingProfile.all {
-            let item = NSMenuItem(title: "\(profile.title) - \(profile.detail)", action: #selector(selectWritingProfile(_:)), keyEquivalent: "")
+            let item = NSMenuItem(title: profile.title, action: #selector(selectWritingProfile(_:)), keyEquivalent: "")
             item.target = self
             item.representedObject = profile.id
             item.state = profile == current ? .on : .off
+            item.toolTip = profile.detail
             profileMenu.addItem(item)
         }
     }
@@ -740,16 +764,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     }
 
     private func refreshPermissionUI() {
-        let hasAutoPastePermission = AXIsProcessTrusted()
-        let permissionStatus = hasAutoPastePermission ? "Paste-Back Ready" : "Paste-Back Needs Permission - Click to Fix"
-        autoPastePermissionMenuItem.title = permissionStatus
-        autoPastePermissionMenuItem.state = hasAutoPastePermission ? .on : .off
-        autoPastePermissionMenuItem.isEnabled = !hasAutoPastePermission
-        autoPastePermissionMenuItem.target = hasAutoPastePermission ? nil : self
-        autoPastePermissionMenuItem.action = hasAutoPastePermission ? nil : #selector(openAccessibilitySettings)
-        autoPastePermissionMenuItem.toolTip = hasAutoPastePermission
-            ? "Plume can paste transcripts back into the target app."
-            : "Plume needs paste-back permission to put text into other apps."
+        let pasteReadiness = PasteTargetDetector.readiness()
+        let hasAutoPastePermission = pasteReadiness.severity != .blocked
+        autoPastePermissionMenuItem.title = pasteReadiness.menuTitle
+        autoPastePermissionMenuItem.state = .off
+        autoPastePermissionMenuItem.isEnabled = true
+        autoPastePermissionMenuItem.target = self
+        autoPastePermissionMenuItem.action = #selector(openSetupDoctor)
+        autoPastePermissionMenuItem.toolTip = pasteReadiness.detail
+
+        timeSavedMenuItem.title = DictationStatsStore.current().menuSummary
 
         let permissionSuffix = hasAutoPastePermission ? "" : " - Paste-Back Needs Permission"
         statusItem.button?.toolTip = "\(appDisplayName): \(state.statusText)\(permissionSuffix)"
@@ -1172,6 +1196,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         tryItController.show()
     }
 
+    private func openTryItWithRecoveredText(_ text: String) {
+        tryItController.show(withRecoveredText: text)
+    }
+
     @objc private func openPersonalDictionary() {
         personalDictionaryController.show()
     }
@@ -1184,6 +1212,45 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         guard let url = Bundle.main.url(forResource: "UserGuide", withExtension: "html") else {
             setState(.error("User guide is missing from this build."))
             NSSound.beep()
+            return
+        }
+        NSWorkspace.shared.open(url)
+    }
+
+    @objc private func exportSupportBundle() {
+        NSApp.setActivationPolicy(.regular)
+        NSApp.activate(ignoringOtherApps: true)
+
+        let panel = NSSavePanel()
+        panel.title = "Export Plume Support Bundle"
+        panel.nameFieldStringValue = SupportBundleExporter.suggestedFilename()
+        panel.canCreateDirectories = true
+        panel.isExtensionHidden = false
+
+        guard panel.runModal() == .OK, let url = panel.url else {
+            NSApp.setActivationPolicy(.accessory)
+            return
+        }
+
+        do {
+            try SupportBundleExporter.export(
+                to: url,
+                selectedModel: selectedModel,
+                inputLanguage: selectedInputLanguage,
+                outputLanguage: selectedOutputLanguage,
+                writingProfile: selectedWritingProfile
+            )
+            NSWorkspace.shared.activateFileViewerSelecting([url])
+            AppLog.write("exported support bundle to \(url.path)")
+        } catch {
+            let alert = NSAlert(error: error)
+            alert.runModal()
+            AppLog.write("support bundle export failed: \(error.localizedDescription)")
+        }
+    }
+
+    @objc private func checkForUpdates() {
+        guard let url = URL(string: "https://github.com/byrondaniels/duckwhisperer/releases") else {
             return
         }
         NSWorkspace.shared.open(url)
@@ -1562,7 +1629,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             AppLog.write("delivery fallback; Accessibility not trusted, transcript copied and transcript window shown")
             showPasteRecovery(
                 output,
-                reason: "Your text is safe and copied. Allow paste-back in System Settings so Plume can put it into other apps."
+                reason: pasteRecoveryReason(
+                    "Your text is safe and copied.",
+                    target: target
+                )
             )
             finishActiveTranscription(transcriptionID)
             setState(.ready)
@@ -1578,7 +1648,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             if !self.pasteClipboardIntoFocusedTarget(allowWithoutFocusedCheck: allowFocusedCheckBypass) {
                 self.showPasteRecovery(
                     output,
-                    reason: "Your text is safe and copied. Click in the field you want, then choose Paste Again."
+                    reason: self.pasteRecoveryReason(
+                        "Your text is safe and copied. Click in the field you want, then choose Paste Again.",
+                        target: target
+                    )
                 )
                 self.finishActiveTranscription(transcriptionID)
                 self.setState(.ready)
@@ -1645,6 +1718,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
 
     private func showPasteRecovery(_ output: String, reason: String) {
         transcriptionResult.show(text: output, reason: reason)
+    }
+
+    private func pasteRecoveryReason(_ prefix: String, target: PasteTarget?) -> String {
+        let readiness = PasteTargetDetector.readiness(for: target)
+        return "\(prefix)\n\n\(readiness.title): \(readiness.detail)"
     }
 
     private func finishSuccessfulDelivery(
@@ -1769,7 +1847,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         guard AXIsProcessTrusted() else {
             showPasteRecovery(
                 text,
-                reason: "Paste-back still needs permission. Your text is copied, and the Fix Permission button will open the right setting."
+                reason: pasteRecoveryReason(
+                    "Paste-back still needs permission. Your text is copied, and the Fix Permission button will open the right setting.",
+                    target: nil
+                )
             )
             return
         }
@@ -1777,7 +1858,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         guard pasteClipboardIntoFocusedTarget() else {
             showPasteRecovery(
                 text,
-                reason: "Click in the field where you want this text, then choose Paste Again."
+                reason: pasteRecoveryReason(
+                    "Click in the field where you want this text, then choose Paste Again.",
+                    target: nil
+                )
             )
             return
         }

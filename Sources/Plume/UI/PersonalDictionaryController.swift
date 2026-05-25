@@ -3,6 +3,7 @@ import AppKit
 final class PersonalDictionaryController: NSObject {
     private let panel: NSPanel
     private let textView = NSTextView()
+    private let countLabel = NSTextField(labelWithString: "")
     private let onSave: () -> Void
 
     init(onSave: @escaping () -> Void) {
@@ -23,10 +24,15 @@ final class PersonalDictionaryController: NSObject {
         let contentView = NSView(frame: NSRect(origin: .zero, size: size))
         panel.contentView = contentView
 
-        let helpLabel = NSTextField(labelWithString: "Teach Plume your words. Example: open ai = OpenAI")
+        let helpLabel = NSTextField(labelWithString: "Teach Plume names, brands, and phrases that should always come out right.")
         helpLabel.translatesAutoresizingMaskIntoConstraints = false
         helpLabel.textColor = .secondaryLabelColor
         helpLabel.font = .systemFont(ofSize: 13)
+        helpLabel.maximumNumberOfLines = 0
+
+        countLabel.translatesAutoresizingMaskIntoConstraints = false
+        countLabel.textColor = .secondaryLabelColor
+        countLabel.font = .systemFont(ofSize: 12, weight: .medium)
 
         let scrollView = NSScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
@@ -43,12 +49,18 @@ final class PersonalDictionaryController: NSObject {
         saveButton.translatesAutoresizingMaskIntoConstraints = false
         saveButton.bezelStyle = .rounded
 
+        let examplesButton = NSButton(title: "Add Examples", target: self, action: #selector(addExamples))
+        examplesButton.translatesAutoresizingMaskIntoConstraints = false
+        examplesButton.bezelStyle = .rounded
+
         let closeButton = NSButton(title: "Close", target: self, action: #selector(close))
         closeButton.translatesAutoresizingMaskIntoConstraints = false
         closeButton.bezelStyle = .rounded
 
         contentView.addSubview(helpLabel)
+        contentView.addSubview(countLabel)
         contentView.addSubview(scrollView)
+        contentView.addSubview(examplesButton)
         contentView.addSubview(saveButton)
         contentView.addSubview(closeButton)
 
@@ -57,21 +69,29 @@ final class PersonalDictionaryController: NSObject {
             helpLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             helpLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 16),
 
+            countLabel.leadingAnchor.constraint(equalTo: helpLabel.leadingAnchor),
+            countLabel.trailingAnchor.constraint(equalTo: helpLabel.trailingAnchor),
+            countLabel.topAnchor.constraint(equalTo: helpLabel.bottomAnchor, constant: 6),
+
             scrollView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             scrollView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            scrollView.topAnchor.constraint(equalTo: helpLabel.bottomAnchor, constant: 10),
+            scrollView.topAnchor.constraint(equalTo: countLabel.bottomAnchor, constant: 10),
             scrollView.bottomAnchor.constraint(equalTo: saveButton.topAnchor, constant: -14),
 
             closeButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             closeButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -16),
 
             saveButton.trailingAnchor.constraint(equalTo: closeButton.leadingAnchor, constant: -8),
-            saveButton.centerYAnchor.constraint(equalTo: closeButton.centerYAnchor)
+            saveButton.centerYAnchor.constraint(equalTo: closeButton.centerYAnchor),
+
+            examplesButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            examplesButton.centerYAnchor.constraint(equalTo: closeButton.centerYAnchor)
         ])
     }
 
     func show() {
         textView.string = UserDefaults.standard.string(forKey: personalDictionaryTextKey) ?? ""
+        updateCountLabel()
         if !panel.isVisible {
             panel.center()
         }
@@ -83,13 +103,41 @@ final class PersonalDictionaryController: NSObject {
 
     @objc private func save() {
         UserDefaults.standard.set(textView.string, forKey: personalDictionaryTextKey)
+        updateCountLabel()
         onSave()
         panel.orderOut(nil)
         NSApp.setActivationPolicy(.accessory)
     }
 
+    @objc private func addExamples() {
+        let examples = [
+            "# Use one saved word per line.",
+            "# spoken phrase = preferred spelling",
+            "open ai = OpenAI",
+            "byron daniels = Byron Daniels",
+            "acme crm = ACME CRM"
+        ]
+        let existing = textView.string.trimmingCharacters(in: .whitespacesAndNewlines)
+        let missingExamples = examples.filter { !textView.string.contains($0) }
+        guard !missingExamples.isEmpty else {
+            updateCountLabel()
+            return
+        }
+        textView.string = existing.isEmpty
+            ? missingExamples.joined(separator: "\n")
+            : existing + "\n\n" + missingExamples.joined(separator: "\n")
+        updateCountLabel()
+        panel.makeFirstResponder(textView)
+    }
+
     @objc private func close() {
         panel.orderOut(nil)
         NSApp.setActivationPolicy(.accessory)
+    }
+
+    private func updateCountLabel() {
+        let count = PersonalDictionary.entries(from: textView.string).count
+        let noun = count == 1 ? "saved word" : "saved words"
+        countLabel.stringValue = "\(count) \(noun). Format: spoken phrase = preferred spelling"
     }
 }

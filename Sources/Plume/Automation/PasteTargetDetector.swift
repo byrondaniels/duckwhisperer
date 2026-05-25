@@ -8,6 +8,35 @@ struct PasteTarget {
     let pid: pid_t?
     let selectedRange: CFRange?
 }
+
+enum PasteBackSeverity: Equatable {
+    case ready
+    case warning
+    case blocked
+}
+
+struct PasteBackReadiness {
+    let severity: PasteBackSeverity
+    let title: String
+    let detail: String
+    let actionTitle: String?
+
+    var isReady: Bool {
+        severity == .ready
+    }
+
+    var menuTitle: String {
+        switch severity {
+        case .ready:
+            return "Paste-Back: Ready"
+        case .warning:
+            return "Paste-Back: Check Target"
+        case .blocked:
+            return "Paste-Back: Needs Permission"
+        }
+    }
+}
+
 enum PasteTargetDetector {
     static func captureFocusedEditableTarget() -> PasteTarget {
         let application = currentExternalFrontmostApplication()
@@ -36,6 +65,62 @@ enum PasteTargetDetector {
         }
 
         return !elementBelongsToCurrentProcess(element)
+    }
+
+    static func readiness(for target: PasteTarget? = nil) -> PasteBackReadiness {
+        guard AXIsProcessTrusted() else {
+            return PasteBackReadiness(
+                severity: .blocked,
+                title: "Paste-back permission is missing",
+                detail: "macOS has not allowed Plume to control the keyboard or target text fields yet.",
+                actionTitle: "Open Permission Fix"
+            )
+        }
+
+        if let target {
+            if let appName = target.application?.localizedName, target.element != nil {
+                return PasteBackReadiness(
+                    severity: .ready,
+                    title: "Target field captured",
+                    detail: "Plume found an editable field in \(appName) before recording started.",
+                    actionTitle: nil
+                )
+            }
+
+            if let appName = target.application?.localizedName {
+                return PasteBackReadiness(
+                    severity: .warning,
+                    title: "Target app captured, field not confirmed",
+                    detail: "Plume saw \(appName), but macOS did not expose the exact text field. Clipboard paste can still work if the field accepts Command+V.",
+                    actionTitle: "Click Field And Paste Again"
+                )
+            }
+        }
+
+        if hasFocusedEditableTarget() {
+            return PasteBackReadiness(
+                severity: .ready,
+                title: "Focused text field detected",
+                detail: "Plume can see the current editable field and should be able to paste there.",
+                actionTitle: nil
+            )
+        }
+
+        if let appName = currentExternalFrontmostApplication()?.localizedName {
+            return PasteBackReadiness(
+                severity: .warning,
+                title: "No editable field detected",
+                detail: "Plume can see \(appName), but not a focused text field. Click in the field before starting dictation.",
+                actionTitle: "Click A Text Field"
+            )
+        }
+
+        return PasteBackReadiness(
+            severity: .warning,
+            title: "No target app detected",
+            detail: "Click in the app and field where you want text before starting dictation.",
+            actionTitle: "Click A Text Field"
+        )
     }
 
     static func focusCapturedTarget(_ target: PasteTarget) -> Bool {

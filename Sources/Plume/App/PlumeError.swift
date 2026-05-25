@@ -11,6 +11,7 @@ enum PlumeError: LocalizedError {
     case styleRewriteFailed(String)
     case styleRewriteInstallFailed(String)
     case styleRewriteRuntimeMissing(String)
+    case supportBundleFailed(String)
     case translationFailed(String)
     case translationInstallFailed(String)
     case translationModelMissing(String)
@@ -39,6 +40,8 @@ enum PlumeError: LocalizedError {
             return "Style rewrite install failed: \(message)"
         case .styleRewriteRuntimeMissing(let message):
             return "Missing local style runner: \(message)"
+        case .supportBundleFailed(let message):
+            return "Support bundle failed: \(message)"
         case .translationFailed(let message):
             return "Translation failed: \(message)"
         case .translationInstallFailed(let message):

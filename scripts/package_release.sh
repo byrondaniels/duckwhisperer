@@ -88,7 +88,7 @@ write_start_here() {
     <h2>First Run</h2>
     <ol>
       <li>Open the menu-bar Plume icon.</li>
-      <li>Choose <code>Finish Setup...</code>.</li>
+      <li>Choose <code>Finish Setup...</code> for the guided setup checks.</li>
       <li>Grant Microphone and Paste-Back permissions.</li>
       <li>Choose <code>Try It Here...</code> for a quick test.</li>
     </ol>
@@ -98,6 +98,9 @@ write_start_here() {
 
     <h2>What Is Included</h2>
     <p>This app includes Best Accuracy English dictation. Extra language and style assets are optional downloads inside Plume.</p>
+
+    <h2>If Paste-Back Fails</h2>
+    <p>Your text is copied and safe. Use <code>Paste Again</code>, <code>Copy</code>, <code>Try In Plume</code>, or <code>Fix Permission</code> in the recovery window.</p>
   </main>
 </body>
 </html>
@@ -127,6 +130,7 @@ $package_list
 - Bundled default speech model: Best Accuracy English (ggml-small.en.bin).
 - Bundled user guide: Resources/UserGuide.html.
 - Optional non-English speech, translation, and Enhanced Robot assets are not included. Plume asks before downloading them.
+- First-run setup checks, paste-back diagnostics, and support bundle export are included in the app.
 
 ## Signing
 

@@ -80,6 +80,7 @@ Before publishing:
 8. Grant Microphone and Paste-Back permissions.
 9. Open `Try It Here...`, record once, and confirm the text appears.
 10. Test paste-back in TextEdit or Notes with the cursor in a text field.
+11. Open `Settings -> Export Support Bundle...` and confirm a ZIP is created without transcript history.
 
 ## User Customization Checklist
 
@@ -90,7 +91,9 @@ Plume's menu-bar settings cover normal non-dev customization:
 - `App Defaults`: per-app model, output, and writing mode
 - `Preserve Capitalization`
 - `History`: recent local transcripts and time-saved stats
+- `Time Saved`: main-menu tracker for the value users get from dictation
 - `Settings -> Advanced`: input language, output language, model choice, optional asset downloads, audio ducking, presenter mode, translation, and fun modes
+- `Settings -> Export Support Bundle...`: diagnostics for support without transcript history
 
 ## Versioning
 
