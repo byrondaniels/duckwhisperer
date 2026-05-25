@@ -702,8 +702,9 @@ final class RecordingOverlayController {
 
     func setAudioLevel(_ level: Float) {
         let clampedLevel = max(0, min(1, CGFloat(level)))
-        let gatedLevel = clampedLevel < 0.035 ? 0 : clampedLevel
-        targetAudioLevel = min(0.82, pow(gatedLevel, 1.62) * 0.90)
+        let noiseFloor: CGFloat = 0.015
+        let gatedLevel = max(0, (clampedLevel - noiseFloor) / (1 - noiseFloor))
+        targetAudioLevel = min(0.78, pow(gatedLevel, 1.12) * 0.88)
     }
 
     private func startAnimationTimer() {
@@ -729,7 +730,7 @@ final class RecordingOverlayController {
             return
         }
 
-        let smoothing: CGFloat = targetAudioLevel > displayedAudioLevel ? 0.24 : 0.10
+        let smoothing: CGFloat = targetAudioLevel > displayedAudioLevel ? 0.30 : 0.10
         displayedAudioLevel += (targetAudioLevel - displayedAudioLevel) * smoothing
         if abs(displayedAudioLevel - targetAudioLevel) < 0.002 {
             displayedAudioLevel = targetAudioLevel
