@@ -15,12 +15,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     private let historyMenu = NSMenu()
     private let appDefaultsMenu = NSMenu()
     private let settingsMenu = NSMenu()
+    private let advancedMenu = NSMenu()
     private let statusMenuItem = NSMenuItem(title: "Starting...", action: nil, keyEquivalent: "")
     private let autoPastePermissionMenuItem = NSMenuItem(title: "Paste-Back: Checking...", action: #selector(openAccessibilitySettings), keyEquivalent: "")
     private let privacyMenuItem = NSMenuItem(title: "Private: your voice stays on this Mac", action: nil, keyEquivalent: "")
-    private let toggleMenuItem = NSMenuItem(title: "Start Recording", action: #selector(toggleRecordingFromMenu), keyEquivalent: "")
+    private let toggleMenuItem = NSMenuItem(title: "Start Voice Typing", action: #selector(toggleRecordingFromMenu), keyEquivalent: "")
     private let undoLastPasteMenuItem = NSMenuItem(title: "Undo Last Paste", action: #selector(undoLastPaste), keyEquivalent: "")
-    private let copyLastMenuItem = NSMenuItem(title: "Copy Last Transcript", action: #selector(copyLastTranscript), keyEquivalent: "")
+    private let copyLastMenuItem = NSMenuItem(title: "Copy Last Text", action: #selector(copyLastTranscript), keyEquivalent: "")
     private let preserveCapitalizationMenuItem = NSMenuItem(title: "Preserve Capitalization", action: #selector(togglePreserveCapitalization), keyEquivalent: "")
     private let audioDuckingMenuItem = NSMenuItem(title: "Audio Ducking", action: #selector(toggleAudioDucking), keyEquivalent: "")
     private let presenterModeMenuItem = NSMenuItem(title: "Presenter Mode", action: #selector(togglePresenterMode), keyEquivalent: "")
@@ -249,49 +250,55 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         menu.addItem(tryItItem)
         menu.addItem(undoLastPasteMenuItem)
         menu.addItem(copyLastMenuItem)
-        menu.addItem(historyMenuItem())
-        menu.addItem(inputLanguageMenuItem())
-        menu.addItem(outputMenuItem())
         menu.addItem(profileMenuItem())
-        menu.addItem(performanceMenuItem())
-        menu.addItem(settingsMenuItem())
-
-        settingsMenu.addItem(preserveCapitalizationMenuItem)
-        settingsMenu.addItem(audioDuckingMenuItem)
-        settingsMenu.addItem(presenterModeMenuItem)
-        settingsMenu.addItem(appDefaultsMenuItem())
         let personalDictionaryItem = NSMenuItem(
             title: "Saved Words...",
             action: #selector(openPersonalDictionary),
             keyEquivalent: ""
         )
         personalDictionaryItem.target = self
-        settingsMenu.addItem(personalDictionaryItem)
-        let topLevelModelExplorer = NSMenuItem(
-            title: "Open Speed & Accuracy...",
-            action: #selector(openModelExplorer(_:)),
-            keyEquivalent: ""
-        )
-        topLevelModelExplorer.target = self
-        settingsMenu.addItem(topLevelModelExplorer)
-        settingsMenu.addItem(modelMenuItem())
-        settingsMenu.addItem(NSMenuItem.separator())
+        menu.addItem(personalDictionaryItem)
+        menu.addItem(historyMenuItem())
+
         let userGuideItem = NSMenuItem(
             title: "Open User Guide...",
             action: #selector(openUserGuide),
             keyEquivalent: ""
         )
         userGuideItem.target = self
-        settingsMenu.addItem(userGuideItem)
-        settingsMenu.addItem(openMicSettings)
-        settingsMenu.addItem(openAccessibilitySettings)
         let setupDoctorItem = NSMenuItem(
             title: "Finish Setup...",
             action: #selector(openSetupDoctor),
             keyEquivalent: ""
         )
         setupDoctorItem.target = self
-        settingsMenu.addItem(setupDoctorItem)
+        menu.addItem(NSMenuItem.separator())
+        menu.addItem(setupDoctorItem)
+        menu.addItem(settingsMenuItem())
+
+        settingsMenu.addItem(preserveCapitalizationMenuItem)
+        settingsMenu.addItem(appDefaultsMenuItem())
+        settingsMenu.addItem(NSMenuItem.separator())
+        settingsMenu.addItem(userGuideItem)
+        settingsMenu.addItem(openMicSettings)
+        settingsMenu.addItem(openAccessibilitySettings)
+        settingsMenu.addItem(NSMenuItem.separator())
+        settingsMenu.addItem(advancedMenuItem())
+
+        let topLevelModelExplorer = NSMenuItem(
+            title: "Open Speed & Accuracy...",
+            action: #selector(openModelExplorer(_:)),
+            keyEquivalent: ""
+        )
+        topLevelModelExplorer.target = self
+        advancedMenu.addItem(inputLanguageMenuItem())
+        advancedMenu.addItem(outputMenuItem())
+        advancedMenu.addItem(performanceMenuItem())
+        advancedMenu.addItem(topLevelModelExplorer)
+        advancedMenu.addItem(modelMenuItem())
+        advancedMenu.addItem(NSMenuItem.separator())
+        advancedMenu.addItem(audioDuckingMenuItem)
+        advancedMenu.addItem(presenterModeMenuItem)
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Quit \(appDisplayName)", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         statusItem.menu = menu
@@ -329,19 +336,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     }
 
     private func inputLanguageMenuItem() -> NSMenuItem {
-        let item = NSMenuItem(title: "I Speak", action: nil, keyEquivalent: "")
+        let item = NSMenuItem(title: "Input Language", action: nil, keyEquivalent: "")
         item.submenu = inputLanguageMenu
         return item
     }
 
     private func outputMenuItem() -> NSMenuItem {
-        let item = NSMenuItem(title: "Output", action: nil, keyEquivalent: "")
+        let item = NSMenuItem(title: "Output Language", action: nil, keyEquivalent: "")
         item.submenu = outputMenu
         return item
     }
 
     private func profileMenuItem() -> NSMenuItem {
-        let item = NSMenuItem(title: "Writing Style", action: nil, keyEquivalent: "")
+        let item = NSMenuItem(title: "Writing Mode", action: nil, keyEquivalent: "")
         item.submenu = profileMenu
         return item
     }
@@ -365,7 +372,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     }
 
     private func modelMenuItem() -> NSMenuItem {
-        let item = NSMenuItem(title: "Advanced Model List", action: nil, keyEquivalent: "")
+        let item = NSMenuItem(title: "Model Downloads", action: nil, keyEquivalent: "")
         item.submenu = modelMenu
         return item
     }
@@ -373,6 +380,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     private func settingsMenuItem() -> NSMenuItem {
         let item = NSMenuItem(title: "Settings", action: nil, keyEquivalent: "")
         item.submenu = settingsMenu
+        return item
+    }
+
+    private func advancedMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(title: "Advanced", action: nil, keyEquivalent: "")
+        item.submenu = advancedMenu
         return item
     }
 
@@ -612,7 +625,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             stopRecordingLevelTimer()
             stopTranscriptionProgress()
             recordingOverlay.hide()
-            toggleMenuItem.title = "Start Recording"
+            toggleMenuItem.title = "Start Voice Typing"
             toggleMenuItem.isEnabled = true
         case .recording:
             recordingOverlay.show(
@@ -740,8 +753,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
 
         let permissionSuffix = hasAutoPastePermission ? "" : " - Paste-Back Needs Permission"
         statusItem.button?.toolTip = "\(appDisplayName): \(state.statusText)\(permissionSuffix)"
-        let formattingText = preserveCapitalization ? "Caps On" : "Caps Off"
-        statusMenuItem.title = "\(state.statusText)\(permissionSuffix) - \(languageRouteText(inputLanguage: selectedInputLanguage, outputLanguage: selectedOutputLanguage)) - \(selectedModel.friendlyTitle) - \(selectedWritingProfile.title) - \(formattingText)"
+        let routeText = overlayLanguageRouteText(inputLanguage: selectedInputLanguage, outputLanguage: selectedOutputLanguage)
+        let routeSuffix = routeText.isEmpty ? "" : " - \(routeText)"
+        let formattingSuffix = preserveCapitalization ? "" : " - Lowercase Mode"
+        statusMenuItem.title = "\(plainStatusText())\(permissionSuffix)\(routeSuffix)\(formattingSuffix)"
+    }
+
+    private func plainStatusText() -> String {
+        switch state {
+        case .ready:
+            return "Ready - Voice Typing"
+        case .recording:
+            return "Recording"
+        case .transcribing:
+            return "Transcribing"
+        case .error(let message):
+            return "Needs Attention - \(message)"
+        }
     }
 
     private func languageRouteText(inputLanguage: InputLanguageChoice, outputLanguage: OutputLanguage) -> String {

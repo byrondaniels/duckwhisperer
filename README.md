@@ -2,7 +2,7 @@
 
 Private voice typing for every Mac app.
 
-Press `Option+Space`, talk naturally, press `Option+Space` again, and Plume turns your voice into polished text anywhere your cursor already is. Transcription runs locally on your Mac, so your voice stays on your machine. It can listen in English by default, with optional local input support for Spanish, French, Tagalog, and other common languages. Output defaults to `Same as Input`, or you can choose English, French, Dutch, British, Gen Z, Alien, Cowboy, Pirate, Robot, Shakespeare, or a ridiculous Quack mode.
+Press `Option+Space`, talk naturally, press `Option+Space` again, and Plume turns your voice into polished text anywhere your cursor already is. Transcription runs locally on your Mac, so your voice stays on your machine. The default menu is intentionally simple for everyday voice typing, while language, model, translation, and fun output modes live under `Settings -> Advanced`.
 
 ## Quick Start
 
@@ -18,7 +18,7 @@ If you have a packaged release:
 Use `Option+Space` once to start recording and `Option+Space` again to stop, transcribe, and paste.
 Press `Escape` while recording or transcribing to cancel without pasting.
 
-Open the menu-bar icon for `Try It Here`, `Undo Last Paste`, `I Speak`, `Output`, `Writing Style`, `Speed & Accuracy`, `History`, and `Settings`.
+Open the menu-bar icon for `Try It Here`, `Undo Last Paste`, `Writing Mode`, `Saved Words`, `History`, `Finish Setup`, and `Settings`. Technical choices such as input language, output language, model downloads, translation, and fun modes are under `Settings -> Advanced`.
 
 ## Fresh Machine Setup
 
@@ -59,7 +59,7 @@ Runtime assets are installed outside the repo and app bundle at:
 
 That folder contains downloaded speech models, optional translation runtime data, and optional local style-rewrite assets. It is not committed to Git.
 
-The default install sets up transcription only. Local translation can be added later from `Speed & Accuracy` or with:
+The default install sets up transcription only. Local translation can be added later from `Settings -> Advanced -> Speed & Accuracy` or with:
 
 ```bash
 ./scripts/setup_local_translation.sh
@@ -103,7 +103,7 @@ Build a drag-and-drop macOS package with the default `Best Accuracy` speech mode
 
 The release artifact is written to `release/`. By default this creates a `.dmg` with `Plume.app`, an `Applications` shortcut, and `Start Here.html`. Set `PACKAGE_FORMAT=zip` or `PACKAGE_FORMAT=both` if needed.
 
-This packaged app can transcribe English without a terminal setup or model download. macOS still requires the user to grant Microphone and paste-back permissions after installing. French/Dutch translation remains optional and can be installed later from `Speed & Accuracy`.
+This packaged app can transcribe English without a terminal setup or model download. macOS still requires the user to grant Microphone and paste-back permissions after installing. French/Dutch translation remains optional and can be installed later from `Settings -> Advanced -> Speed & Accuracy`.
 
 See `docs/release-workflow.md` for the full non-developer install test, signing notes, and release checklist.
 
@@ -163,6 +163,7 @@ Run the full local verification loop before pushing changes:
 - Searchable local transcript history
 - Local time-saved tracker based on words dictated, speaking time, and estimated typing time
 - Optional audio ducking while recording
+- Simplified office-worker menu with model, language, translation, and fun modes tucked under `Settings -> Advanced`
 - `Speed & Accuracy` menu for Best Accuracy, Fast, and Fastest choices
 - `Finish Setup` for microphone, paste-back, model, install, and app identity checks
 - `Presenter Mode` for camera-readable TikTok/product demos
@@ -177,7 +178,7 @@ Run the full local verification loop before pushing changes:
 
 English input uses the smaller English-only speech model. Non-English input uses one shared multilingual Whisper model for the selected speed. Plume does not download one speech pack per language; the first non-English language you choose asks for approval, then that one shared speech model unlocks the other non-English input languages for that speed.
 
-`I Speak` controls what language you speak. `Output` controls what text comes back. `Same as Input` keeps Spanish speech as Spanish text, French speech as French text, and so on. Choosing `English` while speaking a non-English input language uses a dedicated local text translator when that language pair is installed, with Whisper's local speech-translation mode as the fallback.
+`Settings -> Advanced -> Input Language` controls what language you speak. `Settings -> Advanced -> Output Language` controls what text comes back. `Same as Input` keeps Spanish speech as Spanish text, French speech as French text, and so on. Choosing `English` while speaking a non-English input language uses a dedicated local text translator when that language pair is installed, with Whisper's local speech-translation mode as the fallback.
 
 ## Models
 
@@ -212,13 +213,13 @@ Output defaults to `Same as Input`. You can also choose English, French, Dutch, 
 
 Non-English input to English can use individual local text translators. For example, Tagalog -> English installs only the Tagalog -> English translator, then Plume transcribes Tagalog text first and translates that text to English. If the matching translator is not installed, the app asks before downloading it.
 
-French and Dutch output use local Argos Translate packages after the transcript is available in English. Install them from `Speed & Accuracy`, or run:
+French and Dutch output use local Argos Translate packages after the transcript is available in English. Install them from `Settings -> Advanced -> Speed & Accuracy`, or run:
 
 ```bash
 ./scripts/setup_local_translation.sh
 ```
 
-The translation setup intentionally avoids Python versions that would require native source builds. The Argos setup currently looks for Python 3.13, then 3.12, then 3.11, and installs `argostranslate==1.11.0` plus `sentencepiece==0.2.1` from binary wheels. Dedicated input -> English translators are lazy installs from `Speed & Accuracy`; the first one may also install a local Transformers/PyTorch runtime.
+The translation setup intentionally avoids Python versions that would require native source builds. The Argos setup currently looks for Python 3.13, then 3.12, then 3.11, and installs `argostranslate==1.11.0` plus `sentencepiece==0.2.1` from binary wheels. Dedicated input -> English translators are lazy installs from `Settings -> Advanced -> Speed & Accuracy`; the first one may also install a local Transformers/PyTorch runtime.
 
 Translation runtime data is stored in:
 
@@ -226,7 +227,7 @@ Translation runtime data is stored in:
 ~/Library/Application Support/Plume/Translation
 ```
 
-Fun modes are built into the app. British, Gen Z, Alien, Cowboy, Pirate, Shakespeare, and Quack output do not require a model, package, or network call. Robot works immediately in basic mode, and can optionally be upgraded to Enhanced Robot from `Speed & Accuracy`.
+Fun modes are built into the app under `Settings -> Advanced -> Output Language`. British, Gen Z, Alien, Cowboy, Pirate, Shakespeare, and Quack output do not require a model, package, or network call. Robot works immediately in basic mode, and can optionally be upgraded to Enhanced Robot from `Settings -> Advanced -> Speed & Accuracy`.
 
 Enhanced Robot installs its own local llama.cpp runner plus `qwen2.5-0.5b-instruct-q4_k_m.gguf`. It does not require Ollama, a server process, or a cloud API. The optional download is about 491 MB for the model plus about 8 MB for the runner, and it is only downloaded after you approve the install.
 

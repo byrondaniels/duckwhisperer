@@ -85,14 +85,12 @@ Before publishing:
 
 Plume's menu-bar settings cover normal non-dev customization:
 
-- `I Speak`: input language
-- `Output`: same-language output, translation, or fun modes
-- `Writing Style`: email, notes, bullets, raw dictation, Slack casual, and more
-- `Speed & Accuracy`: model choice and optional asset downloads
+- `Writing Mode`: email, notes, bullets, raw dictation, Slack casual, and more
 - `Saved Words...`: personal dictionary replacements
-- `App Defaults`: per-app model, output, and writing style
-- `Preserve Capitalization`, `Audio Ducking`, and `Presenter Mode`
+- `App Defaults`: per-app model, output, and writing mode
+- `Preserve Capitalization`
 - `History`: recent local transcripts and time-saved stats
+- `Settings -> Advanced`: input language, output language, model choice, optional asset downloads, audio ducking, presenter mode, translation, and fun modes
 
 ## Versioning
 

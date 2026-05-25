@@ -17,7 +17,7 @@ Voiceover:
 On-screen text: "Rambling -> clean email"
 
 Action:
-Choose `Writing Style -> Clean Email`, dictate a messy email, and show the cleaned output.
+Choose `Writing Mode -> Clean Email`, dictate a messy email, and show the cleaned output.
 
 Voiceover:
 "I can talk messy, and it comes out like something I would actually send."
@@ -47,7 +47,7 @@ Voiceover:
 On-screen text: "Pick speed or accuracy"
 
 Action:
-Open `Speed & Accuracy`, show `Best Accuracy`, `Fast`, and `Fastest`.
+Open `Settings -> Advanced -> Speed & Accuracy`, show `Best Accuracy`, `Fast`, and `Fastest`.
 
 Voiceover:
 "You can use the accurate model by default, then switch faster for rough notes."
@@ -67,7 +67,7 @@ Voiceover:
 On-screen text: "Big demo HUD"
 
 Action:
-Turn on `Settings -> Presenter Mode`, record, and show the larger HUD with the pasted checkmark.
+Turn on `Settings -> Advanced -> Presenter Mode`, record, and show the larger HUD with the pasted checkmark.
 
 Voiceover:
 "Presenter Mode makes the recording overlay easier to see on video."
@@ -77,7 +77,7 @@ Voiceover:
 On-screen text: "Completely necessary feature"
 
 Action:
-Choose `Output -> Quack`, dictate a serious sentence, show it become quacks.
+Choose `Settings -> Advanced -> Output Language -> Quack`, dictate a serious sentence, show it become quacks.
 
 Voiceover:
 "And, because software should have one silly button, Quack mode exists."
@@ -87,7 +87,7 @@ Voiceover:
 On-screen text: "Same sentence, different moods"
 
 Action:
-Dictate the same sentence with `Output -> Alien`, `Cowboy`, `Robot`, and `Shakespeare`.
+Dictate the same sentence with `Settings -> Advanced -> Output Language -> Alien`, `Cowboy`, `Robot`, and `Shakespeare`.
 
 Voiceover:
 "The fun modes are local too, so they are instant and do not need another download."
