@@ -4,17 +4,8 @@ import QuartzCore
 private final class RecordingOverlayView: NSView {
     private let baseDrawingSize = NSSize(width: 140, height: 76)
 
-    var audioLevel: CGFloat = 0 {
-        didSet {
-            needsDisplay = true
-        }
-    }
-
-    var animationPhase: CGFloat = 0 {
-        didSet {
-            needsDisplay = true
-        }
-    }
+    var audioLevel: CGFloat = 0
+    var animationPhase: CGFloat = 0
 
     var progressPercent: Int? {
         didSet {
@@ -58,6 +49,12 @@ private final class RecordingOverlayView: NSView {
 
     override var isFlipped: Bool {
         true
+    }
+
+    func setAnimationState(audioLevel: CGFloat, animationPhase: CGFloat) {
+        self.audioLevel = audioLevel
+        self.animationPhase = animationPhase
+        needsDisplay = true
     }
 
     override func draw(_ dirtyRect: NSRect) {
@@ -550,6 +547,10 @@ final class RecordingOverlayController {
     private let overlayView: RecordingOverlayView
     private var isVisible = false
     private var presenterMode = false
+    private var animationTimer: Timer?
+    private var targetAudioLevel: CGFloat = 0
+    private var displayedAudioLevel: CGFloat = 0
+    private var animationPhase: CGFloat = 0
 
     init() {
         let size = Self.standardSize
@@ -597,6 +598,7 @@ final class RecordingOverlayController {
             overlayView.hintText = hintText
         }
         overlayView.commandText = commandText
+        startAnimationTimer()
         guard !isVisible else {
             return
         }
@@ -616,15 +618,18 @@ final class RecordingOverlayController {
     func hide() {
         guard isVisible else {
             overlayView.progressPercent = nil
-            overlayView.audioLevel = 0
+            targetAudioLevel = 0
+            displayedAudioLevel = 0
+            overlayView.setAnimationState(audioLevel: 0, animationPhase: animationPhase)
             overlayView.previewText = ""
             overlayView.commandText = nil
+            stopAnimationTimer()
             return
         }
 
         isVisible = false
         overlayView.progressPercent = nil
-        overlayView.audioLevel = 0
+        targetAudioLevel = 0
         overlayView.previewText = ""
         overlayView.commandText = nil
 
@@ -636,6 +641,9 @@ final class RecordingOverlayController {
             guard let self, !self.isVisible else {
                 return
             }
+            self.displayedAudioLevel = 0
+            self.overlayView.setAnimationState(audioLevel: 0, animationPhase: self.animationPhase)
+            self.stopAnimationTimer()
             self.panel.orderOut(nil)
         }
     }
@@ -695,9 +703,39 @@ final class RecordingOverlayController {
     func setAudioLevel(_ level: Float) {
         let clampedLevel = max(0, min(1, CGFloat(level)))
         let gatedLevel = clampedLevel < 0.035 ? 0 : clampedLevel
-        let shapedLevel = pow(gatedLevel, 1.55)
-        let smoothing: CGFloat = shapedLevel > overlayView.audioLevel ? 0.58 : 0.18
-        overlayView.audioLevel = overlayView.audioLevel + (shapedLevel - overlayView.audioLevel) * smoothing
-        overlayView.animationPhase += 0.08 + overlayView.audioLevel * 0.46
+        targetAudioLevel = pow(gatedLevel, 1.45)
+    }
+
+    private func startAnimationTimer() {
+        guard animationTimer == nil else {
+            return
+        }
+
+        let timer = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
+            self?.advanceAnimationFrame()
+        }
+        animationTimer = timer
+        RunLoop.main.add(timer, forMode: .common)
+    }
+
+    private func stopAnimationTimer() {
+        animationTimer?.invalidate()
+        animationTimer = nil
+    }
+
+    private func advanceAnimationFrame() {
+        guard isVisible else {
+            stopAnimationTimer()
+            return
+        }
+
+        let smoothing: CGFloat = targetAudioLevel > displayedAudioLevel ? 0.34 : 0.12
+        displayedAudioLevel += (targetAudioLevel - displayedAudioLevel) * smoothing
+        if abs(displayedAudioLevel - targetAudioLevel) < 0.002 {
+            displayedAudioLevel = targetAudioLevel
+        }
+
+        animationPhase += 0.055 + displayedAudioLevel * 0.42
+        overlayView.setAnimationState(audioLevel: displayedAudioLevel, animationPhase: animationPhase)
     }
 }

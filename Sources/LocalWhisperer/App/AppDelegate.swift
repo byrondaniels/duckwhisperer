@@ -68,6 +68,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     private var transcriptionProgressPercent = 0
     private var activeTranscriptionID: UUID?
     private var recordingStartedAt: Date?
+    private var lastRecordingDetailsRefreshAt: Date?
     private var activeAppName: String?
     private var activeInputLanguage: InputLanguageChoice?
     private var activeOutputLanguage: OutputLanguage?
@@ -606,6 +607,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         switch newState {
         case .ready, .error:
             recordingStartedAt = nil
+            lastRecordingDetailsRefreshAt = nil
             audioDucker.restore()
             stopRecordingLevelTimer()
             stopTranscriptionProgress()
@@ -675,11 +677,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
 
     private func startRecordingLevelTimer() {
         recordingLevelTimer?.invalidate()
-        recordingLevelTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 30.0, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
             guard let self, self.state == .recording else {
                 return
             }
             self.recordingOverlay.setAudioLevel(self.audioCapture.currentLevel())
+
+            let now = Date()
+            if let lastRecordingDetailsRefreshAt = self.lastRecordingDetailsRefreshAt,
+               now.timeIntervalSince(lastRecordingDetailsRefreshAt) < 0.16 {
+                return
+            }
+            self.lastRecordingDetailsRefreshAt = now
+
             let elapsed = self.recordingStartedAt.map { Date().timeIntervalSince($0) } ?? 0
             let preview = self.liveTranscriptionSession?.previewText() ?? ""
             if let detectedCommandName = CommandPhraseProcessor.detectedCommandName(in: preview) {
@@ -694,11 +704,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                 presenterMode: self.presenterModeEnabled
             )
         }
+        recordingLevelTimer = timer
+        RunLoop.main.add(timer, forMode: .common)
     }
 
     private func stopRecordingLevelTimer() {
         recordingLevelTimer?.invalidate()
         recordingLevelTimer = nil
+        lastRecordingDetailsRefreshAt = nil
         recordingOverlay.setAudioLevel(0)
     }
 
