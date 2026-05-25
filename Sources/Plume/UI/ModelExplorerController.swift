@@ -511,14 +511,14 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
 
                 do {
                     if let error {
-                        throw LocalWhispererError.modelDownloadFailed(error.localizedDescription)
+                        throw PlumeError.modelDownloadFailed(error.localizedDescription)
                     }
                     if let response = response as? HTTPURLResponse,
                        !(200...299).contains(response.statusCode) {
-                        throw LocalWhispererError.modelDownloadFailed("HTTP \(response.statusCode) while downloading \(asset.filename).")
+                        throw PlumeError.modelDownloadFailed("HTTP \(response.statusCode) while downloading \(asset.filename).")
                     }
                     guard let temporaryURL else {
-                        throw LocalWhispererError.modelDownloadFailed("No downloaded file was returned.")
+                        throw PlumeError.modelDownloadFailed("No downloaded file was returned.")
                     }
                     try ModelStore.installDownloadedModel(from: temporaryURL, for: choice, inputLanguage: inputLanguage)
                     self.currentModel = choice

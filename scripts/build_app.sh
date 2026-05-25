@@ -12,7 +12,7 @@ FRAMEWORK_PARENT="$(dirname "$FRAMEWORK_SRC")"
 MODEL_DST_DIR="$RESOURCES_DIR/Models"
 TRANSLATION_DST_DIR="$RESOURCES_DIR/Translation"
 MODULE_CACHE_DIR="$ROOT_DIR/build/module-cache"
-SUPPORT_ROOT="${PLUME_SUPPORT_DIR:-${DUCKWHISPERER_SUPPORT_DIR:-${LOCAL_WHISPERER_SUPPORT_DIR:-$HOME/Library/Application Support/Plume}}}"
+SUPPORT_ROOT="${PLUME_SUPPORT_DIR:-$HOME/Library/Application Support/Plume}"
 LEGACY_SUPPORT_ROOT="$HOME/Library/Application Support/Local Whisperer"
 DEFAULT_MODEL_FILE="ggml-small.en.bin"
 DEFAULT_MODEL_SRC="$SUPPORT_ROOT/Models/$DEFAULT_MODEL_FILE"
@@ -75,9 +75,9 @@ mkdir -p "$MACOS_DIR" "$RESOURCES_DIR" "$FRAMEWORKS_DIR" "$MODEL_DST_DIR" "$TRAN
 cp "$ROOT_DIR/Info.plist" "$CONTENTS_DIR/Info.plist"
 while IFS= read -r source; do
   SWIFT_SOURCES+=("$source")
-done < <(find "$ROOT_DIR/Sources/LocalWhisperer" -name '*.swift' -print | sort)
+done < <(find "$ROOT_DIR/Sources/Plume" -name '*.swift' -print | sort)
 if [[ "${#SWIFT_SOURCES[@]}" -eq 0 ]]; then
-  echo "No Swift sources found under Sources/LocalWhisperer." >&2
+  echo "No Swift sources found under Sources/Plume." >&2
   exit 1
 fi
 

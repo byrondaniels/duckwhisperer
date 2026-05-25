@@ -265,7 +265,7 @@ enum ModelStore {
         let expectedSHA1 = choice.expectedSHA1(for: inputLanguage)
         guard actualSHA1 == expectedSHA1 else {
             try? FileManager.default.removeItem(at: partialURL)
-            throw LocalWhispererError.modelDownloadFailed(
+            throw PlumeError.modelDownloadFailed(
                 "Checksum mismatch for \(choice.friendlyTitle). Expected \(expectedSHA1), got \(actualSHA1)."
             )
         }

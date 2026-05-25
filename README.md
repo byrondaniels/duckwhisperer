@@ -32,7 +32,7 @@ Requirements:
 Install:
 
 ```bash
-git clone https://github.com/byrondaniels/duckwhisperer.git plume
+git clone <repository-url> plume
 cd plume
 ./scripts/doctor.sh
 ./scripts/install_app.sh
@@ -135,14 +135,14 @@ Run the full local verification loop before pushing changes:
 
 ## Source Layout
 
-- `Sources/LocalWhisperer/App`: app delegate, menu state, config, logging, launch helpers, errors
-- `Sources/LocalWhisperer/Audio`: microphone capture and audio conversion
-- `Sources/LocalWhisperer/Automation`: global shortcuts, Accessibility target detection, paste/type-back
-- `Sources/LocalWhisperer/Models`: speech model metadata and model storage
-- `Sources/LocalWhisperer/Transcription`: whisper.cpp wrapper and live chunking
-- `Sources/LocalWhisperer/Translation`: Argos package management and local translation calls
-- `Sources/LocalWhisperer/UI`: menu-bar icon, overlay, transcript window, model explorer
-- `Sources/LocalWhisperer/Text`: output styles, writing profiles, command phrases, and dictionary replacement
+- `Sources/Plume/App`: app delegate, menu state, config, logging, launch helpers, errors
+- `Sources/Plume/Audio`: microphone capture and audio conversion
+- `Sources/Plume/Automation`: global shortcuts, Accessibility target detection, paste/type-back
+- `Sources/Plume/Models`: speech model metadata and model storage
+- `Sources/Plume/Transcription`: whisper.cpp wrapper and live chunking
+- `Sources/Plume/Translation`: Argos package management and local translation calls
+- `Sources/Plume/UI`: menu-bar icon, overlay, transcript window, model explorer
+- `Sources/Plume/Text`: output styles, writing profiles, command phrases, and dictionary replacement
 
 ## Features
 

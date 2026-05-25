@@ -94,7 +94,7 @@ final class WhisperTranscriber {
         }
 
         guard result == 0 else {
-            throw LocalWhispererError.transcriptionFailed("whisper_full returned \(result).")
+            throw PlumeError.transcriptionFailed("whisper_full returned \(result).")
         }
 
         var transcript = ""
@@ -120,7 +120,7 @@ final class WhisperTranscriber {
         }
 
         guard FileManager.default.fileExists(atPath: modelURL.path) else {
-            throw LocalWhispererError.modelMissing(modelURL.path)
+            throw PlumeError.modelMissing(modelURL.path)
         }
 
         setenv("GGML_METAL_NO_RESIDENCY", "1", 0)
@@ -135,12 +135,12 @@ final class WhisperTranscriber {
             }
         }
 
-        let enableMetal = ProcessInfo.processInfo.environment["LOCAL_WHISPERER_ENABLE_METAL"] == "1"
+        let enableMetal = ProcessInfo.processInfo.environment["PLUME_ENABLE_METAL"] == "1"
         let loaded = enableMetal
             ? (loadContext(useGPU: true) ?? loadContext(useGPU: false))
             : loadContext(useGPU: false)
         guard let loaded else {
-            throw LocalWhispererError.modelLoadFailed(modelURL.path)
+            throw PlumeError.modelLoadFailed(modelURL.path)
         }
 
         context = loaded

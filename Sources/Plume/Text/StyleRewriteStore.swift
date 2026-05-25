@@ -93,7 +93,7 @@ enum StyleRewriteStore {
         if let fallback = fallbackRunnerURL() {
             return fallback
         }
-        throw LocalWhispererError.styleRewriteRuntimeMissing("Install Enhanced Robot from Speed & Accuracy.")
+        throw PlumeError.styleRewriteRuntimeMissing("Install Enhanced Robot from Speed & Accuracy.")
     }
 
     static func install(_ pack: StyleRewritePack = .enhancedRobot) throws {
@@ -109,7 +109,6 @@ enum StyleRewriteStore {
         let environment = ProcessInfo.processInfo.environment
         let candidates = [
             environment["PLUME_LLAMA_CLI"],
-            environment["DUCKWHISPERER_LLAMA_CLI"],
             "/opt/homebrew/bin/llama-cli",
             "/usr/local/bin/llama-cli",
             "/opt/homebrew/bin/llama",
@@ -130,7 +129,7 @@ enum StyleRewriteStore {
 
         let actualSHA256 = try sha256Hex(for: archiveURL)
         guard actualSHA256 == archive.expectedSHA256 else {
-            throw LocalWhispererError.styleRewriteInstallFailed(
+            throw PlumeError.styleRewriteInstallFailed(
                 "Checksum mismatch for llama.cpp runner. Expected \(archive.expectedSHA256), got \(actualSHA256)."
             )
         }
@@ -142,7 +141,7 @@ enum StyleRewriteStore {
         try run(URL(fileURLWithPath: "/usr/bin/tar"), arguments: ["-xzf", archiveURL.path, "-C", extractionURL.path])
 
         guard let extractedRunnerURL = findFile(named: "llama-cli", under: extractionURL) else {
-            throw LocalWhispererError.styleRewriteInstallFailed("The llama.cpp archive did not contain llama-cli.")
+            throw PlumeError.styleRewriteInstallFailed("The llama.cpp archive did not contain llama-cli.")
         }
 
         let extractedRunnerDirectory = extractedRunnerURL.deletingLastPathComponent()
@@ -174,7 +173,7 @@ enum StyleRewriteStore {
         let fileSize = try FileManager.default.attributesOfItem(atPath: partialURL.path)[.size] as? NSNumber
         guard fileSize?.int64Value == pack.expectedModelSizeBytes else {
             try? FileManager.default.removeItem(at: partialURL)
-            throw LocalWhispererError.styleRewriteInstallFailed(
+            throw PlumeError.styleRewriteInstallFailed(
                 "Downloaded rewrite model had an unexpected size. Expected \(pack.expectedModelSizeBytes) bytes, got \(fileSize?.int64Value ?? 0)."
             )
         }
@@ -182,7 +181,7 @@ enum StyleRewriteStore {
         let actualSHA256 = try sha256Hex(for: partialURL)
         guard actualSHA256 == pack.expectedModelSHA256 else {
             try? FileManager.default.removeItem(at: partialURL)
-            throw LocalWhispererError.styleRewriteInstallFailed(
+            throw PlumeError.styleRewriteInstallFailed(
                 "Checksum mismatch for \(pack.modelFilename). Expected \(pack.expectedModelSHA256), got \(actualSHA256)."
             )
         }
@@ -207,7 +206,7 @@ enum StyleRewriteStore {
                 expectedSHA256: "79c7ca2465cbebd1ef22fdaceea14108beb8943555fc2eccfd7f741a64bb8e30"
             )
         default:
-            throw LocalWhispererError.styleRewriteInstallFailed("Unsupported Mac architecture: \(ProcessInfo.processInfo.machineHardwareName).")
+            throw PlumeError.styleRewriteInstallFailed("Unsupported Mac architecture: \(ProcessInfo.processInfo.machineHardwareName).")
         }
     }
 
@@ -228,11 +227,11 @@ enum StyleRewriteStore {
             }
             if let response = response as? HTTPURLResponse,
                !(200...299).contains(response.statusCode) {
-                result = .failure(LocalWhispererError.styleRewriteInstallFailed("HTTP \(response.statusCode) while downloading \(sourceURL.lastPathComponent)."))
+                result = .failure(PlumeError.styleRewriteInstallFailed("HTTP \(response.statusCode) while downloading \(sourceURL.lastPathComponent)."))
                 return
             }
             guard let temporaryURL else {
-                result = .failure(LocalWhispererError.styleRewriteInstallFailed("No downloaded file was returned."))
+                result = .failure(PlumeError.styleRewriteInstallFailed("No downloaded file was returned."))
                 return
             }
 
@@ -299,7 +298,7 @@ enum StyleRewriteStore {
                 data: errorPipe.fileHandleForReading.readDataToEndOfFile(),
                 encoding: .utf8
             )?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            throw LocalWhispererError.styleRewriteInstallFailed(
+            throw PlumeError.styleRewriteInstallFailed(
                 errorOutput.isEmpty ? "\(executableURL.lastPathComponent) exited with \(process.terminationStatus)." : errorOutput
             )
         }

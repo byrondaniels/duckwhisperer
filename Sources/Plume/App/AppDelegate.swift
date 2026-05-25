@@ -153,7 +153,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                 setState(.error("Choose Input Language or Speed & Accuracy to download speech support."))
             }
         } else {
-            setState(.error(LocalWhispererError.hotKeyFailed(hotKeyStatus).localizedDescription))
+            setState(.error(PlumeError.hotKeyFailed(hotKeyStatus).localizedDescription))
         }
 
         if CommandLine.arguments.contains("--open-model-explorer") {
@@ -908,14 +908,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
 
                 do {
                     if let error {
-                        throw LocalWhispererError.modelDownloadFailed(error.localizedDescription)
+                        throw PlumeError.modelDownloadFailed(error.localizedDescription)
                     }
                     if let response = response as? HTTPURLResponse,
                        !(200...299).contains(response.statusCode) {
-                        throw LocalWhispererError.modelDownloadFailed("HTTP \(response.statusCode) while downloading \(asset.filename).")
+                        throw PlumeError.modelDownloadFailed("HTTP \(response.statusCode) while downloading \(asset.filename).")
                     }
                     guard let temporaryURL else {
-                        throw LocalWhispererError.modelDownloadFailed("No downloaded file was returned.")
+                        throw PlumeError.modelDownloadFailed("No downloaded file was returned.")
                     }
 
                     try ModelStore.installDownloadedModel(from: temporaryURL, for: choice, inputLanguage: inputLanguage)

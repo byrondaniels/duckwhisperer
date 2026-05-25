@@ -2,12 +2,12 @@
 set -u
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SUPPORT_ROOT="${PLUME_SUPPORT_DIR:-${DUCKWHISPERER_SUPPORT_DIR:-${LOCAL_WHISPERER_SUPPORT_DIR:-$HOME/Library/Application Support/Plume}}}"
+SUPPORT_ROOT="${PLUME_SUPPORT_DIR:-$HOME/Library/Application Support/Plume}"
 LEGACY_SUPPORT_ROOT="$HOME/Library/Application Support/Local Whisperer"
 TRANSLATION_DIR="$SUPPORT_ROOT/Translation"
 STYLE_REWRITER_DIR="$SUPPORT_ROOT/StyleRewriter"
 MODEL_DIR="$SUPPORT_ROOT/Models"
-APP_PATH="${PLUME_INSTALL_DIR:-${DUCKWHISPERER_INSTALL_DIR:-/Applications}}/Plume.app"
+APP_PATH="${PLUME_INSTALL_DIR:-/Applications}/Plume.app"
 FRAMEWORK_DIR="$ROOT_DIR/vendor/whisper-xcframework/build-apple/whisper.xcframework"
 
 failures=0

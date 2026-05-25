@@ -44,7 +44,7 @@ func runSmokeTranscriptionIfRequested() {
         let outputLanguage = OutputLanguage.choice(for: outputLanguageID)
         let writingProfile = WritingProfile.choice(for: writingProfileID)
         guard let modelURL = ModelStore.installedURL(for: choice, inputLanguage: inputLanguage) else {
-            throw LocalWhispererError.modelMissing(ModelStore.userURL(for: choice, inputLanguage: inputLanguage).path)
+            throw PlumeError.modelMissing(ModelStore.userURL(for: choice, inputLanguage: inputLanguage).path)
         }
         let transcriber = WhisperTranscriber(modelURL: modelURL)
         transcriber.setLanguageCode(inputLanguage.whisperCode)

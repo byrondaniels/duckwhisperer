@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_NAME="Plume.app"
 APP_SRC="$ROOT_DIR/dist/$APP_NAME"
-APP_DST="${PLUME_INSTALL_DIR:-${DUCKWHISPERER_INSTALL_DIR:-/Applications}}/$APP_NAME"
+APP_DST="${PLUME_INSTALL_DIR:-/Applications}/$APP_NAME"
 FRAMEWORK_DIR="$ROOT_DIR/vendor/whisper-xcframework/build-apple/whisper.xcframework"
 
 cd "$ROOT_DIR"
@@ -44,7 +44,6 @@ echo "Rebuilding Plume without reinstalling runtime models..."
 INSTALL_DEFAULT_MODEL=0 INSTALL_TRANSLATION=0 ./scripts/build_app.sh
 
 stop_app Plume Plume
-stop_app DuckWhisperer DuckWhisperer
 
 echo "Installing $APP_NAME to $APP_DST..."
 replace_app_bundle

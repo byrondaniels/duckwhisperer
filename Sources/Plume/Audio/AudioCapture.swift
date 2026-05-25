@@ -23,11 +23,11 @@ final class AudioCapture {
         let inputFormat = inputNode.outputFormat(forBus: 0)
 
         guard inputFormat.channelCount > 0, inputFormat.sampleRate > 0 else {
-            throw LocalWhispererError.audioReadFailed("No microphone input format was available.")
+            throw PlumeError.audioReadFailed("No microphone input format was available.")
         }
 
         guard let converter = AVAudioConverter(from: inputFormat, to: targetFormat) else {
-            throw LocalWhispererError.audioReadFailed("Could not create the microphone sample-rate converter.")
+            throw PlumeError.audioReadFailed("Could not create the microphone sample-rate converter.")
         }
 
         lock.lock()
@@ -63,7 +63,7 @@ final class AudioCapture {
         lock.unlock()
 
         guard wasRecording, let engine else {
-            throw LocalWhispererError.noRecording
+            throw PlumeError.noRecording
         }
 
         engine.inputNode.removeTap(onBus: 0)
@@ -214,7 +214,7 @@ final class AudioCapture {
         let file = try AVAudioFile(forReading: url, commonFormat: .pcmFormatFloat32, interleaved: false)
         let frameCount = AVAudioFrameCount(file.length)
         guard let buffer = AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: frameCount) else {
-            throw LocalWhispererError.audioReadFailed("Could not allocate audio buffer.")
+            throw PlumeError.audioReadFailed("Could not allocate audio buffer.")
         }
 
         try file.read(into: buffer)
@@ -225,7 +225,7 @@ final class AudioCapture {
               abs(file.processingFormat.sampleRate - Double(WHISPER_SAMPLE_RATE)) < 1,
               let channel = buffer.floatChannelData?[0]
         else {
-            throw LocalWhispererError.audioReadFailed(
+            throw PlumeError.audioReadFailed(
                 "Recording was not 16 kHz mono float PCM. Format: \(file.processingFormat)"
             )
         }

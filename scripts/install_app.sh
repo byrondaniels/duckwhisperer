@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_NAME="Plume.app"
 APP_SRC="$ROOT_DIR/dist/$APP_NAME"
-APP_DST="${PLUME_INSTALL_DIR:-${DUCKWHISPERER_INSTALL_DIR:-/Applications}}/$APP_NAME"
+APP_DST="${PLUME_INSTALL_DIR:-/Applications}/$APP_NAME"
 INSTALL_TRANSLATION="${INSTALL_TRANSLATION:-0}"
 export INSTALL_TRANSLATION
 
@@ -60,7 +60,6 @@ echo "Building Plume..."
 ./scripts/build_app.sh
 
 stop_app Plume Plume
-stop_app DuckWhisperer DuckWhisperer
 
 echo "Installing $APP_NAME to $APP_DST..."
 replace_app_bundle
