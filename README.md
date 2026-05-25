@@ -107,6 +107,8 @@ This packaged app can transcribe English without a terminal setup or model downl
 
 See `docs/release-workflow.md` for the full non-developer install test, signing notes, and release checklist.
 
+See `docs/go-to-market-plan.md` for the current market research, positioning, launch, pricing, and website strategy.
+
 The build script automatically uses a local code-signing identity when one is available, preferring `Developer ID Application` and then local Apple development identities. If no identity exists, it falls back to ad-hoc signing.
 
 For release packages meant for other Macs, use a Developer ID certificate:
