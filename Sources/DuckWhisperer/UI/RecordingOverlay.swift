@@ -338,7 +338,14 @@ private final class RecordingOverlayView: NSView {
         glow.shadowOffset = .zero
         glow.set()
 
-        image.draw(in: targetRect, from: NSRect(origin: .zero, size: image.size), operation: .sourceOver, fraction: 1)
+        image.draw(
+            in: targetRect,
+            from: NSRect(origin: .zero, size: image.size),
+            operation: .sourceOver,
+            fraction: 1,
+            respectFlipped: true,
+            hints: [.interpolation: NSImageInterpolation.high]
+        )
     }
 
     private func aspectFitRect(for imageSize: NSSize, in targetRect: NSRect) -> NSRect {
