@@ -504,12 +504,19 @@ private final class RecordingOverlayView: NSView {
 final class RecordingOverlayController {
     private static let standardSize = NSSize(width: 360, height: 142)
     private static let presenterSize = NSSize(width: 560, height: 220)
+    private static let overlayCollectionBehavior: NSWindow.CollectionBehavior = [
+        .canJoinAllSpaces,
+        .fullScreenAuxiliary,
+        .transient,
+        .ignoresCycle
+    ]
 
     private let panel: NSPanel
     private let overlayView: RecordingOverlayView
     private var isVisible = false
     private var presenterMode = false
     private var animationTimer: Timer?
+    private var activeSpaceObserver: NSObjectProtocol?
     private var targetAudioLevel: CGFloat = 0
     private var displayedAudioLevel: CGFloat = 0
     private var animationPhase: CGFloat = 0
@@ -531,7 +538,21 @@ final class RecordingOverlayController {
         panel.hidesOnDeactivate = false
         panel.isReleasedWhenClosed = false
         panel.level = .statusBar
-        panel.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
+        panel.collectionBehavior = Self.overlayCollectionBehavior
+
+        activeSpaceObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.activeSpaceDidChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleActiveSpaceDidChange()
+        }
+    }
+
+    deinit {
+        if let activeSpaceObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(activeSpaceObserver)
+        }
     }
 
     func show(
@@ -561,12 +582,13 @@ final class RecordingOverlayController {
         }
         overlayView.commandText = commandText
         startAnimationTimer()
-        guard !isVisible else {
+        if isVisible {
+            revealOnActiveSpace()
             return
         }
 
         isVisible = true
-        positionPanel()
+        revealOnActiveSpace()
         panel.alphaValue = 0
         panel.orderFrontRegardless()
 
@@ -611,7 +633,7 @@ final class RecordingOverlayController {
     }
 
     private func positionPanel() {
-        guard let screen = NSScreen.main else {
+        guard let screen = activeScreen() else {
             return
         }
 
@@ -622,6 +644,33 @@ final class RecordingOverlayController {
             y: frame.maxY - size.height - 42
         )
         panel.setFrameOrigin(origin)
+    }
+
+    private func activeScreen() -> NSScreen? {
+        let mouseLocation = NSEvent.mouseLocation
+        return NSScreen.screens.first { screen in
+            screen.frame.contains(mouseLocation)
+        } ?? NSScreen.main ?? NSScreen.screens.first
+    }
+
+    private func revealOnActiveSpace() {
+        panel.collectionBehavior = Self.overlayCollectionBehavior
+        positionPanel()
+        panel.orderFrontRegardless()
+    }
+
+    private func handleActiveSpaceDidChange() {
+        guard isVisible else {
+            return
+        }
+
+        revealOnActiveSpace()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) { [weak self] in
+            guard let self, self.isVisible else {
+                return
+            }
+            self.revealOnActiveSpace()
+        }
     }
 
     func setPresenterMode(_ enabled: Bool) {
