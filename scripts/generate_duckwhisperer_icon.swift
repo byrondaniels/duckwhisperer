@@ -9,6 +9,12 @@ guard CommandLine.arguments.count == 2 else {
 let outputURL = URL(fileURLWithPath: CommandLine.arguments[1])
 let fileManager = FileManager.default
 let iconsetURL = outputURL.deletingPathExtension().appendingPathExtension("iconset")
+let scriptURL = URL(fileURLWithPath: CommandLine.arguments[0])
+let artworkURL = scriptURL
+    .deletingLastPathComponent()
+    .deletingLastPathComponent()
+    .appendingPathComponent("Resources/DuckWhispererOption3.png")
+let selectedArtwork = NSImage(contentsOf: artworkURL)
 
 try? fileManager.removeItem(at: iconsetURL)
 try? fileManager.removeItem(at: outputURL)
@@ -121,6 +127,12 @@ private func drawDuckWhispererIcon(in rect: NSRect) {
         NSColor(calibratedRed: 0.030, green: 0.030, blue: 0.026, alpha: 1),
         NSColor(calibratedRed: 0.105, green: 0.085, blue: 0.035, alpha: 1)
     ])?.draw(in: background, angle: 270)
+
+    if let selectedArtwork {
+        let imageRect = aspectFitRect(for: selectedArtwork.size, in: rect.insetBy(dx: w * 0.035, dy: h * 0.14))
+        selectedArtwork.draw(in: imageRect, from: NSRect(origin: .zero, size: selectedArtwork.size), operation: .sourceOver, fraction: 1)
+        return
+    }
 
     let glow = NSBezierPath(ovalIn: NSRect(x: w * 0.18, y: h * 0.12, width: w * 0.64, height: h * 0.72))
     NSColor(calibratedRed: 1.0, green: 0.68, blue: 0.10, alpha: 0.18).setFill()
@@ -245,4 +257,19 @@ private func drawIconMascot(width w: CGFloat, height h: CGFloat) {
     )
     NSColor(calibratedWhite: 0.06, alpha: 0.92).setStroke()
     smile.stroke()
+}
+
+private func aspectFitRect(for imageSize: NSSize, in targetRect: NSRect) -> NSRect {
+    guard imageSize.width > 0, imageSize.height > 0 else {
+        return targetRect
+    }
+    let scale = min(targetRect.width / imageSize.width, targetRect.height / imageSize.height)
+    let width = imageSize.width * scale
+    let height = imageSize.height * scale
+    return NSRect(
+        x: targetRect.midX - width / 2,
+        y: targetRect.midY - height / 2,
+        width: width,
+        height: height
+    )
 }

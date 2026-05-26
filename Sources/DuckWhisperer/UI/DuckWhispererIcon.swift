@@ -1,6 +1,13 @@
 import AppKit
 
 enum DuckWhispererIcon {
+    private static let selectedArtwork: NSImage? = {
+        guard let url = Bundle.main.url(forResource: "DuckWhispererOption3", withExtension: "png") else {
+            return nil
+        }
+        return NSImage(contentsOf: url)
+    }()
+
     static func menuBarImage() -> NSImage {
         let image = NSImage(size: NSSize(width: 22, height: 22), flipped: false) { rect in
             drawDuckWhispererMark(in: rect)
@@ -16,6 +23,11 @@ enum DuckWhispererIcon {
 
         NSColor.clear.setFill()
         rect.fill()
+
+        if let selectedArtwork {
+            drawImage(selectedArtwork, aspectFillIn: rect)
+            return
+        }
 
         drawAudioBars(x: w * 0.16, centerY: h * 0.48, scale: w)
         drawAudioBars(x: w * 0.86, centerY: h * 0.48, scale: w)
@@ -141,5 +153,23 @@ enum DuckWhispererIcon {
         )
         NSColor(calibratedWhite: 0.08, alpha: 0.90).setStroke()
         smile.stroke()
+    }
+
+    private static func drawImage(_ image: NSImage, aspectFillIn targetRect: NSRect) {
+        guard image.size.width > 0, image.size.height > 0 else {
+            return
+        }
+
+        let sourceSize = image.size
+        let scale = max(targetRect.width / sourceSize.width, targetRect.height / sourceSize.height)
+        let sourceWidth = targetRect.width / scale
+        let sourceHeight = targetRect.height / scale
+        let sourceRect = NSRect(
+            x: (sourceSize.width - sourceWidth) / 2,
+            y: (sourceSize.height - sourceHeight) / 2,
+            width: sourceWidth,
+            height: sourceHeight
+        )
+        image.draw(in: targetRect, from: sourceRect, operation: .sourceOver, fraction: 1)
     }
 }

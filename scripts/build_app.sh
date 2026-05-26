@@ -95,6 +95,9 @@ swift \
 if [[ -f "$ROOT_DIR/Resources/UserGuide.html" ]]; then
   cp "$ROOT_DIR/Resources/UserGuide.html" "$RESOURCES_DIR/UserGuide.html"
 fi
+if [[ -f "$ROOT_DIR/Resources/DuckWhispererOption3.png" ]]; then
+  cp "$ROOT_DIR/Resources/DuckWhispererOption3.png" "$RESOURCES_DIR/DuckWhispererOption3.png"
+fi
 ditto "$FRAMEWORK_SRC" "$FRAMEWORKS_DIR/whisper.framework"
 find "$MODEL_DST_DIR" -maxdepth 1 -type f -name 'ggml-*.bin' -delete
 cp "$ROOT_DIR/translation/translate_local.py" "$TRANSLATION_DST_DIR/translate_local.py"

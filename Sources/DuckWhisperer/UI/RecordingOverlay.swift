@@ -3,6 +3,12 @@ import QuartzCore
 
 private final class RecordingOverlayView: NSView {
     private let baseDrawingSize = NSSize(width: 140, height: 76)
+    private static let selectedArtwork: NSImage? = {
+        guard let url = Bundle.main.url(forResource: "DuckWhispererOption3", withExtension: "png") else {
+            return nil
+        }
+        return NSImage(contentsOf: url)
+    }()
 
     var audioLevel: CGFloat = 0
     var animationPhase: CGFloat = 0
@@ -303,6 +309,12 @@ private final class RecordingOverlayView: NSView {
         dropShadow.shadowOffset = NSSize(width: 0, height: 4)
         dropShadow.set()
 
+        if let selectedArtwork = Self.selectedArtwork {
+            drawSelectedArtwork(selectedArtwork, energy: energy)
+            NSGraphicsContext.restoreGraphicsState()
+            return
+        }
+
         drawMascotWaves(energy: energy)
         drawMascotBody(energy: energy)
         drawMascotHead(energy: energy)
@@ -314,6 +326,34 @@ private final class RecordingOverlayView: NSView {
 
         drawMascotFace(energy: energy)
         NSGraphicsContext.restoreGraphicsState()
+    }
+
+    private func drawSelectedArtwork(_ image: NSImage, energy: CGFloat) {
+        let artBounds = NSRect(x: 20, y: 0, width: 104, height: 76)
+        let targetRect = aspectFitRect(for: image.size, in: artBounds)
+
+        let glow = NSShadow()
+        glow.shadowColor = NSColor(calibratedRed: 1.0, green: 0.72, blue: 0.16, alpha: 0.12 + energy * 0.18)
+        glow.shadowBlurRadius = 8 + energy * 8
+        glow.shadowOffset = .zero
+        glow.set()
+
+        image.draw(in: targetRect, from: NSRect(origin: .zero, size: image.size), operation: .sourceOver, fraction: 1)
+    }
+
+    private func aspectFitRect(for imageSize: NSSize, in targetRect: NSRect) -> NSRect {
+        guard imageSize.width > 0, imageSize.height > 0 else {
+            return targetRect
+        }
+        let scale = min(targetRect.width / imageSize.width, targetRect.height / imageSize.height)
+        let width = imageSize.width * scale
+        let height = imageSize.height * scale
+        return NSRect(
+            x: targetRect.midX - width / 2,
+            y: targetRect.midY - height / 2,
+            width: width,
+            height: height
+        )
     }
 
     private func drawMascotWaves(energy: CGFloat) {
