@@ -4,22 +4,28 @@ Private voice typing for every Mac app.
 
 Press `Option+Space`, talk naturally, press `Option+Space` again, and DuckWhisperer turns your voice into polished text anywhere your cursor already is. Transcription runs locally on your Mac, so your voice stays on your machine. The menu-bar drop-down keeps the everyday pickers — Writing Mode, Input Language, Output Language, Speed & Accuracy — one click away, with technical extras tucked under `Settings`.
 
+## Download
+
+Grab the latest macOS installer from the releases page:
+
+**[Download DuckWhisperer (.dmg)](https://github.com/byrondaniels/duckwhisperer/releases/latest)**
+
+The DMG is small (~8 MB); the English speech model downloads on first launch after you approve it.
+
 ## Quick Start
 
-If you have a packaged release:
-
 1. Open the DuckWhisperer DMG.
-2. Drag `DuckWhisperer.app` to `Applications`.
-3. Open it.
-4. In the menu-bar icon, open `Finish Setup`.
-5. Allow Microphone and paste-back permissions.
+2. Drag `DuckWhisperer.app` onto `Applications`.
+3. Open it from `Applications` (first launch: right-click the app and choose `Open` to clear the macOS Gatekeeper prompt).
+4. The `Finish Setup` window opens automatically. Tap `Download` to fetch the default speech model.
+5. Allow Microphone and paste-back (Accessibility) permissions.
 6. Open `Try It Here...` and do your first test.
 
-Use `Option+Space` once to start recording and `Option+Space` again to stop, transcribe, and paste.
+Use `Option+Space` once to start recording and `Option+Space` again to stop, transcribe, and paste. Change the trigger from `Recording Shortcut` in the menu if `Option+Space` clashes with another app.
 Press `Escape` while recording or transcribing to cancel without pasting.
 
-Open the menu-bar icon for `Try It Here`, `Undo Last Paste`, `Writing Mode`, `Input Language`, `Output Language`, `Speed & Accuracy`, `Saved Words`, `History`, `Finish Setup`, and `Settings`. Power-user knobs (model downloads, Per-App Defaults, audio ducking, presenter mode) live under `Settings`.
-`Finish Setup` is the first-run setup wizard and paste-back dashboard. It checks Microphone, paste-back permission, model availability, install location, and app identity, then gives users a safe `Try It Here` path.
+Open the menu-bar icon for `Try It Here`, `Undo Last Paste`, `Writing Mode`, `Input Language`, `Output Language`, `Speed & Accuracy`, `Recording Shortcut`, `Preserve Capitalization`, `Saved Words`, `History`, `Finish Setup`, and `Settings`. Power-user knobs (model downloads, Per-App Defaults, audio ducking, presenter mode) live under `Settings`.
+`Finish Setup` is the first-run setup wizard and paste-back dashboard. It checks Microphone, paste-back permission, and speech-model availability with big status icons, downloads the model in place, and gives users a safe `Try It Here` path. It opens automatically whenever setup is incomplete.
 
 ## Fresh Machine Setup
 
@@ -58,7 +64,7 @@ Runtime assets are installed outside the repo and app bundle at:
 ~/Library/Application Support/DuckWhisperer
 ```
 
-That folder contains downloaded speech models, optional translation runtime data, and optional local style-rewrite assets. It is not committed to Git.
+That folder contains downloaded speech models and optional translation runtime data. It is not committed to Git.
 
 The default install sets up transcription only. Local translation can be added later from `Speed & Accuracy` or with:
 
@@ -96,15 +102,21 @@ INSTALL_DEFAULT_MODEL=0 INSTALL_TRANSLATION=0 ./scripts/build_app.sh
 
 ## Release Package
 
-Build a drag-and-drop macOS package with the default `Best Accuracy` speech model bundled inside the app:
+Build a drag-and-drop macOS package:
 
 ```bash
 ./scripts/package_release.sh
 ```
 
-The release artifact is written to `release/`. By default this creates a `.dmg` with `DuckWhisperer.app`, an `Applications` shortcut, and `Start Here.html`. Set `PACKAGE_FORMAT=zip` or `PACKAGE_FORMAT=both` if needed.
+The release artifact is written to `release/`. By default this creates a small (~8 MB) `.dmg` with `DuckWhisperer.app`, an `Applications` shortcut (styled with a drag-to-install background), and `Start Here.html`. The speech model is **not** bundled by default — it downloads on first launch after the user approves it, which keeps the DMG tiny. Set `PACKAGE_FORMAT=zip` or `PACKAGE_FORMAT=both` if needed.
 
-This packaged app can transcribe English without a terminal setup or model download. macOS still requires the user to grant Microphone and paste-back permissions after installing. French/Dutch translation remains optional and can be installed later from `Speed & Accuracy`.
+To bake the default speech model into the app for an offline-first, larger DMG:
+
+```bash
+BUNDLE_DEFAULT_MODEL=1 ./scripts/package_release.sh
+```
+
+macOS still requires the user to grant Microphone and paste-back permissions after installing. French/Dutch translation remains optional and can be installed later from `Speed & Accuracy`.
 
 See `docs/release-workflow.md` for the full non-developer install test, signing notes, and release checklist.
 
@@ -149,10 +161,10 @@ Run the full local verification loop before pushing changes:
 
 ## Features
 
-- Global shortcut: `Option+Space`
+- Configurable global shortcut (default `Option+Space`), chosen from `Recording Shortcut` in the menu
 - Active dictation cancel shortcut: `Escape`
 - Built-in `Try It Here` window for first-run testing
-- First-run setup wizard with Microphone, paste-back, model, install, and signing checks
+- Setup wizard with large status icons for Microphone, paste-back, and speech model; downloads the model in place and auto-opens whenever setup is incomplete
 - `Undo Last Paste` for fast recovery when text lands in the wrong place
 - Paste-back dashboard with plain-language diagnostics when macOS blocks insertion
 - Local speech transcription with lazy input-language downloads
@@ -169,8 +181,8 @@ Run the full local verification loop before pushing changes:
 - Local time-saved tracker based on words dictated, speaking time, and estimated typing time, visible from the main menu and History
 - Optional audio ducking while recording
 - Simplified office-worker menu with everyday language and speed pickers up front, power-user knobs under `Settings`
-- `Speed & Accuracy` menu for Best Accuracy, Fast, and Fastest choices
-- `Finish Setup` for microphone, paste-back, model, install, and app identity checks
+- `Speed & Accuracy` menu for Fast (default), Best Accuracy, and Fastest choices, with per-model `Delete` to reclaim disk space
+- `Finish Setup` for microphone, paste-back, and speech-model checks
 - `Presenter Mode` for camera-readable TikTok/product demos
 - Fun language modes that transform the transcript locally without extra downloads
 - Audio-reactive recording overlay with live preview, elapsed time, profile/model context, cancel hint, and transcription progress percentage
@@ -189,30 +201,28 @@ English input uses the smaller English-only speech model. Non-English input uses
 
 ## Models
 
-No speech model is committed to Git. Normal source builds keep speech models outside the app bundle in Application Support. Release packages created by `./scripts/package_release.sh` bundle `Best Accuracy` inside `DuckWhisperer.app` so a fresh Mac can transcribe English without a separate model download.
+No speech model is committed to Git, and the default DMG does not bundle one — the model downloads on first launch after the user approves it, from `Finish Setup` or `Speed & Accuracy`. Use `BUNDLE_DEFAULT_MODEL=1 ./scripts/package_release.sh` for an offline-first build.
 
 Default model:
 
-- `Best Accuracy`, internally `Small English`
-- about 487.6 MB
-- best default for English dictation
+- `Fast`, internally `Base English`
+- about 148.0 MB
+- recommended balance of speed and accuracy for everyday dictation
 
-Optional models:
+Other models:
 
-- `Fast`, internally `Base English`, about 148.0 MB
-- `Fastest`, internally `Tiny English`, about 77.7 MB
+- `Best Accuracy`, internally `Small English`, about 487.6 MB — most accurate
+- `Fastest`, internally `Tiny English`, about 77.7 MB — rough drafts and smoke tests
 
-Extra language file sizes:
-
-- `Best Accuracy`, about 488.0 MB
-- `Fast`, about 148.0 MB
-- `Fastest`, about 77.7 MB
+Each model also has a shared multilingual variant of similar size for non-English input.
 
 Downloaded models are stored in:
 
 ```text
 ~/Library/Application Support/DuckWhisperer/Models
 ```
+
+Delete a downloaded model anytime from `Speed & Accuracy` → `Open Speed & Accuracy...`; each downloaded model that is not currently in use shows a `Delete` button.
 
 ## Translation
 

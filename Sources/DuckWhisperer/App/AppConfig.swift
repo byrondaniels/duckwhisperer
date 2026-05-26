@@ -15,6 +15,7 @@ let personalDictionaryTextKey = "PersonalDictionaryText"
 let transcriptHistoryKey = "TranscriptHistory"
 let dictationStatsKey = "DictationStats"
 let hasSeenOnboardingKey = "HasSeenOnboarding"
+let recordShortcutPresetIDKey = "RecordShortcutPresetID"
 let appDisplayName = "DuckWhisperer"
 let supportDirectoryName = "DuckWhisperer"
 let legacySupportDirectoryNames = ["Plume", "Local Whisperer"]

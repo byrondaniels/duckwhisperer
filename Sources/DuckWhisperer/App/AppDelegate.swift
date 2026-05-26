@@ -15,7 +15,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     private let historyMenu = NSMenu()
     private let appDefaultsMenu = NSMenu()
     private let settingsMenu = NSMenu()
-    private let advancedMenu = NSMenu()
+    private let recordShortcutMenu = NSMenu()
     private let statusMenuItem = NSMenuItem(title: "Starting...", action: nil, keyEquivalent: "")
     private let autoPastePermissionMenuItem = NSMenuItem(title: "Paste-Back: Checking...", action: #selector(openAccessibilitySettings), keyEquivalent: "")
     private let privacyMenuItem = NSMenuItem(title: "Private: your voice stays on this Mac", action: nil, keyEquivalent: "")
@@ -50,6 +50,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         onOpenMicrophone: { [weak self] in self?.openMicrophoneSettings() },
         onOpenAccessibility: { [weak self] in self?.openAccessibilitySettings() },
         onOpenModelExplorer: { [weak self] in self?.showModelExplorer() },
+        onDownloadDefaultModel: { [weak self] in
+            self?.downloadDefaultModelForSetup()
+        },
         onOpenTryIt: { [weak self] in self?.openTryIt() },
         onExportSupportBundle: { [weak self] in self?.exportSupportBundle() }
     )
@@ -166,7 +169,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             showModelExplorer()
         }
 
-        if !UserDefaults.standard.bool(forKey: hasSeenOnboardingKey) {
+        if !isSetupComplete() || !UserDefaults.standard.bool(forKey: hasSeenOnboardingKey) {
             UserDefaults.standard.set(true, forKey: hasSeenOnboardingKey)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
                 self?.showSetupDoctor()
@@ -181,6 +184,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                 self.deliverTranscript(debugPasteText)
             }
         }
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        showSetupDoctor()
+        return true
+    }
+
+    private func isSetupComplete() -> Bool {
+        let modelReady = ModelStore.isInstalled(ModelChoice.defaultChoice)
+        let micReady = AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
+        let pasteReady = PasteTargetDetector.readiness().severity != .blocked
+        return modelReady && micReady && pasteReady
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -262,6 +277,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         menu.addItem(inputLanguageMenuItem())
         menu.addItem(outputMenuItem())
         menu.addItem(performanceMenuItem())
+        menu.addItem(recordShortcutMenuItem())
+        menu.addItem(preserveCapitalizationMenuItem)
         let personalDictionaryItem = NSMenuItem(
             title: "Saved Words...",
             action: #selector(openPersonalDictionary),
@@ -287,8 +304,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         menu.addItem(setupDoctorItem)
         menu.addItem(settingsMenuItem())
 
-        settingsMenu.addItem(preserveCapitalizationMenuItem)
         settingsMenu.addItem(appDefaultsMenuItem())
+        settingsMenu.addItem(audioDuckingMenuItem)
+        settingsMenu.addItem(presenterModeMenuItem)
+        settingsMenu.addItem(NSMenuItem.separator())
+        let topLevelModelExplorer = NSMenuItem(
+            title: "Open Speed & Accuracy...",
+            action: #selector(openModelExplorer(_:)),
+            keyEquivalent: ""
+        )
+        topLevelModelExplorer.target = self
+        settingsMenu.addItem(topLevelModelExplorer)
+        settingsMenu.addItem(modelMenuItem())
         settingsMenu.addItem(NSMenuItem.separator())
         settingsMenu.addItem(userGuideItem)
         let exportSupportItem = NSMenuItem(
@@ -307,20 +334,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         settingsMenu.addItem(checkForUpdatesItem)
         settingsMenu.addItem(openMicSettings)
         settingsMenu.addItem(openAccessibilitySettings)
-        settingsMenu.addItem(NSMenuItem.separator())
-        settingsMenu.addItem(advancedMenuItem())
-
-        let topLevelModelExplorer = NSMenuItem(
-            title: "Open Speed & Accuracy...",
-            action: #selector(openModelExplorer(_:)),
-            keyEquivalent: ""
-        )
-        topLevelModelExplorer.target = self
-        advancedMenu.addItem(topLevelModelExplorer)
-        advancedMenu.addItem(modelMenuItem())
-        advancedMenu.addItem(NSMenuItem.separator())
-        advancedMenu.addItem(audioDuckingMenuItem)
-        advancedMenu.addItem(presenterModeMenuItem)
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Quit \(appDisplayName)", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         statusItem.menu = menu
@@ -334,6 +347,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         rebuildHistoryMenu()
         rebuildAppDefaultsMenu()
         rebuildModelMenu()
+        rebuildRecordShortcutMenu()
         refreshPermissionUI()
     }
 
@@ -405,10 +419,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         return item
     }
 
-    private func advancedMenuItem() -> NSMenuItem {
-        let item = NSMenuItem(title: "Advanced", action: nil, keyEquivalent: "")
-        item.submenu = advancedMenu
+    private func recordShortcutMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(title: "Recording Shortcut", action: nil, keyEquivalent: "")
+        item.submenu = recordShortcutMenu
         return item
+    }
+
+    private func rebuildRecordShortcutMenu() {
+        recordShortcutMenu.removeAllItems()
+        let current = RecordShortcutPreset.currentSelected
+        for preset in RecordShortcutPreset.all {
+            let item = NSMenuItem(title: preset.title, action: #selector(selectRecordShortcut(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = preset.id
+            item.state = preset == current ? .on : .off
+            recordShortcutMenu.addItem(item)
+        }
+    }
+
+    @objc private func selectRecordShortcut(_ sender: NSMenuItem) {
+        guard state != .recording, state != .transcribing else {
+            NSSound.beep()
+            return
+        }
+        guard let id = sender.representedObject as? String else { return }
+        let preset = RecordShortcutPreset.preset(for: id)
+        UserDefaults.standard.set(preset.id, forKey: recordShortcutPresetIDKey)
+        let status = hotKeyController.reregisterRecordHotKey(preset: preset)
+        if status != noErr {
+            AppLog.write("failed to re-register record hotkey \(preset.id): \(status)")
+            NSSound.beep()
+        }
+        rebuildRecordShortcutMenu()
     }
 
     private func rebuildInputLanguageMenu() {
@@ -911,6 +953,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     private func ensureSpeechModel(
         for choice: ModelChoice,
         inputLanguage: InputLanguageChoice,
+        onDownloadStateChange: ((Bool) -> Void)? = nil,
         completion: @escaping () -> Void
     ) {
         if ModelStore.isInstalled(choice, inputLanguage: inputLanguage) {
@@ -941,6 +984,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         }
 
         downloadingSpeechModelKeys.insert(key)
+        onDownloadStateChange?(true)
         let downloadStatus = inputLanguage.isEnglish ? "Downloading English speech..." : "Downloading multilingual speech..."
         setState(.error(downloadStatus))
 
@@ -948,6 +992,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             DispatchQueue.main.async {
                 guard let self else { return }
                 self.downloadingSpeechModelKeys.remove(key)
+                onDownloadStateChange?(false)
 
                 do {
                     if let error {
@@ -1891,6 +1936,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
 
     private func showSetupDoctor() {
         setupDoctorController.show()
+    }
+
+    private func downloadDefaultModelForSetup() {
+        ensureSpeechModel(
+            for: ModelChoice.defaultChoice,
+            inputLanguage: InputLanguageChoice.defaultChoice,
+            onDownloadStateChange: { [weak self] downloading in
+                self?.setupDoctorController.setModelDownloading(downloading)
+            },
+            completion: { [weak self] in
+                self?.setupDoctorController.refreshChecks()
+            }
+        )
     }
 
     @objc private func openInstalledModelsFolder() {

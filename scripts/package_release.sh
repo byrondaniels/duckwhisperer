@@ -9,6 +9,7 @@ PACKAGE_FORMAT="${PACKAGE_FORMAT:-dmg}"
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$ROOT_DIR/Info.plist")"
 BUILD="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$ROOT_DIR/Info.plist")"
 ARTIFACT_BASE="DuckWhisperer-${VERSION}-${BUILD}"
+BUNDLE_DEFAULT_MODEL="${BUNDLE_DEFAULT_MODEL:-0}"
 DEFAULT_MODEL="$APP_DIR/Contents/Resources/Models/ggml-small.en.bin"
 RELEASE_NOTES="$RELEASE_DIR/$ARTIFACT_BASE-release-notes.md"
 
@@ -97,7 +98,7 @@ write_start_here() {
     <p>Press <code>Option+Space</code> to start recording, then press <code>Option+Space</code> again to stop and paste. Press <code>Escape</code> to cancel.</p>
 
     <h2>What Is Included</h2>
-    <p>This app includes Best Accuracy English dictation. Extra language and style assets are optional downloads inside DuckWhisperer.</p>
+    <p>This app downloads its English speech model on first launch (approval-gated). Extra language packs are optional downloads from inside DuckWhisperer.</p>
 
     <h2>If Paste-Back Fails</h2>
     <p>Your text is copied and safe. Use <code>Paste Again</code>, <code>Copy</code>, <code>Try In DuckWhisperer</code>, or <code>Fix Permission</code> in the recovery window.</p>
@@ -127,9 +128,8 @@ $package_list
 
 ## Included Assets
 
-- Bundled default speech model: Best Accuracy English (ggml-small.en.bin).
 - Bundled user guide: Resources/UserGuide.html.
-- Optional non-English speech, translation, and Enhanced Robot assets are not included. DuckWhisperer asks before downloading them.
+- Speech models (English and non-English) and translation packs are approval-gated downloads from inside DuckWhisperer. Nothing downloads without user consent.
 - First-run setup checks, paste-back diagnostics, and support bundle export are included in the app.
 
 ## Signing
@@ -150,10 +150,14 @@ EOF
 echo "Preparing whisper.cpp backend..."
 ./scripts/bootstrap_backend.sh
 
-echo "Building self-contained DuckWhisperer app with bundled Best Accuracy dictation..."
-BUNDLE_DEFAULT_MODEL=1 INSTALL_DEFAULT_MODEL=0 INSTALL_TRANSLATION=0 ./scripts/build_app.sh >/dev/null
+if [[ "$BUNDLE_DEFAULT_MODEL" == "1" ]]; then
+  echo "Building self-contained DuckWhisperer app with bundled Best Accuracy dictation..."
+else
+  echo "Building DuckWhisperer app; speech model will download on first launch..."
+fi
+BUNDLE_DEFAULT_MODEL="$BUNDLE_DEFAULT_MODEL" INSTALL_DEFAULT_MODEL=0 INSTALL_TRANSLATION=0 ./scripts/build_app.sh >/dev/null
 
-if [[ ! -f "$DEFAULT_MODEL" ]]; then
+if [[ "$BUNDLE_DEFAULT_MODEL" == "1" && ! -f "$DEFAULT_MODEL" ]]; then
   echo "Packaged app is missing bundled model: $DEFAULT_MODEL" >&2
   exit 1
 fi
@@ -178,6 +182,9 @@ fi
 if [[ "$PACKAGE_FORMAT" == "dmg" || "$PACKAGE_FORMAT" == "both" ]]; then
   STAGING_DIR="$STAGING_ROOT/$ARTIFACT_BASE"
   DMG_PATH="$RELEASE_DIR/$ARTIFACT_BASE.dmg"
+  TEMP_DMG="$STAGING_ROOT/$ARTIFACT_BASE-temp.dmg"
+  BACKGROUND_PNG="$STAGING_ROOT/dmg-background.png"
+  VOLUME_NAME="DuckWhisperer"
   mkdir -p "$STAGING_DIR"
   if ! cp -cR "$APP_DIR" "$STAGING_DIR/DuckWhisperer.app" 2>/dev/null; then
     rm -rf "$STAGING_DIR/DuckWhisperer.app"
@@ -185,14 +192,79 @@ if [[ "$PACKAGE_FORMAT" == "dmg" || "$PACKAGE_FORMAT" == "both" ]]; then
   fi
   ln -s /Applications "$STAGING_DIR/Applications"
   write_start_here "$STAGING_DIR/Start Here.html"
-  rm -f "$DMG_PATH"
-  echo "Creating $DMG_PATH..."
+
+  echo "Generating DMG background..."
+  /usr/bin/swift "$ROOT_DIR/scripts/generate_dmg_background.swift" "$BACKGROUND_PNG"
+
+  echo "Creating writable DMG for layout..."
+  rm -f "$DMG_PATH" "$TEMP_DMG"
+  STAGING_SIZE_KB=$(du -sk "$STAGING_DIR" | awk '{print $1}')
+  DMG_SIZE_KB=$(( STAGING_SIZE_KB + 20480 ))
   hdiutil create \
-    -volname "DuckWhisperer" \
-    -srcfolder "$STAGING_DIR" \
-    -ov \
-    -format UDZO \
-    "$DMG_PATH"
+    -volname "$VOLUME_NAME" \
+    -fs HFS+ \
+    -size "${DMG_SIZE_KB}k" \
+    "$TEMP_DMG" >/dev/null
+
+  MOUNT_POINT="/Volumes/$VOLUME_NAME"
+  hdiutil attach -readwrite -noverify -noautoopen "$TEMP_DMG" >/dev/null
+
+  ditto "$STAGING_DIR/DuckWhisperer.app" "$MOUNT_POINT/DuckWhisperer.app"
+  cp "$STAGING_DIR/Start Here.html" "$MOUNT_POINT/Start Here.html"
+  mkdir -p "$MOUNT_POINT/.background"
+  cp "$BACKGROUND_PNG" "$MOUNT_POINT/.background/background.png"
+
+  # A real Finder alias carries the /Applications folder icon; a plain symlink renders blank.
+  osascript -e "tell application \"Finder\" to make alias file to (POSIX file \"/Applications\") at (POSIX file \"$MOUNT_POINT\")" >/dev/null
+  if [[ -e "$MOUNT_POINT/Applications alias" ]]; then
+    mv "$MOUNT_POINT/Applications alias" "$MOUNT_POINT/Applications"
+  fi
+
+  # Finder won't lazily render the /Applications system icon on a scripted DMG, so stamp it explicitly.
+  ICON_SCRIPT="$STAGING_ROOT/set_applications_icon.swift"
+  cat > "$ICON_SCRIPT" <<'SWIFTEOF'
+import AppKit
+let target = CommandLine.arguments.last ?? ""
+let icon = NSWorkspace.shared.icon(forFile: "/Applications")
+NSWorkspace.shared.setIcon(icon, forFile: target, options: [])
+SWIFTEOF
+  /usr/bin/swift "$ICON_SCRIPT" "$MOUNT_POINT/Applications"
+
+  echo "Configuring Finder layout..."
+  osascript <<EOF >/dev/null
+tell application "Finder"
+    tell disk "$VOLUME_NAME"
+        open
+        set current view of container window to icon view
+        set toolbar visible of container window to false
+        set statusbar visible of container window to false
+        set sidebar width of container window to 0
+        set the bounds of container window to {200, 200, 800, 620}
+        set viewOptions to the icon view options of container window
+        set arrangement of viewOptions to not arranged
+        set icon size of viewOptions to 96
+        set text size of viewOptions to 12
+        set background picture of viewOptions to file ".background:background.png"
+        set position of item "DuckWhisperer.app" of container window to {150, 200}
+        set position of item "Applications" of container window to {450, 200}
+        set position of item "Start Here.html" of container window to {300, 340}
+        update without registering applications
+        delay 2
+        close
+        open
+        update without registering applications
+        delay 3
+        close
+    end tell
+end tell
+EOF
+
+  sync
+  sleep 1
+  hdiutil detach "$MOUNT_POINT" >/dev/null
+  echo "Compressing to read-only DMG..."
+  hdiutil convert "$TEMP_DMG" -format UDZO -imagekey zlib-level=9 -o "$DMG_PATH" >/dev/null
+  rm -f "$TEMP_DMG"
   du -h "$DMG_PATH"
   created_packages+=("- $DMG_PATH")
 fi
@@ -207,6 +279,6 @@ $RELEASE_DIR
 Release notes:
 $RELEASE_NOTES
 
-This package includes Best Accuracy dictation inside DuckWhisperer.app.
-Non-English speech models, translator add-ons, and Enhanced Robot assets remain optional and install only after user approval.
+Speech models and translator add-ons remain optional and install only after user approval on first launch.
+Set BUNDLE_DEFAULT_MODEL=1 to bake the Best Accuracy English model into the app for an offline-first DMG.
 EOF

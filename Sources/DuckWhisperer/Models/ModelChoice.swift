@@ -88,9 +88,9 @@ struct ModelChoice: Equatable {
     var friendlyDetail: String {
         switch id {
         case "small-en":
-            return "recommended for everyday dictation"
+            return "best when you want top accuracy"
         case "base-en":
-            return "quicker, still solid"
+            return "recommended for everyday dictation"
         case "tiny-en":
             return "quick tests and short notes"
         default:
@@ -101,9 +101,9 @@ struct ModelChoice: Equatable {
     var friendlyMenuTitle: String {
         switch id {
         case "small-en":
-            return "Best Accuracy - Recommended"
+            return "Best Accuracy - Most Accurate"
         case "base-en":
-            return "Fast - Smaller Download"
+            return "Fast - Recommended"
         case "tiny-en":
             return "Fastest - Rough Drafts"
         default:
@@ -181,7 +181,7 @@ struct ModelChoice: Equatable {
     ]
 
     static var defaultChoice: ModelChoice {
-        all[0]
+        all[1]
     }
 
     static func choice(for id: String?) -> ModelChoice {
@@ -238,6 +238,17 @@ enum ModelStore {
 
     static func isInstalled(_ choice: ModelChoice, inputLanguage: InputLanguageChoice) -> Bool {
         installedURL(for: choice, inputLanguage: inputLanguage) != nil
+    }
+
+    static func isUserInstalled(_ choice: ModelChoice, inputLanguage: InputLanguageChoice) -> Bool {
+        FileManager.default.fileExists(atPath: userURL(for: choice, inputLanguage: inputLanguage).path)
+    }
+
+    static func deleteUserModel(_ choice: ModelChoice, inputLanguage: InputLanguageChoice) throws {
+        let url = userURL(for: choice, inputLanguage: inputLanguage)
+        if FileManager.default.fileExists(atPath: url.path) {
+            try FileManager.default.removeItem(at: url)
+        }
     }
 
     static func installDownloadedModel(from temporaryURL: URL, for choice: ModelChoice) throws {

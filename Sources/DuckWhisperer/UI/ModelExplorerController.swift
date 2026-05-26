@@ -218,11 +218,23 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
         row.addSubview(metricsLabel)
         row.addSubview(actionButton)
 
+        var titleTrailingTarget = actionButton.leadingAnchor
+        var deleteButton: NSButton?
+        if ModelStore.isUserInstalled(choice, inputLanguage: currentInputLanguage), choice != currentModel {
+            let button = NSButton(title: "Delete", target: self, action: #selector(handleModelDelete(_:)))
+            button.translatesAutoresizingMaskIntoConstraints = false
+            button.bezelStyle = .rounded
+            button.identifier = NSUserInterfaceItemIdentifier(choice.id)
+            row.addSubview(button)
+            deleteButton = button
+            titleTrailingTarget = button.leadingAnchor
+        }
+
         NSLayoutConstraint.activate([
             row.heightAnchor.constraint(greaterThanOrEqualToConstant: 106),
 
             titleLabel.leadingAnchor.constraint(equalTo: row.leadingAnchor, constant: 12),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: actionButton.leadingAnchor, constant: -8),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: titleTrailingTarget, constant: -8),
             titleLabel.topAnchor.constraint(equalTo: row.topAnchor, constant: 11),
             titleLabel.centerYAnchor.constraint(equalTo: actionButton.centerYAnchor),
 
@@ -243,6 +255,14 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
             metricsLabel.topAnchor.constraint(equalTo: statusLabel.bottomAnchor, constant: 4),
             metricsLabel.bottomAnchor.constraint(lessThanOrEqualTo: row.bottomAnchor, constant: -10)
         ])
+
+        if let deleteButton {
+            NSLayoutConstraint.activate([
+                deleteButton.trailingAnchor.constraint(equalTo: actionButton.leadingAnchor, constant: -8),
+                deleteButton.centerYAnchor.constraint(equalTo: actionButton.centerYAnchor),
+                deleteButton.widthAnchor.constraint(equalToConstant: 84)
+            ])
+        }
 
         return row
     }
@@ -453,6 +473,30 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
 
     private func downloadKey(for choice: ModelChoice) -> String {
         choice.filename(for: currentInputLanguage)
+    }
+
+    @objc private func handleModelDelete(_ sender: NSButton) {
+        guard let id = sender.identifier?.rawValue else { return }
+        let choice = ModelChoice.choice(for: id)
+        guard ModelStore.isUserInstalled(choice, inputLanguage: currentInputLanguage), choice != currentModel else {
+            return
+        }
+
+        let alert = NSAlert()
+        alert.messageText = "Delete the \(choice.friendlyTitle) model?"
+        alert.informativeText = "This removes the downloaded \(choice.diskSizeText(for: currentInputLanguage)) file from this Mac. You can download it again anytime."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Delete")
+        alert.addButton(withTitle: "Cancel")
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+
+        do {
+            try ModelStore.deleteUserModel(choice, inputLanguage: currentInputLanguage)
+            onModelsChanged()
+        } catch {
+            showError(error)
+        }
+        rebuild()
     }
 
     private func confirmAndInstall(_ pack: TranslationPackChoice) {
