@@ -18,38 +18,11 @@ enum DuckWhispererIcon {
         rect.fill()
 
         let waveColor = NSColor(calibratedRed: 1.0, green: 0.75, blue: 0.12, alpha: 0.95)
-        drawWave(center: NSPoint(x: w * 0.38, y: h * 0.47), radius: w * 0.19, leftSide: true, color: waveColor, lineWidth: max(1.4, w * 0.07))
-        drawWave(center: NSPoint(x: w * 0.62, y: h * 0.47), radius: w * 0.19, leftSide: false, color: waveColor, lineWidth: max(1.4, w * 0.07))
+        drawWave(center: NSPoint(x: w * 0.30, y: h * 0.48), radius: w * 0.17, leftSide: true, color: waveColor, lineWidth: max(1.2, w * 0.055))
+        drawWave(center: NSPoint(x: w * 0.73, y: h * 0.48), radius: w * 0.17, leftSide: false, color: waveColor, lineWidth: max(1.2, w * 0.055))
 
-        let foot = NSBezierPath(ovalIn: NSRect(x: w * 0.45, y: h * 0.08, width: w * 0.10, height: h * 0.16))
-        NSColor(calibratedWhite: 0.88, alpha: 0.92).setFill()
-        foot.fill()
-
-        let body = NSBezierPath(ovalIn: NSRect(x: w * 0.38, y: h * 0.18, width: w * 0.24, height: h * 0.25))
-        NSGradient(colors: [
-            NSColor.white,
-            NSColor(calibratedWhite: 0.83, alpha: 1)
-        ])?.draw(in: body, angle: 90)
-
-        let wing = NSBezierPath()
-        wing.lineWidth = max(1.2, w * 0.055)
-        wing.lineCapStyle = .round
-        wing.move(to: NSPoint(x: w * 0.61, y: h * 0.28))
-        wing.curve(
-            to: NSPoint(x: w * 0.74, y: h * 0.34),
-            controlPoint1: NSPoint(x: w * 0.66, y: h * 0.25),
-            controlPoint2: NSPoint(x: w * 0.70, y: h * 0.28)
-        )
-        NSColor.white.withAlphaComponent(0.95).setStroke()
-        wing.stroke()
-
-        drawFeatherHead(in: NSRect(x: w * 0.31, y: h * 0.30, width: w * 0.38, height: h * 0.58))
-
-        let leftEye = NSBezierPath(ovalIn: NSRect(x: w * 0.42, y: h * 0.43, width: w * 0.07, height: h * 0.10))
-        let rightEye = NSBezierPath(ovalIn: NSRect(x: w * 0.54, y: h * 0.43, width: w * 0.07, height: h * 0.10))
-        NSColor(calibratedWhite: 0.04, alpha: 1).setFill()
-        leftEye.fill()
-        rightEye.fill()
+        drawDuckBody(in: rect)
+        drawDuckHead(in: rect)
     }
 
     private static func drawWave(center: NSPoint, radius: CGFloat, leftSide: Bool, color: NSColor, lineWidth: CGFloat) {
@@ -67,37 +40,115 @@ enum DuckWhispererIcon {
         path.stroke()
     }
 
-    private static func drawFeatherHead(in rect: NSRect) {
-        let x = rect.minX
-        let y = rect.minY
+    private static func drawDuckBody(in rect: NSRect) {
         let w = rect.width
         let h = rect.height
 
-        let duckwhisperer = NSBezierPath()
-        duckwhisperer.move(to: NSPoint(x: x + w * 0.28, y: y + h * 0.12))
-        duckwhisperer.curve(
-            to: NSPoint(x: x + w * 0.92, y: y + h * 0.98),
-            controlPoint1: NSPoint(x: x + w * 0.30, y: y + h * 0.58),
-            controlPoint2: NSPoint(x: x + w * 0.66, y: y + h * 0.88)
+        let body = NSBezierPath()
+        body.move(to: NSPoint(x: w * 0.20, y: h * 0.36))
+        body.curve(
+            to: NSPoint(x: w * 0.43, y: h * 0.18),
+            controlPoint1: NSPoint(x: w * 0.22, y: h * 0.24),
+            controlPoint2: NSPoint(x: w * 0.31, y: h * 0.18)
         )
-        duckwhisperer.curve(
-            to: NSPoint(x: x + w * 0.74, y: y + h * 0.25),
-            controlPoint1: NSPoint(x: x + w * 0.96, y: y + h * 0.70),
-            controlPoint2: NSPoint(x: x + w * 0.94, y: y + h * 0.38)
+        body.curve(
+            to: NSPoint(x: w * 0.73, y: h * 0.38),
+            controlPoint1: NSPoint(x: w * 0.61, y: h * 0.18),
+            controlPoint2: NSPoint(x: w * 0.73, y: h * 0.25)
         )
-        duckwhisperer.curve(
-            to: NSPoint(x: x + w * 0.28, y: y + h * 0.12),
-            controlPoint1: NSPoint(x: x + w * 0.62, y: y + h * 0.08),
-            controlPoint2: NSPoint(x: x + w * 0.42, y: y + h * 0.04)
+        body.curve(
+            to: NSPoint(x: w * 0.48, y: h * 0.53),
+            controlPoint1: NSPoint(x: w * 0.73, y: h * 0.50),
+            controlPoint2: NSPoint(x: w * 0.61, y: h * 0.55)
         )
-        duckwhisperer.close()
+        body.curve(
+            to: NSPoint(x: w * 0.20, y: h * 0.36),
+            controlPoint1: NSPoint(x: w * 0.32, y: h * 0.54),
+            controlPoint2: NSPoint(x: w * 0.22, y: h * 0.48)
+        )
+        body.close()
+        NSGradient(colors: [
+            NSColor.white,
+            NSColor(calibratedWhite: 0.82, alpha: 1)
+        ])?.draw(in: body, angle: 90)
+
+        let tail = NSBezierPath()
+        tail.move(to: NSPoint(x: w * 0.22, y: h * 0.40))
+        tail.line(to: NSPoint(x: w * 0.08, y: h * 0.53))
+        tail.line(to: NSPoint(x: w * 0.16, y: h * 0.32))
+        tail.close()
+        NSColor.white.withAlphaComponent(0.96).setFill()
+        tail.fill()
+
+        let wing = NSBezierPath()
+        wing.move(to: NSPoint(x: w * 0.39, y: h * 0.37))
+        wing.curve(
+            to: NSPoint(x: w * 0.56, y: h * 0.34),
+            controlPoint1: NSPoint(x: w * 0.45, y: h * 0.43),
+            controlPoint2: NSPoint(x: w * 0.52, y: h * 0.42)
+        )
+        wing.curve(
+            to: NSPoint(x: w * 0.43, y: h * 0.28),
+            controlPoint1: NSPoint(x: w * 0.54, y: h * 0.29),
+            controlPoint2: NSPoint(x: w * 0.48, y: h * 0.27)
+        )
+        wing.close()
         NSGradient(colors: [
             NSColor(calibratedRed: 1.0, green: 0.94, blue: 0.62, alpha: 1),
             NSColor(calibratedRed: 1.0, green: 0.67, blue: 0.08, alpha: 1)
-        ])?.draw(in: duckwhisperer, angle: 120)
+        ])?.draw(in: wing, angle: 90)
+    }
 
-        let face = NSBezierPath(ovalIn: NSRect(x: x + w * 0.16, y: y, width: w * 0.62, height: h * 0.45))
+    private static func drawDuckHead(in rect: NSRect) {
+        let w = rect.width
+        let h = rect.height
+
+        let neck = NSBezierPath(ovalIn: NSRect(x: w * 0.56, y: h * 0.42, width: w * 0.18, height: h * 0.28))
+        NSColor(calibratedRed: 1.0, green: 0.74, blue: 0.13, alpha: 1).setFill()
+        neck.fill()
+
+        let head = NSBezierPath(ovalIn: NSRect(x: w * 0.54, y: h * 0.58, width: w * 0.28, height: h * 0.24))
         NSColor(calibratedRed: 1.0, green: 0.74, blue: 0.16, alpha: 1).setFill()
-        face.fill()
+        head.fill()
+
+        let crest = NSBezierPath()
+        crest.move(to: NSPoint(x: w * 0.61, y: h * 0.76))
+        crest.curve(
+            to: NSPoint(x: w * 0.55, y: h * 0.92),
+            controlPoint1: NSPoint(x: w * 0.57, y: h * 0.82),
+            controlPoint2: NSPoint(x: w * 0.56, y: h * 0.88)
+        )
+        crest.curve(
+            to: NSPoint(x: w * 0.70, y: h * 0.78),
+            controlPoint1: NSPoint(x: w * 0.66, y: h * 0.89),
+            controlPoint2: NSPoint(x: w * 0.70, y: h * 0.84)
+        )
+        crest.close()
+        NSColor(calibratedRed: 1.0, green: 0.82, blue: 0.24, alpha: 1).setFill()
+        crest.fill()
+
+        let beak = NSBezierPath()
+        beak.move(to: NSPoint(x: w * 0.78, y: h * 0.68))
+        beak.curve(
+            to: NSPoint(x: w * 0.95, y: h * 0.63),
+            controlPoint1: NSPoint(x: w * 0.85, y: h * 0.71),
+            controlPoint2: NSPoint(x: w * 0.91, y: h * 0.68)
+        )
+        beak.curve(
+            to: NSPoint(x: w * 0.78, y: h * 0.58),
+            controlPoint1: NSPoint(x: w * 0.91, y: h * 0.57),
+            controlPoint2: NSPoint(x: w * 0.84, y: h * 0.56)
+        )
+        beak.close()
+        NSColor(calibratedRed: 1.0, green: 0.50, blue: 0.05, alpha: 1).setFill()
+        beak.fill()
+
+        let eye = NSBezierPath(ovalIn: NSRect(x: w * 0.66, y: h * 0.68, width: w * 0.07, height: h * 0.085))
+        NSColor(calibratedWhite: 0.04, alpha: 1).setFill()
+        eye.fill()
+
+        let glint = NSBezierPath(ovalIn: NSRect(x: w * 0.68, y: h * 0.72, width: w * 0.018, height: h * 0.018))
+        NSColor.white.withAlphaComponent(0.92).setFill()
+        glint.fill()
     }
 }
