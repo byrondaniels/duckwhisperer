@@ -2,14 +2,10 @@
 set -u
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SUPPORT_ROOT="${DUCKWHISPERER_SUPPORT_DIR:-${PLUME_SUPPORT_DIR:-$HOME/Library/Application Support/DuckWhisperer}}"
-LEGACY_SUPPORT_ROOTS=(
-  "$HOME/Library/Application Support/Plume"
-  "$HOME/Library/Application Support/Local Whisperer"
-)
+SUPPORT_ROOT="${DUCKWHISPERER_SUPPORT_DIR:-$HOME/Library/Application Support/DuckWhisperer}"
 TRANSLATION_DIR="$SUPPORT_ROOT/Translation"
 MODEL_DIR="$SUPPORT_ROOT/Models"
-APP_PATH="${DUCKWHISPERER_INSTALL_DIR:-${PLUME_INSTALL_DIR:-/Applications}}/DuckWhisperer.app"
+APP_PATH="${DUCKWHISPERER_INSTALL_DIR:-/Applications}/DuckWhisperer.app"
 FRAMEWORK_DIR="$ROOT_DIR/vendor/whisper-xcframework/build-apple/whisper.xcframework"
 
 failures=0
@@ -41,20 +37,6 @@ require_command() {
   else
     fail "$name is missing. $hint"
   fi
-}
-
-resolve_support_root() {
-  if [[ -d "$SUPPORT_ROOT" ]]; then
-    return
-  fi
-  for legacy_support_root in "${LEGACY_SUPPORT_ROOTS[@]}"; do
-    if [[ -d "$legacy_support_root" ]]; then
-      SUPPORT_ROOT="$legacy_support_root"
-      TRANSLATION_DIR="$SUPPORT_ROOT/Translation"
-      MODEL_DIR="$SUPPORT_ROOT/Models"
-      break
-    fi
-  done
 }
 
 python_version() {
@@ -222,7 +204,6 @@ check_installed_app_signature() {
   fi
 }
 
-resolve_support_root
 check_macos
 require_command swift "Install Xcode Command Line Tools: xcode-select --install"
 require_command swiftc "Install Xcode Command Line Tools: xcode-select --install"

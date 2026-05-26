@@ -2,7 +2,7 @@ import AppKit
 
 enum DuckWhispererIcon {
     private static let selectedArtwork: NSImage? = {
-        guard let url = Bundle.main.url(forResource: "DuckWhispererOption3", withExtension: "png") else {
+        guard let url = Bundle.main.url(forResource: "DuckWhispererOption3Hud", withExtension: "png") else {
             return nil
         }
         return NSImage(contentsOf: url)

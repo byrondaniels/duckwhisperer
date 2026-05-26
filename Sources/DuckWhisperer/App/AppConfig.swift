@@ -19,7 +19,6 @@ let appDisplayName = "DuckWhisperer"
 let supportDirectoryName = "DuckWhisperer"
 let legacySupportDirectoryNames = ["Plume", "Local Whisperer"]
 let logFilename = "duckwhisperer.log"
-let buildMarker = "duckwhisperer-2026-05-25-rebrand"
 var debugPasteText: String?
 
 func appSupportRootURL() -> URL {

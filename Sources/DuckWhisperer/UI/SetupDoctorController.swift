@@ -135,7 +135,7 @@ final class SetupDoctorController: NSObject {
         }
 
         var completed = 0
-        let total = 5
+        let total = 3
 
         let mic = microphoneStatus()
         completed += mic.ready ? 1 : 0
@@ -159,19 +159,6 @@ final class SetupDoctorController: NSObject {
             action: modelReady ? nil : #selector(openModelExplorer)
         )
 
-        let installed = FileManager.default.fileExists(atPath: "/Applications/DuckWhisperer.app")
-        completed += installed ? 1 : 0
-        addRow(
-            status: installed ? "OK App is installed" : "FIX Move DuckWhisperer to Applications",
-            detail: installed ? "Running from Applications keeps macOS permissions stable across launches." : "Drag DuckWhisperer.app into Applications from the DMG.",
-            actionTitle: nil,
-            action: nil
-        )
-
-        let signing = signingStatus()
-        completed += signing.ready ? 1 : 0
-        addRow(status: signing.text, detail: signing.detail, actionTitle: nil, action: nil)
-        addRow(status: "OK Private by default", detail: "Core English dictation runs on this Mac. Optional language and style downloads ask first.", actionTitle: nil, action: nil)
         progressLabel.stringValue = completed == total
             ? "Setup complete. Use Try It Here for a safe first dictation."
             : "\(completed)/\(total) setup checks complete"
@@ -236,28 +223,6 @@ final class SetupDoctorController: NSObject {
             return (false, "FIX Allow microphone access", "macOS has not asked or the prompt was not completed yet.", "Fix")
         @unknown default:
             return (false, "FIX Microphone needs attention", "Open System Settings and confirm microphone access.", "Fix")
-        }
-    }
-
-    private func signingStatus() -> (ready: Bool, text: String, detail: String) {
-        let appURL = URL(fileURLWithPath: "/Applications/DuckWhisperer.app")
-        guard FileManager.default.fileExists(atPath: appURL.path) else {
-            return (false, "FIX Install the app to finish setup", "The release app should run from Applications.")
-        }
-
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/codesign")
-        process.arguments = ["--verify", "--deep", "--strict", appURL.path]
-        process.standardOutput = Pipe()
-        process.standardError = Pipe()
-        do {
-            try process.run()
-            process.waitUntilExit()
-            return process.terminationStatus == 0
-                ? (true, "OK App identity is stable", "Code signing verifies, so macOS permissions should persist.")
-                : (false, "FIX App identity needs attention", "Rebuild or install the signed release if macOS keeps asking for permissions.")
-        } catch {
-            return (false, "FIX Could not check app identity", "The support bundle can help diagnose this.")
         }
     }
 

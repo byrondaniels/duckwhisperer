@@ -133,7 +133,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         installApplicationIcon()
-        AppLog.write("launched \(buildMarker); axTrusted=\(AXIsProcessTrusted())")
+        AppLog.write("launched; axTrusted=\(AXIsProcessTrusted())")
 
         setupMenu()
         transcriber.setLanguageCode(selectedInputLanguage.whisperCode)
@@ -1397,6 +1397,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                     writingProfile: writingProfile
                 )
                 let dictionaryOutput = PersonalDictionary.apply(dictionaryEntries, to: commandResult.text)
+                let willRunArgosTranslation = commandResult.outputLanguage.requiresTranslation
+                    && !commandResult.outputLanguage.matchesInput(inputLanguage)
+                if willRunArgosTranslation {
+                    let targetLabel = commandResult.outputLanguage.title
+                    DispatchQueue.main.async { [weak self] in
+                        guard let self, self.isActiveTranscription(transcriptionID) else { return }
+                        self.recordingOverlay.setDetails(
+                            statusText: "Translating to \(targetLabel)",
+                            contextText: self.overlayContextText(),
+                            previewText: "Sending text through the local translator...",
+                            hintText: "Esc cancels",
+                            commandText: commandResult.commandName,
+                            presenterMode: self.presenterModeEnabled
+                        )
+                    }
+                }
                 let translatedOutput: String
                 do {
                     translatedOutput = try TranscriptionOutputPipeline.applyConfiguredOutputLanguage(
@@ -1616,7 +1632,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
 
         NSApp.setActivationPolicy(.accessory)
         if let application = target.application, !application.isTerminated {
-            application.activate(options: [.activateAllWindows])
+            application.activate(options: [])
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {

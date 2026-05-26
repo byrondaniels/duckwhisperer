@@ -131,7 +131,7 @@ enum PasteTargetDetector {
         }
 
         if let app = target.application, !app.isTerminated {
-            app.activate(options: [.activateAllWindows])
+            app.activate(options: [])
         }
 
         AXUIElementSetAttributeValue(element, kAXFocusedAttribute as CFString, kCFBooleanTrue)
