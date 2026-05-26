@@ -161,6 +161,8 @@ fi
 echo "Verifying app signature..."
 codesign --verify --deep --strict "$APP_DIR"
 
+rm -rf "$ROOT_DIR/build/module-cache"
+
 mkdir -p "$RELEASE_DIR"
 created_packages=()
 
@@ -177,7 +179,10 @@ if [[ "$PACKAGE_FORMAT" == "dmg" || "$PACKAGE_FORMAT" == "both" ]]; then
   STAGING_DIR="$STAGING_ROOT/$ARTIFACT_BASE"
   DMG_PATH="$RELEASE_DIR/$ARTIFACT_BASE.dmg"
   mkdir -p "$STAGING_DIR"
-  ditto "$APP_DIR" "$STAGING_DIR/DuckWhisperer.app"
+  if ! cp -cR "$APP_DIR" "$STAGING_DIR/DuckWhisperer.app" 2>/dev/null; then
+    rm -rf "$STAGING_DIR/DuckWhisperer.app"
+    ditto "$APP_DIR" "$STAGING_DIR/DuckWhisperer.app"
+  fi
   ln -s /Applications "$STAGING_DIR/Applications"
   write_start_here "$STAGING_DIR/Start Here.html"
   rm -f "$DMG_PATH"

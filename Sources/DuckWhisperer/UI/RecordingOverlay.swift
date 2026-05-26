@@ -318,9 +318,9 @@ private final class RecordingOverlayView: NSView {
 
     private func drawMascotWaves(energy: CGFloat) {
         let loudness = pow(max(0, min(1, energy)), 0.82)
-        let baseColor = NSColor(calibratedRed: 1.0, green: 0.77, blue: 0.15, alpha: 0.38 + loudness * 0.44)
-        let groups: [CGFloat] = [38, 112]
-        let baseHeights: [CGFloat] = [15, 25, 35, 25, 15]
+        let baseColor = NSColor(calibratedRed: 1.0, green: 0.76, blue: 0.12, alpha: 0.38 + loudness * 0.46)
+        let groups: [CGFloat] = [40, 112]
+        let baseHeights: [CGFloat] = [14, 24, 34, 24, 14]
 
         for groupX in groups {
             for (index, baseHeight) in baseHeights.enumerated() {
@@ -337,133 +337,51 @@ private final class RecordingOverlayView: NSView {
     }
 
     private func drawMascotBody(energy: CGFloat) {
-        let shadow = NSBezierPath(ovalIn: NSRect(x: 48, y: 70, width: 54, height: 8))
-        NSColor.black.withAlphaComponent(0.22).setFill()
-        shadow.fill()
-
-        drawMascotFoot(origin: NSPoint(x: 54, y: 69), width: 18, height: 5)
-        drawMascotFoot(origin: NSPoint(x: 70, y: 69), width: 20, height: 5)
-
-        let raisedWing = NSBezierPath()
-        raisedWing.move(to: NSPoint(x: 76, y: 52))
-        raisedWing.curve(
-            to: NSPoint(x: 116, y: 30),
-            controlPoint1: NSPoint(x: 89, y: 42),
-            controlPoint2: NSPoint(x: 105, y: 34)
-        )
-        raisedWing.curve(
-            to: NSPoint(x: 100, y: 62),
-            controlPoint1: NSPoint(x: 118, y: 43),
-            controlPoint2: NSPoint(x: 112, y: 56)
-        )
-        raisedWing.curve(
-            to: NSPoint(x: 76, y: 52),
-            controlPoint1: NSPoint(x: 91, y: 65),
-            controlPoint2: NSPoint(x: 82, y: 60)
-        )
-        raisedWing.close()
+        let badgeRect = NSRect(x: 43, y: 8, width: 66, height: 66)
+        let badge = NSBezierPath(ovalIn: badgeRect)
         NSGradient(colors: [
-            NSColor(calibratedRed: 1.0, green: 0.98, blue: 0.78, alpha: 1),
-            NSColor(calibratedRed: 1.0, green: 0.72, blue: 0.14, alpha: 1)
-        ])?.draw(in: raisedWing, angle: 90)
+            NSColor(calibratedRed: 1.0, green: 0.74, blue: 0.12, alpha: 0.18 + energy * 0.18),
+            NSColor(calibratedRed: 0.40, green: 0.27, blue: 0.06, alpha: 0.10 + energy * 0.10)
+        ])?.draw(in: badge, angle: 270)
+        NSColor(calibratedRed: 1.0, green: 0.74, blue: 0.18, alpha: 0.55 + energy * 0.22).setStroke()
+        badge.lineWidth = 2.2
+        badge.stroke()
 
-        for offset in [0, 1, 2] {
-            let feather = NSBezierPath()
-            feather.lineWidth = 1
-            feather.lineCapStyle = .round
-            let start = NSPoint(x: 88 + CGFloat(offset) * 6, y: 50 - CGFloat(offset) * 4)
-            feather.move(to: start)
-            feather.curve(
-                to: NSPoint(x: start.x + 13, y: start.y - 11),
-                controlPoint1: NSPoint(x: start.x + 4, y: start.y - 3),
-                controlPoint2: NSPoint(x: start.x + 9, y: start.y - 8)
-            )
-            NSColor.white.withAlphaComponent(0.35).setStroke()
-            feather.stroke()
-        }
-
-        let body = NSBezierPath()
-        body.move(to: NSPoint(x: 47, y: 60))
-        body.curve(
-            to: NSPoint(x: 62, y: 35),
-            controlPoint1: NSPoint(x: 39, y: 48),
-            controlPoint2: NSPoint(x: 46, y: 34)
-        )
-        body.curve(
-            to: NSPoint(x: 84, y: 54),
-            controlPoint1: NSPoint(x: 79, y: 35),
-            controlPoint2: NSPoint(x: 88, y: 44)
-        )
-        body.curve(
-            to: NSPoint(x: 65, y: 70),
-            controlPoint1: NSPoint(x: 85, y: 67),
-            controlPoint2: NSPoint(x: 75, y: 72)
-        )
-        body.curve(
-            to: NSPoint(x: 47, y: 60),
-            controlPoint1: NSPoint(x: 55, y: 70),
-            controlPoint2: NSPoint(x: 49, y: 66)
-        )
-        body.close()
-        NSGradient(colors: [
-            NSColor(calibratedRed: 1.0, green: 0.99, blue: 0.90, alpha: 1),
-            NSColor(calibratedRed: 0.98, green: 0.84, blue: 0.48, alpha: 1)
-        ])?.draw(in: body, angle: 90)
-        NSColor.white.withAlphaComponent(0.52 + energy * 0.16).setStroke()
-        body.lineWidth = 1
-        body.stroke()
-
-        let wing = NSBezierPath()
-        wing.move(to: NSPoint(x: 54, y: 52))
-        wing.curve(
-            to: NSPoint(x: 74, y: 50),
-            controlPoint1: NSPoint(x: 60, y: 60),
-            controlPoint2: NSPoint(x: 70, y: 60)
-        )
-        wing.curve(
-            to: NSPoint(x: 58, y: 63),
-            controlPoint1: NSPoint(x: 72, y: 58),
-            controlPoint2: NSPoint(x: 65, y: 64)
-        )
-        wing.curve(
-            to: NSPoint(x: 54, y: 52),
-            controlPoint1: NSPoint(x: 53, y: 62),
-            controlPoint2: NSPoint(x: 51, y: 56)
-        )
-        wing.close()
-        NSGradient(colors: [
-            NSColor(calibratedRed: 1.0, green: 0.93, blue: 0.56, alpha: 0.96),
-            NSColor(calibratedRed: 0.98, green: 0.66, blue: 0.10, alpha: 0.96)
-        ])?.draw(in: wing, angle: 90)
+        let innerGlow = NSBezierPath(ovalIn: badgeRect.insetBy(dx: 8, dy: 7))
+        NSColor.white.withAlphaComponent(0.05 + energy * 0.05).setFill()
+        innerGlow.fill()
 
         let neck = NSBezierPath()
-        neck.move(to: NSPoint(x: 70, y: 47))
+        neck.move(to: NSPoint(x: 61, y: 67))
         neck.curve(
-            to: NSPoint(x: 69, y: 25),
-            controlPoint1: NSPoint(x: 69, y: 39),
-            controlPoint2: NSPoint(x: 67, y: 30)
+            to: NSPoint(x: 67, y: 35),
+            controlPoint1: NSPoint(x: 53, y: 55),
+            controlPoint2: NSPoint(x: 55, y: 42)
         )
         neck.curve(
-            to: NSPoint(x: 84, y: 25),
-            controlPoint1: NSPoint(x: 73, y: 21),
-            controlPoint2: NSPoint(x: 80, y: 21)
+            to: NSPoint(x: 87, y: 38),
+            controlPoint1: NSPoint(x: 74, y: 29),
+            controlPoint2: NSPoint(x: 84, y: 31)
         )
         neck.curve(
-            to: NSPoint(x: 80, y: 49),
-            controlPoint1: NSPoint(x: 86, y: 34),
-            controlPoint2: NSPoint(x: 84, y: 43)
+            to: NSPoint(x: 83, y: 67),
+            controlPoint1: NSPoint(x: 91, y: 50),
+            controlPoint2: NSPoint(x: 92, y: 62)
+        )
+        neck.curve(
+            to: NSPoint(x: 61, y: 67),
+            controlPoint1: NSPoint(x: 77, y: 75),
+            controlPoint2: NSPoint(x: 67, y: 75)
         )
         neck.close()
         NSGradient(colors: [
             NSColor(calibratedRed: 1.0, green: 0.99, blue: 0.91, alpha: 1),
-            NSColor(calibratedRed: 0.99, green: 0.84, blue: 0.48, alpha: 1)
+            NSColor(calibratedRed: 0.99, green: 0.84, blue: 0.46, alpha: 1)
         ])?.draw(in: neck, angle: 90)
-
-        drawMascotBowTie(center: NSPoint(x: 74, y: 49), scale: 7.5)
     }
 
     private func drawMascotHead(energy: CGFloat) {
-        let head = NSBezierPath(ovalIn: NSRect(x: 68, y: 18, width: 31, height: 29))
+        let head = NSBezierPath(ovalIn: NSRect(x: 64, y: 21, width: 38, height: 34))
         NSGradient(colors: [
             NSColor(calibratedRed: 1.0, green: 0.99, blue: 0.90, alpha: 1),
             NSColor(calibratedRed: 1.0, green: 0.84, blue: 0.45, alpha: 1)
@@ -473,16 +391,16 @@ private final class RecordingOverlayView: NSView {
         head.stroke()
 
         let beak = NSBezierPath()
-        beak.move(to: NSPoint(x: 96, y: 31))
+        beak.move(to: NSPoint(x: 98, y: 34))
         beak.curve(
-            to: NSPoint(x: 120, y: 35),
-            controlPoint1: NSPoint(x: 106, y: 27),
-            controlPoint2: NSPoint(x: 116, y: 28)
+            to: NSPoint(x: 130, y: 40),
+            controlPoint1: NSPoint(x: 111, y: 27),
+            controlPoint2: NSPoint(x: 124, y: 29)
         )
         beak.curve(
-            to: NSPoint(x: 96, y: 40),
-            controlPoint1: NSPoint(x: 116, y: 42),
-            controlPoint2: NSPoint(x: 106, y: 44)
+            to: NSPoint(x: 98, y: 47),
+            controlPoint1: NSPoint(x: 123, y: 52),
+            controlPoint2: NSPoint(x: 111, y: 53)
         )
         beak.close()
         NSGradient(colors: [
@@ -492,69 +410,29 @@ private final class RecordingOverlayView: NSView {
     }
 
     private func drawMascotFace(energy: CGFloat) {
-        let eye = NSBezierPath(ovalIn: NSRect(x: 79, y: 27, width: 6.2, height: 8.0))
+        let eye = NSBezierPath(ovalIn: NSRect(x: 78, y: 30, width: 7.0, height: 9.0))
         NSColor(calibratedWhite: 0.045, alpha: 1).setFill()
         eye.fill()
 
-        let glint = NSBezierPath(ovalIn: NSRect(x: 81.0, y: 28.3, width: 1.7, height: 1.9))
+        let glint = NSBezierPath(ovalIn: NSRect(x: 80.2, y: 31.5, width: 1.9, height: 2.1))
         NSColor.white.withAlphaComponent(0.92).setFill()
         glint.fill()
 
         let smile = NSBezierPath()
         smile.lineWidth = 2
         smile.lineCapStyle = .round
-        smile.move(to: NSPoint(x: 88, y: 38))
+        smile.move(to: NSPoint(x: 91, y: 45))
         smile.curve(
-            to: NSPoint(x: 93, y: 38),
-            controlPoint1: NSPoint(x: 89.0, y: 41 + energy * 0.5),
-            controlPoint2: NSPoint(x: 92.0, y: 41 + energy * 0.5)
+            to: NSPoint(x: 98, y: 45),
+            controlPoint1: NSPoint(x: 92.5, y: 49 + energy * 0.5),
+            controlPoint2: NSPoint(x: 96.5, y: 49 + energy * 0.5)
         )
         NSColor(calibratedWhite: 0.08, alpha: 0.9).setStroke()
         smile.stroke()
 
-        let cheek = NSBezierPath(ovalIn: NSRect(x: 70, y: 39, width: 5, height: 3))
+        let cheek = NSBezierPath(ovalIn: NSRect(x: 69, y: 44, width: 5, height: 3))
         NSColor(calibratedRed: 1.0, green: 0.90, blue: 0.45, alpha: 0.34).setFill()
         cheek.fill()
-    }
-
-    private func drawMascotFoot(origin: NSPoint, width: CGFloat, height: CGFloat) {
-        let foot = NSBezierPath()
-        foot.move(to: origin)
-        foot.curve(
-            to: NSPoint(x: origin.x + width, y: origin.y),
-            controlPoint1: NSPoint(x: origin.x + width * 0.32, y: origin.y - height),
-            controlPoint2: NSPoint(x: origin.x + width * 0.74, y: origin.y - height * 0.8)
-        )
-        foot.curve(
-            to: origin,
-            controlPoint1: NSPoint(x: origin.x + width * 0.70, y: origin.y + height * 0.65),
-            controlPoint2: NSPoint(x: origin.x + width * 0.22, y: origin.y + height * 0.50)
-        )
-        foot.close()
-        NSColor(calibratedRed: 1.0, green: 0.58, blue: 0.05, alpha: 1).setFill()
-        foot.fill()
-    }
-
-    private func drawMascotBowTie(center: NSPoint, scale: CGFloat) {
-        let left = NSBezierPath()
-        left.move(to: center)
-        left.line(to: NSPoint(x: center.x - scale, y: center.y - scale * 0.45))
-        left.line(to: NSPoint(x: center.x - scale, y: center.y + scale * 0.45))
-        left.close()
-
-        let right = NSBezierPath()
-        right.move(to: center)
-        right.line(to: NSPoint(x: center.x + scale, y: center.y - scale * 0.45))
-        right.line(to: NSPoint(x: center.x + scale, y: center.y + scale * 0.45))
-        right.close()
-
-        NSColor(calibratedRed: 1.0, green: 0.63, blue: 0.08, alpha: 1).setFill()
-        left.fill()
-        right.fill()
-
-        let knot = NSBezierPath(ovalIn: NSRect(x: center.x - scale * 0.23, y: center.y - scale * 0.21, width: scale * 0.46, height: scale * 0.42))
-        NSColor(calibratedRed: 0.88, green: 0.39, blue: 0.02, alpha: 1).setFill()
-        knot.fill()
     }
 
     private func drawProgress() {
