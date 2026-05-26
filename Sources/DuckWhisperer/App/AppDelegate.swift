@@ -87,7 +87,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     private var lastPasteWasTryIt = false
     private var downloadingSpeechModelKeys = Set<String>()
     private var installingTranslationPackIDs = Set<String>()
-    private var installingStyleRewritePackIDs = Set<String>()
 
     private var selectedModel: ModelChoice {
         ModelChoice.choice(for: UserDefaults.standard.string(forKey: selectedModelIDKey))
@@ -260,6 +259,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         menu.addItem(undoLastPasteMenuItem)
         menu.addItem(copyLastMenuItem)
         menu.addItem(profileMenuItem())
+        menu.addItem(inputLanguageMenuItem())
+        menu.addItem(outputMenuItem())
+        menu.addItem(performanceMenuItem())
         let personalDictionaryItem = NSMenuItem(
             title: "Saved Words...",
             action: #selector(openPersonalDictionary),
@@ -314,9 +316,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             keyEquivalent: ""
         )
         topLevelModelExplorer.target = self
-        advancedMenu.addItem(inputLanguageMenuItem())
-        advancedMenu.addItem(outputMenuItem())
-        advancedMenu.addItem(performanceMenuItem())
         advancedMenu.addItem(topLevelModelExplorer)
         advancedMenu.addItem(modelMenuItem())
         advancedMenu.addItem(NSMenuItem.separator())
@@ -465,15 +464,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             let translationSuffix = isInstallingTranslator
                 ? " - installing translator..."
                 : (missingTranslationPacks.isEmpty ? "" : " - needs translator")
-            let styleSuffix: String
-            if language.id == "robot", installingStyleRewritePackIDs.contains(StyleRewritePack.enhancedRobot.id) {
-                styleSuffix = " - installing enhanced mode..."
-            } else if language.id == "robot", !StyleRewriteStore.isInstalled(.enhancedRobot) {
-                styleSuffix = " - basic mode"
-            } else {
-                styleSuffix = ""
-            }
-            let item = NSMenuItem(title: "\(title)\(translationSuffix)\(styleSuffix)", action: #selector(selectOutputLanguage(_:)), keyEquivalent: "")
+            let item = NSMenuItem(title: "\(title)\(translationSuffix)", action: #selector(selectOutputLanguage(_:)), keyEquivalent: "")
             item.target = self
             item.representedObject = language.id
             item.state = language == current || (language.isSameAsInput && current.matchesInput(inputLanguage)) ? .on : .off
@@ -1067,60 +1058,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         }
     }
 
-    private func confirmEnhancedRobotInstall(completion: @escaping (Bool) -> Void) {
-        let pack = StyleRewritePack.enhancedRobot
-        guard !installingStyleRewritePackIDs.contains(pack.id) else {
-            NSSound.beep()
-            completion(false)
-            return
-        }
-
-        let alert = NSAlert()
-        alert.messageText = "Install Enhanced Robot?"
-        alert.informativeText = "This installs a local llama.cpp runner and \(pack.modelFilename). Download size: \(pack.totalSizeText). Robot mode still works in basic mode if you skip this."
-        alert.alertStyle = .informational
-        alert.addButton(withTitle: "Install")
-        alert.addButton(withTitle: "Use Basic")
-        alert.addButton(withTitle: "Cancel")
-
-        let response = alert.runModal()
-        if response == .alertSecondButtonReturn {
-            completion(true)
-            return
-        }
-        guard response == .alertFirstButtonReturn else {
-            completion(false)
-            return
-        }
-
-        installingStyleRewritePackIDs.insert(pack.id)
-        setState(.error("Installing Enhanced Robot..."))
-        rebuildOutputMenu()
-        modelExplorer.refresh(currentModel: selectedModel, inputLanguage: selectedInputLanguage)
-
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            do {
-                try StyleRewriteStore.install(pack)
-                DispatchQueue.main.async {
-                    guard let self else { return }
-                    self.installingStyleRewritePackIDs.remove(pack.id)
-                    self.rebuildOutputMenu()
-                    self.modelExplorer.refresh(currentModel: self.selectedModel, inputLanguage: self.selectedInputLanguage)
-                    completion(true)
-                }
-            } catch {
-                DispatchQueue.main.async {
-                    guard let self else { return }
-                    self.installingStyleRewritePackIDs.remove(pack.id)
-                    self.setState(.error(error.localizedDescription))
-                    self.modelExplorer.refresh(currentModel: self.selectedModel, inputLanguage: self.selectedInputLanguage)
-                    NSSound.beep()
-                    completion(false)
-                }
-            }
-        }
-    }
-
     @objc private func selectOutputLanguage(_ sender: NSMenuItem) {
         guard state != .recording, state != .transcribing else {
             NSSound.beep()
@@ -1132,15 +1069,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         }
 
         let language = OutputLanguage.choice(for: id)
-        if language.id == "robot", !StyleRewriteStore.isInstalled(.enhancedRobot) {
-            confirmEnhancedRobotInstall { [weak self] shouldSelectRobot in
-                if shouldSelectRobot {
-                    self?.setSelectedOutputLanguage(language)
-                }
-            }
-            return
-        }
-
         ensureTranslationPacks(inputLanguage: selectedInputLanguage, outputLanguage: language) { [weak self] in
             self?.setSelectedOutputLanguage(language)
         }
@@ -1704,10 +1632,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                 }
                 if self.shouldUseSyntheticTyping(for: target),
                    self.typeTextWithKeyboard(output) {
-                    self.finishSuccessfulDelivery(output, transcriptionID: transcriptionID, undoTarget: target)
-                    return
-                }
-                if PasteTargetDetector.insertTextDirectly(output, into: target) {
                     self.finishSuccessfulDelivery(output, transcriptionID: transcriptionID, undoTarget: target)
                     return
                 }

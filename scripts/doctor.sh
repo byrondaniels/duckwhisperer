@@ -8,7 +8,6 @@ LEGACY_SUPPORT_ROOTS=(
   "$HOME/Library/Application Support/Local Whisperer"
 )
 TRANSLATION_DIR="$SUPPORT_ROOT/Translation"
-STYLE_REWRITER_DIR="$SUPPORT_ROOT/StyleRewriter"
 MODEL_DIR="$SUPPORT_ROOT/Models"
 APP_PATH="${DUCKWHISPERER_INSTALL_DIR:-${PLUME_INSTALL_DIR:-/Applications}}/DuckWhisperer.app"
 FRAMEWORK_DIR="$ROOT_DIR/vendor/whisper-xcframework/build-apple/whisper.xcframework"
@@ -52,7 +51,6 @@ resolve_support_root() {
     if [[ -d "$legacy_support_root" ]]; then
       SUPPORT_ROOT="$legacy_support_root"
       TRANSLATION_DIR="$SUPPORT_ROOT/Translation"
-      STYLE_REWRITER_DIR="$SUPPORT_ROOT/StyleRewriter"
       MODEL_DIR="$SUPPORT_ROOT/Models"
       break
     fi
@@ -163,22 +161,6 @@ check_translation() {
   fi
 }
 
-check_style_rewriter() {
-  if [[ -x "$STYLE_REWRITER_DIR/Runner/llama-cli" ]]; then
-    pass "Enhanced Robot local runner is installed"
-  elif [[ -x /opt/homebrew/bin/llama-cli || -x /usr/local/bin/llama-cli || -x /opt/homebrew/bin/llama || -x /usr/local/bin/llama ]]; then
-    pass "Enhanced Robot can use an installed llama.cpp runner"
-  else
-    warn "Enhanced Robot runner is not installed; basic Robot mode still works"
-  fi
-
-  if [[ -f "$STYLE_REWRITER_DIR/Models/qwen2.5-0.5b-instruct-q4_k_m.gguf" ]]; then
-    pass "Enhanced Robot model is installed"
-  else
-    warn "Enhanced Robot model is not installed; install it from Speed & Accuracy if wanted"
-  fi
-}
-
 check_installed_app() {
   if [[ -d "$APP_PATH" ]]; then
     pass "installed app exists at $APP_PATH"
@@ -254,7 +236,6 @@ check_signing_identity
 check_backend
 check_default_model
 check_translation
-check_style_rewriter
 check_installed_app
 check_installed_app_signature
 

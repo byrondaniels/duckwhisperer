@@ -8,9 +8,6 @@ enum DuckWhispererError: LocalizedError {
     case modelMissing(String)
     case noRecording
     case recordingFailed
-    case styleRewriteFailed(String)
-    case styleRewriteInstallFailed(String)
-    case styleRewriteRuntimeMissing(String)
     case supportBundleFailed(String)
     case translationFailed(String)
     case translationInstallFailed(String)
@@ -34,12 +31,6 @@ enum DuckWhispererError: LocalizedError {
             return "No active recording."
         case .recordingFailed:
             return "The microphone did not start recording."
-        case .styleRewriteFailed(let message):
-            return "Style rewrite failed: \(message)"
-        case .styleRewriteInstallFailed(let message):
-            return "Style rewrite install failed: \(message)"
-        case .styleRewriteRuntimeMissing(let message):
-            return "Missing local style runner: \(message)"
         case .supportBundleFailed(let message):
             return "Support bundle failed: \(message)"
         case .translationFailed(let message):

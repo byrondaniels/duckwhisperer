@@ -18,26 +18,13 @@ enum LanguageOutputRenderer {
         case "pirate":
             return StyledSpeech.pirate(text)
         case "robot":
-            return enhancedRobotOrFallback(text)
+            return StyledSpeech.robot(text)
         case "shakespeare":
             return StyledSpeech.shakespeare(text)
         case "duck":
             return QuackSpeech.render(text)
         default:
             return text
-        }
-    }
-
-    private static func enhancedRobotOrFallback(_ text: String) -> String {
-        guard StyleRewriteStore.isInstalled(.enhancedRobot) else {
-            return StyledSpeech.robot(text)
-        }
-
-        do {
-            return try LocalStyleRewriter.robot(text)
-        } catch {
-            AppLog.write("enhanced robot rewrite failed; falling back to basic robot: \(error.localizedDescription)")
-            return StyledSpeech.robot(text)
         }
     }
 }

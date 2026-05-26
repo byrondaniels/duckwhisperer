@@ -159,7 +159,6 @@ Run the full local verification loop before pushing changes:
 - Built-in input choices for English, Spanish, French, Tagalog, Chinese, Hindi, Arabic, Bengali, Portuguese, Russian, Urdu, Indonesian, German, Japanese, Korean, Turkish, Vietnamese, Italian, Polish, and Dutch
 - Optional English -> French/Dutch output translation plus per-language input -> English translator downloads
 - Built-in British, Gen Z, Alien, Cowboy, Pirate, Robot, Shakespeare, and Quack style modes
-- Optional Enhanced Robot mode with a DuckWhisperer-managed local llama.cpp runner
 - Writing profiles: Smart Clean, Raw Dictation, Clean Email, Slack Casual, Meeting Notes, Code Prompt, and Bullet Notes
 - Command phrases such as "make this shorter", "turn this into bullets", "rewrite professionally", "translate to Dutch", "alien mode", "cowboy mode", and "quack mode"
 - Green HUD command badge when a spoken command phrase is recognized
@@ -235,15 +234,7 @@ Translation runtime data is stored in:
 ~/Library/Application Support/DuckWhisperer/Translation
 ```
 
-Fun modes are built into the app under `Settings -> Advanced -> Output Language`. British, Gen Z, Alien, Cowboy, Pirate, Shakespeare, and Quack output do not require a model, package, or network call. Robot works immediately in basic mode, and can optionally be upgraded to Enhanced Robot from `Settings -> Advanced -> Speed & Accuracy`.
-
-Enhanced Robot installs its own local llama.cpp runner plus `qwen2.5-0.5b-instruct-q4_k_m.gguf`. It does not require Ollama, a server process, or a cloud API. The optional download is about 491 MB for the model plus about 8 MB for the runner, and it is only downloaded after you approve the install.
-
-Enhanced Robot assets are stored in:
-
-```text
-~/Library/Application Support/DuckWhisperer/StyleRewriter
-```
+Fun modes are built into the app under `Output Language`. British, Gen Z, Alien, Cowboy, Pirate, Robot, Shakespeare, and Quack output do not require a model, package, or network call.
 
 ## Product Features
 
