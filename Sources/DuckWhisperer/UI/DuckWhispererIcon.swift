@@ -1,16 +1,16 @@
 import AppKit
 
-enum PlumeIcon {
+enum DuckWhispererIcon {
     static func menuBarImage() -> NSImage {
         let image = NSImage(size: NSSize(width: 22, height: 22), flipped: false) { rect in
-            drawPlumeMark(in: rect)
+            drawDuckWhispererMark(in: rect)
             return true
         }
         image.isTemplate = false
         return image
     }
 
-    private static func drawPlumeMark(in rect: NSRect) {
+    private static func drawDuckWhispererMark(in rect: NSRect) {
         let w = rect.width
         let h = rect.height
 
@@ -73,28 +73,28 @@ enum PlumeIcon {
         let w = rect.width
         let h = rect.height
 
-        let plume = NSBezierPath()
-        plume.move(to: NSPoint(x: x + w * 0.28, y: y + h * 0.12))
-        plume.curve(
+        let duckwhisperer = NSBezierPath()
+        duckwhisperer.move(to: NSPoint(x: x + w * 0.28, y: y + h * 0.12))
+        duckwhisperer.curve(
             to: NSPoint(x: x + w * 0.92, y: y + h * 0.98),
             controlPoint1: NSPoint(x: x + w * 0.30, y: y + h * 0.58),
             controlPoint2: NSPoint(x: x + w * 0.66, y: y + h * 0.88)
         )
-        plume.curve(
+        duckwhisperer.curve(
             to: NSPoint(x: x + w * 0.74, y: y + h * 0.25),
             controlPoint1: NSPoint(x: x + w * 0.96, y: y + h * 0.70),
             controlPoint2: NSPoint(x: x + w * 0.94, y: y + h * 0.38)
         )
-        plume.curve(
+        duckwhisperer.curve(
             to: NSPoint(x: x + w * 0.28, y: y + h * 0.12),
             controlPoint1: NSPoint(x: x + w * 0.62, y: y + h * 0.08),
             controlPoint2: NSPoint(x: x + w * 0.42, y: y + h * 0.04)
         )
-        plume.close()
+        duckwhisperer.close()
         NSGradient(colors: [
             NSColor(calibratedRed: 1.0, green: 0.94, blue: 0.62, alpha: 1),
             NSColor(calibratedRed: 1.0, green: 0.67, blue: 0.08, alpha: 1)
-        ])?.draw(in: plume, angle: 120)
+        ])?.draw(in: duckwhisperer, angle: 120)
 
         let face = NSBezierPath(ovalIn: NSRect(x: x + w * 0.16, y: y, width: w * 0.62, height: h * 0.45))
         NSColor(calibratedRed: 1.0, green: 0.74, blue: 0.16, alpha: 1).setFill()

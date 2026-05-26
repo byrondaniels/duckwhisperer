@@ -2,13 +2,13 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-APP_DIR="$ROOT_DIR/dist/Plume.app"
+APP_DIR="$ROOT_DIR/dist/DuckWhisperer.app"
 RELEASE_DIR="$ROOT_DIR/release"
 STAGING_ROOT="$ROOT_DIR/build/release-staging"
 PACKAGE_FORMAT="${PACKAGE_FORMAT:-dmg}"
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$ROOT_DIR/Info.plist")"
 BUILD="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$ROOT_DIR/Info.plist")"
-ARTIFACT_BASE="Plume-${VERSION}-${BUILD}"
+ARTIFACT_BASE="DuckWhisperer-${VERSION}-${BUILD}"
 DEFAULT_MODEL="$APP_DIR/Contents/Resources/Models/ggml-small.en.bin"
 RELEASE_NOTES="$RELEASE_DIR/$ARTIFACT_BASE-release-notes.md"
 
@@ -39,7 +39,7 @@ write_start_here() {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Start Here - Plume</title>
+  <title>Start Here - DuckWhisperer</title>
   <style>
     color-scheme: light dark;
     body {
@@ -82,12 +82,12 @@ write_start_here() {
 </head>
 <body>
   <main>
-    <h1>Install Plume</h1>
-    <p>Drag <code>Plume.app</code> onto <code>Applications</code>, then open it from Applications.</p>
+    <h1>Install DuckWhisperer</h1>
+    <p>Drag <code>DuckWhisperer.app</code> onto <code>Applications</code>, then open it from Applications.</p>
 
     <h2>First Run</h2>
     <ol>
-      <li>Open the menu-bar Plume icon.</li>
+      <li>Open the menu-bar DuckWhisperer icon.</li>
       <li>Choose <code>Finish Setup...</code> for the guided setup checks.</li>
       <li>Grant Microphone and Paste-Back permissions.</li>
       <li>Choose <code>Try It Here...</code> for a quick test.</li>
@@ -97,10 +97,10 @@ write_start_here() {
     <p>Press <code>Option+Space</code> to start recording, then press <code>Option+Space</code> again to stop and paste. Press <code>Escape</code> to cancel.</p>
 
     <h2>What Is Included</h2>
-    <p>This app includes Best Accuracy English dictation. Extra language and style assets are optional downloads inside Plume.</p>
+    <p>This app includes Best Accuracy English dictation. Extra language and style assets are optional downloads inside DuckWhisperer.</p>
 
     <h2>If Paste-Back Fails</h2>
-    <p>Your text is copied and safe. Use <code>Paste Again</code>, <code>Copy</code>, <code>Try In Plume</code>, or <code>Fix Permission</code> in the recovery window.</p>
+    <p>Your text is copied and safe. Use <code>Paste Again</code>, <code>Copy</code>, <code>Try In DuckWhisperer</code>, or <code>Fix Permission</code> in the recovery window.</p>
   </main>
 </body>
 </html>
@@ -110,7 +110,7 @@ EOF
 write_release_notes() {
   local package_list="$1"
   cat >"$RELEASE_NOTES" <<EOF
-# Plume $VERSION ($BUILD) Release Notes
+# DuckWhisperer $VERSION ($BUILD) Release Notes
 
 ## Artifacts
 
@@ -119,8 +119,8 @@ $package_list
 ## User Install Flow
 
 1. Open the DMG.
-2. Drag Plume.app to Applications.
-3. Open Plume from Applications.
+2. Drag DuckWhisperer.app to Applications.
+3. Open DuckWhisperer from Applications.
 4. Open Finish Setup from the menu-bar icon.
 5. Grant Microphone and Paste-Back permissions.
 6. Press Option+Space to start and stop dictation.
@@ -129,7 +129,7 @@ $package_list
 
 - Bundled default speech model: Best Accuracy English (ggml-small.en.bin).
 - Bundled user guide: Resources/UserGuide.html.
-- Optional non-English speech, translation, and Enhanced Robot assets are not included. Plume asks before downloading them.
+- Optional non-English speech, translation, and Enhanced Robot assets are not included. DuckWhisperer asks before downloading them.
 - First-run setup checks, paste-back diagnostics, and support bundle export are included in the app.
 
 ## Signing
@@ -142,7 +142,7 @@ Run these before publishing:
 
 - ./scripts/verify.sh
 - ./scripts/package_release.sh
-- Mount the DMG and drag Plume.app into Applications on a clean user account or a second Mac.
+- Mount the DMG and drag DuckWhisperer.app into Applications on a clean user account or a second Mac.
 - Open Try It Here..., record once, and confirm paste-back works in TextEdit or Notes after Accessibility is enabled.
 EOF
 }
@@ -150,7 +150,7 @@ EOF
 echo "Preparing whisper.cpp backend..."
 ./scripts/bootstrap_backend.sh
 
-echo "Building self-contained Plume app with bundled Best Accuracy dictation..."
+echo "Building self-contained DuckWhisperer app with bundled Best Accuracy dictation..."
 BUNDLE_DEFAULT_MODEL=1 INSTALL_DEFAULT_MODEL=0 INSTALL_TRANSLATION=0 ./scripts/build_app.sh >/dev/null
 
 if [[ ! -f "$DEFAULT_MODEL" ]]; then
@@ -177,13 +177,13 @@ if [[ "$PACKAGE_FORMAT" == "dmg" || "$PACKAGE_FORMAT" == "both" ]]; then
   STAGING_DIR="$STAGING_ROOT/$ARTIFACT_BASE"
   DMG_PATH="$RELEASE_DIR/$ARTIFACT_BASE.dmg"
   mkdir -p "$STAGING_DIR"
-  ditto "$APP_DIR" "$STAGING_DIR/Plume.app"
+  ditto "$APP_DIR" "$STAGING_DIR/DuckWhisperer.app"
   ln -s /Applications "$STAGING_DIR/Applications"
   write_start_here "$STAGING_DIR/Start Here.html"
   rm -f "$DMG_PATH"
   echo "Creating $DMG_PATH..."
   hdiutil create \
-    -volname "Plume" \
+    -volname "DuckWhisperer" \
     -srcfolder "$STAGING_DIR" \
     -ov \
     -format UDZO \
@@ -202,6 +202,6 @@ $RELEASE_DIR
 Release notes:
 $RELEASE_NOTES
 
-This package includes Best Accuracy dictation inside Plume.app.
+This package includes Best Accuracy dictation inside DuckWhisperer.app.
 Non-English speech models, translator add-ons, and Enhanced Robot assets remain optional and install only after user approval.
 EOF

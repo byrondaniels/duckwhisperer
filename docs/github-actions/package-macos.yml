@@ -8,7 +8,7 @@ on:
 
 jobs:
   package:
-    name: Build Plume DMG
+    name: Build DuckWhisperer DMG
     runs-on: macos-14
 
     steps:
@@ -27,7 +27,7 @@ jobs:
       - name: Upload release artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: plume-macos
+          name: duckwhisperer-macos
           path: |
             release/*.dmg
             release/*.zip

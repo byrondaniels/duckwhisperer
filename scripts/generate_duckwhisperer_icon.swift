@@ -2,7 +2,7 @@ import AppKit
 import Foundation
 
 guard CommandLine.arguments.count == 2 else {
-    fputs("Usage: swift generate_plume_icon.swift /path/to/Plume.icns\n", stderr)
+    fputs("Usage: swift generate_duckwhisperer_icon.swift /path/to/DuckWhisperer.icns\n", stderr)
     exit(EXIT_FAILURE)
 }
 
@@ -35,7 +35,7 @@ for spec in specs {
     let image = NSImage(size: NSSize(width: pixels, height: pixels))
     image.lockFocus()
     NSGraphicsContext.current?.imageInterpolation = .high
-    drawPlumeIcon(in: NSRect(x: 0, y: 0, width: pixels, height: pixels))
+    drawDuckWhispererIcon(in: NSRect(x: 0, y: 0, width: pixels, height: pixels))
     image.unlockFocus()
 
     guard let tiffData = image.tiffRepresentation,
@@ -91,7 +91,7 @@ private func writeICNS(chunks: [(type: String, data: Data)], to outputURL: URL) 
         guard let typeData = chunk.type.data(using: .ascii),
               typeData.count == 4
         else {
-            throw NSError(domain: "PlumeIcon", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid ICNS chunk type \(chunk.type)."])
+            throw NSError(domain: "DuckWhispererIcon", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid ICNS chunk type \(chunk.type)."])
         }
 
         data.append(typeData)
@@ -109,7 +109,7 @@ private func appendBigEndian(_ value: UInt32, to data: inout Data) {
     }
 }
 
-private func drawPlumeIcon(in rect: NSRect) {
+private func drawDuckWhispererIcon(in rect: NSRect) {
     let w = rect.width
     let h = rect.height
 
@@ -190,41 +190,41 @@ private func drawIconMascot(width w: CGFloat, height h: CGFloat) {
     NSColor.white.withAlphaComponent(0.92).setStroke()
     wing.stroke()
 
-    let backPlume = NSBezierPath()
-    backPlume.move(to: NSPoint(x: w * 0.41, y: h * 0.43))
-    backPlume.curve(
+    let backDuckWhisperer = NSBezierPath()
+    backDuckWhisperer.move(to: NSPoint(x: w * 0.41, y: h * 0.43))
+    backDuckWhisperer.curve(
         to: NSPoint(x: w * 0.50, y: h * 0.84),
         controlPoint1: NSPoint(x: w * 0.39, y: h * 0.60),
         controlPoint2: NSPoint(x: w * 0.42, y: h * 0.77)
     )
-    backPlume.curve(
+    backDuckWhisperer.curve(
         to: NSPoint(x: w * 0.55, y: h * 0.43),
         controlPoint1: NSPoint(x: w * 0.61, y: h * 0.70),
         controlPoint2: NSPoint(x: w * 0.63, y: h * 0.53)
     )
-    backPlume.close()
+    backDuckWhisperer.close()
     NSGradient(colors: [
         NSColor(calibratedRed: 1.0, green: 0.91, blue: 0.50, alpha: 1),
         NSColor(calibratedRed: 1.0, green: 0.61, blue: 0.05, alpha: 1)
-    ])?.draw(in: backPlume, angle: 90)
+    ])?.draw(in: backDuckWhisperer, angle: 90)
 
-    let frontPlume = NSBezierPath()
-    frontPlume.move(to: NSPoint(x: w * 0.49, y: h * 0.43))
-    frontPlume.curve(
+    let frontDuckWhisperer = NSBezierPath()
+    frontDuckWhisperer.move(to: NSPoint(x: w * 0.49, y: h * 0.43))
+    frontDuckWhisperer.curve(
         to: NSPoint(x: w * 0.68, y: h * 0.86),
         controlPoint1: NSPoint(x: w * 0.51, y: h * 0.63),
         controlPoint2: NSPoint(x: w * 0.60, y: h * 0.80)
     )
-    frontPlume.curve(
+    frontDuckWhisperer.curve(
         to: NSPoint(x: w * 0.63, y: h * 0.43),
         controlPoint1: NSPoint(x: w * 0.72, y: h * 0.65),
         controlPoint2: NSPoint(x: w * 0.71, y: h * 0.49)
     )
-    frontPlume.close()
+    frontDuckWhisperer.close()
     NSGradient(colors: [
         NSColor(calibratedRed: 1.0, green: 0.96, blue: 0.66, alpha: 1),
         NSColor(calibratedRed: 1.0, green: 0.70, blue: 0.08, alpha: 1)
-    ])?.draw(in: frontPlume, angle: 90)
+    ])?.draw(in: frontDuckWhisperer, angle: 90)
 
     let face = NSBezierPath(ovalIn: NSRect(x: w * 0.38, y: h * 0.36, width: w * 0.27, height: h * 0.23))
     NSGradient(colors: [

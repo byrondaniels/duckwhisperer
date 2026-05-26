@@ -29,7 +29,7 @@ enum LocalTranslator {
         if let pack, case .huggingFaceMarian(_) = pack.backend {
             let modelURL = TranslationStore.localURL(for: pack)
             guard TranslationStore.isInstalled(pack) else {
-                throw PlumeError.translationModelMissing(modelURL.path)
+                throw DuckWhispererError.translationModelMissing(modelURL.path)
             }
             arguments.append(contentsOf: ["--hf-model-dir", modelURL.path])
         }
@@ -65,7 +65,7 @@ enum LocalTranslator {
 
         guard process.terminationStatus == 0 else {
             let message = errorOutput.isEmpty ? "local translator exited with \(process.terminationStatus)" : errorOutput
-            throw PlumeError.translationFailed(message)
+            throw DuckWhispererError.translationFailed(message)
         }
 
         return output.isEmpty ? text : output
@@ -75,7 +75,7 @@ enum LocalTranslator {
         let scriptURL = Bundle.main.resourceURL!
             .appendingPathComponent("Translation/translate_local.py")
         guard FileManager.default.fileExists(atPath: scriptURL.path) else {
-            throw PlumeError.translationRuntimeMissing(scriptURL.path)
+            throw DuckWhispererError.translationRuntimeMissing(scriptURL.path)
         }
 
         let supportRootURL = TranslationStore.supportRootURL
@@ -88,7 +88,8 @@ enum LocalTranslator {
             )
         ]
 
-        let overrideRoot = ProcessInfo.processInfo.environment["PLUME_TRANSLATION_ROOT"]
+        let environment = ProcessInfo.processInfo.environment
+        let overrideRoot = environment["DUCKWHISPERER_TRANSLATION_ROOT"] ?? environment["PLUME_TRANSLATION_ROOT"]
         if let overrideRoot = overrideRoot,
            !overrideRoot.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             let overrideRootURL = URL(fileURLWithPath: overrideRoot, isDirectory: true)
@@ -106,7 +107,7 @@ enum LocalTranslator {
         guard let runtime = candidates.first(where: {
             FileManager.default.isExecutableFile(atPath: $0.pythonURL.path)
         }) else {
-            throw PlumeError.translationRuntimeMissing(
+            throw DuckWhispererError.translationRuntimeMissing(
                 supportRootURL.appendingPathComponent(".venv/bin/python").path
             )
         }

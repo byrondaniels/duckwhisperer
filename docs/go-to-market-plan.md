@@ -1,6 +1,6 @@
-# Plume Go-To-Market Plan
+# DuckWhisperer Go-To-Market Plan
 
-Working name: Plume.
+Working name: DuckWhisperer.
 
 This plan is for launching the app as a consumer-friendly Mac voice typing product for everyday office workers. The goal is to avoid looking like a technical Superwhisper clone and instead own a simpler promise: private voice typing that works wherever the cursor is.
 
@@ -14,7 +14,7 @@ Recommended positioning:
 
 Core promise:
 
-> Press a shortcut, talk naturally, and Plume types polished text where your cursor already is. Your voice stays on your Mac.
+> Press a shortcut, talk naturally, and DuckWhisperer types polished text where your cursor already is. Your voice stays on your Mac.
 
 Do not lead with "Whisper," "local models," "AI transcription," or "Superwhisper alternative." Those are useful proof points and SEO pages, but they are not the mass-market headline.
 
@@ -41,7 +41,7 @@ The market is saturated at the feature checklist level. It is less saturated at 
 
 ## Competitor Map
 
-| Product | Positioning | Pricing observed | Strength | Gap Plume can exploit |
+| Product | Positioning | Pricing observed | Strength | Gap DuckWhisperer can exploit |
 | --- | --- | ---: | --- | --- |
 | Apple Dictation | Built into macOS | Free | Zero install, good enough for quick use | Not a productized writing workflow; limited customization; privacy details vary by setting/language; no trust-building onboarding |
 | Wispr Flow | Voice dictation everywhere, cross-platform, teams | Free tier, $15/mo monthly, $12/mo annual | Polished, real-time, cross-platform, enterprise/security story | Subscription fatigue; cloud/privacy concerns for some users; more account/team oriented |
@@ -53,7 +53,7 @@ The market is saturated at the feature checklist level. It is less saturated at 
 | Microsoft Dictate / Google Docs Voice Typing | App-specific dictation | Included with app/account | Familiar, no separate Mac app | Only works in specific apps/browsers; not a universal Mac shortcut |
 | Dragon legacy | Dictation brand recognition | Expensive/enterprise legacy | Known by lawyers, medical, accessibility users | Mac support and modern UX gaps create replacement demand |
 
-Conclusion: Plume should not try to out-feature the category. It should win on "I installed this and it just works in my work apps."
+Conclusion: DuckWhisperer should not try to out-feature the category. It should win on "I installed this and it just works in my work apps."
 
 ## Target Customer
 
@@ -115,14 +115,14 @@ Primary tagline:
 
 Alternate homepage headline options:
 
-- "Talk. Plume types."
+- "Talk. DuckWhisperer types."
 - "Write with your voice in every Mac app."
 - "The private Mac dictation app for work."
 - "Stop typing the long stuff."
 
 Supporting copy:
 
-> Press Option+Space, say what you mean, and Plume puts polished text where your cursor already is. Core dictation runs locally on your Mac, with no account required for normal voice typing.
+> Press Option+Space, say what you mean, and DuckWhisperer puts polished text where your cursor already is. Core dictation runs locally on your Mac, with no account required for normal voice typing.
 
 Proof points:
 
@@ -263,7 +263,7 @@ First 10 demo videos:
 2. "Mac dictation, but it works in every app."
 3. "Stop typing Slack replies."
 4. "Private voice typing on Mac."
-5. "Apple Dictation vs Plume in Gmail."
+5. "Apple Dictation vs DuckWhisperer in Gmail."
 6. "Long ramble into clean email."
 7. "Voice type into ChatGPT."
 8. "Fix the name it always gets wrong."
@@ -283,8 +283,8 @@ Do not buy a premium single-word domain.
 
 Options:
 
-- Keep Plume as the app name if a clean non-premium domain is available on `.app`, `.co`, or a two-word `.com`.
-- If Plume domains are too expensive, keep the product concept and switch before public launch.
+- Keep DuckWhisperer as the app name if a clean non-premium domain is available on `.app`, `.co`, or a two-word `.com`.
+- If DuckWhisperer domains are too expensive, keep the product concept and switch before public launch.
 - The domain can be descriptive even if the brand is short.
 
 Acceptable domain patterns:
@@ -296,7 +296,7 @@ Acceptable domain patterns:
 - `<brand>typing.com`
 - `<brand>mac.com`
 
-For SEO, the domain matters less than the page title and H1. A domain like `useplume.app` or `plumevoice.app` is acceptable if the homepage title is "Voice Typing for Mac - Plume."
+For SEO, the domain matters less than the page title and H1. A domain like `useduckwhisperer.app` or `duckwhisperervoice.app` is acceptable if the homepage title is "Voice Typing for Mac - DuckWhisperer."
 
 Naming decision rule:
 
@@ -428,7 +428,7 @@ Reliability:
 | Privacy-sensitive worker | Private voice typing for Mac | Core dictation runs locally | Try it offline |
 | Slack/email heavy user | Turn rambling into clean replies | Email and chat writing modes | Watch demo |
 | RSI/fatigue user | Give your hands a break | Press one shortcut and talk | Start voice typing |
-| Productivity nerd | Save hours of typing each week | Time-saved tracker and local history | Try Plume |
+| Productivity nerd | Save hours of typing each week | Time-saved tracker and local history | Try DuckWhisperer |
 
 ## Content Calendar
 
@@ -472,7 +472,7 @@ Week 4:
 ## Immediate Implementation Plan
 
 1. Freeze current product scope for launch: voice typing, writing modes, personal dictionary, time saved, reliable paste-back, simple settings.
-2. Decide brand/domain before public website work. Use Plume as codename until then.
+2. Decide brand/domain before public website work. Use DuckWhisperer as codename until then.
 3. Build the landing page and 5 SEO pages.
 4. Add a real first-run welcome flow if it does not already open automatically.
 5. Add trial/license mechanics only after the install path is fully reliable.

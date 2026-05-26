@@ -2,12 +2,15 @@
 set -u
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SUPPORT_ROOT="${PLUME_SUPPORT_DIR:-$HOME/Library/Application Support/Plume}"
-LEGACY_SUPPORT_ROOT="$HOME/Library/Application Support/Local Whisperer"
+SUPPORT_ROOT="${DUCKWHISPERER_SUPPORT_DIR:-${PLUME_SUPPORT_DIR:-$HOME/Library/Application Support/DuckWhisperer}}"
+LEGACY_SUPPORT_ROOTS=(
+  "$HOME/Library/Application Support/Plume"
+  "$HOME/Library/Application Support/Local Whisperer"
+)
 TRANSLATION_DIR="$SUPPORT_ROOT/Translation"
 STYLE_REWRITER_DIR="$SUPPORT_ROOT/StyleRewriter"
 MODEL_DIR="$SUPPORT_ROOT/Models"
-APP_PATH="${PLUME_INSTALL_DIR:-/Applications}/Plume.app"
+APP_PATH="${DUCKWHISPERER_INSTALL_DIR:-${PLUME_INSTALL_DIR:-/Applications}}/DuckWhisperer.app"
 FRAMEWORK_DIR="$ROOT_DIR/vendor/whisper-xcframework/build-apple/whisper.xcframework"
 
 failures=0
@@ -45,12 +48,15 @@ resolve_support_root() {
   if [[ -d "$SUPPORT_ROOT" ]]; then
     return
   fi
-  if [[ -d "$LEGACY_SUPPORT_ROOT" ]]; then
-    SUPPORT_ROOT="$LEGACY_SUPPORT_ROOT"
-    TRANSLATION_DIR="$SUPPORT_ROOT/Translation"
-    STYLE_REWRITER_DIR="$SUPPORT_ROOT/StyleRewriter"
-    MODEL_DIR="$SUPPORT_ROOT/Models"
-  fi
+  for legacy_support_root in "${LEGACY_SUPPORT_ROOTS[@]}"; do
+    if [[ -d "$legacy_support_root" ]]; then
+      SUPPORT_ROOT="$legacy_support_root"
+      TRANSLATION_DIR="$SUPPORT_ROOT/Translation"
+      STYLE_REWRITER_DIR="$SUPPORT_ROOT/StyleRewriter"
+      MODEL_DIR="$SUPPORT_ROOT/Models"
+      break
+    fi
+  done
 }
 
 python_version() {
@@ -106,7 +112,7 @@ find_supported_python() {
 
 check_macos() {
   if [[ "$(uname -s)" != "Darwin" ]]; then
-    fail "Plume requires macOS."
+    fail "DuckWhisperer requires macOS."
     return
   fi
 
@@ -254,8 +260,8 @@ check_installed_app_signature
 
 printf '\n'
 if (( failures > 0 )); then
-  printf 'Plume doctor found %d failure(s) and %d warning(s).\n' "$failures" "$warnings"
+  printf 'DuckWhisperer doctor found %d failure(s) and %d warning(s).\n' "$failures" "$warnings"
   exit 1
 fi
 
-printf 'Plume doctor passed with %d warning(s).\n' "$warnings"
+printf 'DuckWhisperer doctor passed with %d warning(s).\n' "$warnings"

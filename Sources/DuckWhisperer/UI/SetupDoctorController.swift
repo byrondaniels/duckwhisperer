@@ -55,7 +55,7 @@ final class SetupDoctorController: NSObject {
         title.translatesAutoresizingMaskIntoConstraints = false
         title.font = .boldSystemFont(ofSize: 22)
 
-        let subtitle = NSTextField(labelWithString: "Make sure Plume can listen, paste your words, and run privately on this Mac.")
+        let subtitle = NSTextField(labelWithString: "Make sure DuckWhisperer can listen, paste your words, and run privately on this Mac.")
         subtitle.translatesAutoresizingMaskIntoConstraints = false
         subtitle.font = .systemFont(ofSize: 13)
         subtitle.textColor = .secondaryLabelColor
@@ -159,11 +159,11 @@ final class SetupDoctorController: NSObject {
             action: modelReady ? nil : #selector(openModelExplorer)
         )
 
-        let installed = FileManager.default.fileExists(atPath: "/Applications/Plume.app")
+        let installed = FileManager.default.fileExists(atPath: "/Applications/DuckWhisperer.app")
         completed += installed ? 1 : 0
         addRow(
-            status: installed ? "OK App is installed" : "FIX Move Plume to Applications",
-            detail: installed ? "Running from Applications keeps macOS permissions stable across launches." : "Drag Plume.app into Applications from the DMG.",
+            status: installed ? "OK App is installed" : "FIX Move DuckWhisperer to Applications",
+            detail: installed ? "Running from Applications keeps macOS permissions stable across launches." : "Drag DuckWhisperer.app into Applications from the DMG.",
             actionTitle: nil,
             action: nil
         )
@@ -229,7 +229,7 @@ final class SetupDoctorController: NSObject {
     private func microphoneStatus() -> (ready: Bool, text: String, detail: String, actionTitle: String?) {
         switch AVCaptureDevice.authorizationStatus(for: .audio) {
         case .authorized:
-            return (true, "OK Microphone is ready", "Plume can hear your voice when you start recording.", nil)
+            return (true, "OK Microphone is ready", "DuckWhisperer can hear your voice when you start recording.", nil)
         case .denied, .restricted:
             return (false, "FIX Microphone is blocked", "Allow microphone access in System Settings.", "Fix")
         case .notDetermined:
@@ -240,7 +240,7 @@ final class SetupDoctorController: NSObject {
     }
 
     private func signingStatus() -> (ready: Bool, text: String, detail: String) {
-        let appURL = URL(fileURLWithPath: "/Applications/Plume.app")
+        let appURL = URL(fileURLWithPath: "/Applications/DuckWhisperer.app")
         guard FileManager.default.fileExists(atPath: appURL.path) else {
             return (false, "FIX Install the app to finish setup", "The release app should run from Applications.")
         }

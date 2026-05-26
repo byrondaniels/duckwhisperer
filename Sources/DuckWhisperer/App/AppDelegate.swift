@@ -160,7 +160,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                 setState(.error("Choose Input Language or Speed & Accuracy to download speech support."))
             }
         } else {
-            setState(.error(PlumeError.hotKeyFailed(hotKeyStatus).localizedDescription))
+            setState(.error(DuckWhispererError.hotKeyFailed(hotKeyStatus).localizedDescription))
         }
 
         if CommandLine.arguments.contains("--open-model-explorer") {
@@ -205,7 +205,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     }
 
     private func installApplicationIcon() {
-        guard let iconURL = Bundle.main.url(forResource: "Plume", withExtension: "icns"),
+        guard let iconURL = Bundle.main.url(forResource: "DuckWhisperer", withExtension: "icns"),
               let icon = NSImage(contentsOf: iconURL)
         else {
             return
@@ -216,7 +216,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     private func setupMenu() {
         menu.delegate = self
         statusItem.button?.title = ""
-        statusItem.button?.image = PlumeIcon.menuBarImage()
+        statusItem.button?.image = DuckWhispererIcon.menuBarImage()
         statusItem.button?.imagePosition = .imageOnly
         statusItem.button?.imageScaling = .scaleProportionallyDown
         statusItem.button?.toolTip = appDisplayName
@@ -639,7 +639,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         state = newState
         updateCancelHotKey(for: newState)
         statusItem.button?.title = ""
-        statusItem.button?.image = PlumeIcon.menuBarImage()
+        statusItem.button?.image = DuckWhispererIcon.menuBarImage()
 
         switch newState {
         case .ready, .error:
@@ -938,7 +938,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         alert.messageText = inputLanguage.isEnglish ? "Download English Speech?" : "Download Multilingual Speech?"
         let unlockText = inputLanguage.isEnglish
             ? "This installs \(asset.filename), the English-only Whisper file for \(choice.friendlyTitle)."
-            : "\(inputLanguage.title) uses \(asset.filename), one shared multilingual Whisper file for \(choice.friendlyTitle). It unlocks all non-English input choices for this speed; Plume is not downloading a separate pack for each language."
+            : "\(inputLanguage.title) uses \(asset.filename), one shared multilingual Whisper file for \(choice.friendlyTitle). It unlocks all non-English input choices for this speed; DuckWhisperer is not downloading a separate pack for each language."
         alert.informativeText = "\(unlockText) Download size: \(asset.downloadSizeText). Nothing downloads unless you choose Download."
         alert.alertStyle = .informational
         alert.addButton(withTitle: "Download")
@@ -960,14 +960,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
 
                 do {
                     if let error {
-                        throw PlumeError.modelDownloadFailed(error.localizedDescription)
+                        throw DuckWhispererError.modelDownloadFailed(error.localizedDescription)
                     }
                     if let response = response as? HTTPURLResponse,
                        !(200...299).contains(response.statusCode) {
-                        throw PlumeError.modelDownloadFailed("HTTP \(response.statusCode) while downloading \(asset.filename).")
+                        throw DuckWhispererError.modelDownloadFailed("HTTP \(response.statusCode) while downloading \(asset.filename).")
                     }
                     guard let temporaryURL else {
-                        throw PlumeError.modelDownloadFailed("No downloaded file was returned.")
+                        throw DuckWhispererError.modelDownloadFailed("No downloaded file was returned.")
                     }
 
                     try ModelStore.installDownloadedModel(from: temporaryURL, for: choice, inputLanguage: inputLanguage)
@@ -1222,7 +1222,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         NSApp.activate(ignoringOtherApps: true)
 
         let panel = NSSavePanel()
-        panel.title = "Export Plume Support Bundle"
+        panel.title = "Export DuckWhisperer Support Bundle"
         panel.nameFieldStringValue = SupportBundleExporter.suggestedFilename()
         panel.canCreateDirectories = true
         panel.isExtensionHidden = false
@@ -1361,7 +1361,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             activeCommandName = nil
             if tryItController.shouldReceiveTranscript {
                 pasteTarget = nil
-                activeAppName = "Try Plume"
+                activeAppName = "Try DuckWhisperer"
             } else {
                 pasteTarget = PasteTargetDetector.captureFocusedEditableTarget()
                 activeAppName = pasteTarget?.application?.localizedName

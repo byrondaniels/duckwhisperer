@@ -94,7 +94,7 @@ final class WhisperTranscriber {
         }
 
         guard result == 0 else {
-            throw PlumeError.transcriptionFailed("whisper_full returned \(result).")
+            throw DuckWhispererError.transcriptionFailed("whisper_full returned \(result).")
         }
 
         var transcript = ""
@@ -120,7 +120,7 @@ final class WhisperTranscriber {
         }
 
         guard FileManager.default.fileExists(atPath: modelURL.path) else {
-            throw PlumeError.modelMissing(modelURL.path)
+            throw DuckWhispererError.modelMissing(modelURL.path)
         }
 
         setenv("GGML_METAL_NO_RESIDENCY", "1", 0)
@@ -135,12 +135,14 @@ final class WhisperTranscriber {
             }
         }
 
-        let enableMetal = ProcessInfo.processInfo.environment["PLUME_ENABLE_METAL"] == "1"
+        let environment = ProcessInfo.processInfo.environment
+        let enableMetal = environment["DUCKWHISPERER_ENABLE_METAL"] == "1"
+            || environment["PLUME_ENABLE_METAL"] == "1"
         let loaded = enableMetal
             ? (loadContext(useGPU: true) ?? loadContext(useGPU: false))
             : loadContext(useGPU: false)
         guard let loaded else {
-            throw PlumeError.modelLoadFailed(modelURL.path)
+            throw DuckWhispererError.modelLoadFailed(modelURL.path)
         }
 
         context = loaded

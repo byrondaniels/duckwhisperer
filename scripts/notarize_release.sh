@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$ROOT_DIR/Info.plist")"
 BUILD="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$ROOT_DIR/Info.plist")"
-DMG_PATH="${1:-$ROOT_DIR/release/Plume-${VERSION}-${BUILD}.dmg}"
+DMG_PATH="${1:-$ROOT_DIR/release/DuckWhisperer-${VERSION}-${BUILD}.dmg}"
 
 require_command() {
   local command_name="$1"
@@ -49,13 +49,13 @@ else
 Missing notarization credentials.
 
 Use either:
-  NOTARYTOOL_PROFILE=plume-release ./scripts/notarize_release.sh
+  NOTARYTOOL_PROFILE=duckwhisperer-release ./scripts/notarize_release.sh
 
 or:
   APPLE_ID="you@example.com" APPLE_TEAM_ID="TEAMID" APPLE_APP_SPECIFIC_PASSWORD="xxxx-xxxx-xxxx-xxxx" ./scripts/notarize_release.sh
 
 Create a stored profile with:
-  xcrun notarytool store-credentials plume-release --apple-id "you@example.com" --team-id "TEAMID" --password "app-specific-password"
+  xcrun notarytool store-credentials duckwhisperer-release --apple-id "you@example.com" --team-id "TEAMID" --password "app-specific-password"
 EOF
   exit 1
 fi

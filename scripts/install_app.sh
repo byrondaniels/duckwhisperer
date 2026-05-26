@@ -2,9 +2,11 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-APP_NAME="Plume.app"
+APP_NAME="DuckWhisperer.app"
 APP_SRC="$ROOT_DIR/dist/$APP_NAME"
-APP_DST="${PLUME_INSTALL_DIR:-/Applications}/$APP_NAME"
+APP_INSTALL_DIR="${DUCKWHISPERER_INSTALL_DIR:-${PLUME_INSTALL_DIR:-/Applications}}"
+APP_DST="$APP_INSTALL_DIR/$APP_NAME"
+LEGACY_APP_DST="$APP_INSTALL_DIR/Plume.app"
 INSTALL_TRANSLATION="${INSTALL_TRANSLATION:-0}"
 export INSTALL_TRANSLATION
 
@@ -28,6 +30,9 @@ replace_app_bundle() {
 
   if [[ -e "$APP_DST" ]]; then
     rm -rf "$APP_DST"
+  fi
+  if [[ -e "$LEGACY_APP_DST" && "$LEGACY_APP_DST" != "$APP_DST" ]]; then
+    rm -rf "$LEGACY_APP_DST"
   fi
 
   ditto "$APP_SRC" "$APP_DST"
@@ -56,9 +61,10 @@ fi
 echo "Preparing whisper.cpp backend..."
 ./scripts/bootstrap_backend.sh
 
-echo "Building Plume..."
+echo "Building DuckWhisperer..."
 ./scripts/build_app.sh
 
+stop_app DuckWhisperer DuckWhisperer
 stop_app Plume Plume
 
 echo "Installing $APP_NAME to $APP_DST..."
@@ -67,20 +73,20 @@ replace_app_bundle
 echo "Refreshing macOS app registration..."
 /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$APP_DST" || true
 
-echo "Launching Plume..."
+echo "Launching DuckWhisperer..."
 open "$APP_DST"
 
 cat <<EOF
 
-Plume is installed.
+DuckWhisperer is installed.
 
 Next steps:
 1. Grant Microphone permission when macOS asks.
-2. Enable Plume in System Settings -> Privacy & Security -> Accessibility.
+2. Enable DuckWhisperer in System Settings -> Privacy & Security -> Accessibility.
 3. Press Option+Space once to start recording, then Option+Space again to stop and paste.
 
 Runtime models live outside the repo at:
-~/Library/Application Support/Plume
+~/Library/Application Support/DuckWhisperer
 
 Optional local translation is not installed by default. Add it later with:
 ./scripts/setup_local_translation.sh

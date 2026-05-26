@@ -72,7 +72,7 @@ enum PasteTargetDetector {
             return PasteBackReadiness(
                 severity: .blocked,
                 title: "Paste-back permission is missing",
-                detail: "macOS has not allowed Plume to control the keyboard or target text fields yet.",
+                detail: "macOS has not allowed DuckWhisperer to control the keyboard or target text fields yet.",
                 actionTitle: "Open Permission Fix"
             )
         }
@@ -82,7 +82,7 @@ enum PasteTargetDetector {
                 return PasteBackReadiness(
                     severity: .ready,
                     title: "Target field captured",
-                    detail: "Plume found an editable field in \(appName) before recording started.",
+                    detail: "DuckWhisperer found an editable field in \(appName) before recording started.",
                     actionTitle: nil
                 )
             }
@@ -91,7 +91,7 @@ enum PasteTargetDetector {
                 return PasteBackReadiness(
                     severity: .warning,
                     title: "Target app captured, field not confirmed",
-                    detail: "Plume saw \(appName), but macOS did not expose the exact text field. Clipboard paste can still work if the field accepts Command+V.",
+                    detail: "DuckWhisperer saw \(appName), but macOS did not expose the exact text field. Clipboard paste can still work if the field accepts Command+V.",
                     actionTitle: "Click Field And Paste Again"
                 )
             }
@@ -101,7 +101,7 @@ enum PasteTargetDetector {
             return PasteBackReadiness(
                 severity: .ready,
                 title: "Focused text field detected",
-                detail: "Plume can see the current editable field and should be able to paste there.",
+                detail: "DuckWhisperer can see the current editable field and should be able to paste there.",
                 actionTitle: nil
             )
         }
@@ -110,7 +110,7 @@ enum PasteTargetDetector {
             return PasteBackReadiness(
                 severity: .warning,
                 title: "No editable field detected",
-                detail: "Plume can see \(appName), but not a focused text field. Click in the field before starting dictation.",
+                detail: "DuckWhisperer can see \(appName), but not a focused text field. Click in the field before starting dictation.",
                 actionTitle: "Click A Text Field"
             )
         }

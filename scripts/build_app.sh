@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-APP_DIR="$ROOT_DIR/dist/Plume.app"
+APP_DIR="$ROOT_DIR/dist/DuckWhisperer.app"
 CONTENTS_DIR="$APP_DIR/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
 RESOURCES_DIR="$CONTENTS_DIR/Resources"
@@ -12,11 +12,13 @@ FRAMEWORK_PARENT="$(dirname "$FRAMEWORK_SRC")"
 MODEL_DST_DIR="$RESOURCES_DIR/Models"
 TRANSLATION_DST_DIR="$RESOURCES_DIR/Translation"
 MODULE_CACHE_DIR="$ROOT_DIR/build/module-cache"
-SUPPORT_ROOT="${PLUME_SUPPORT_DIR:-$HOME/Library/Application Support/Plume}"
-LEGACY_SUPPORT_ROOT="$HOME/Library/Application Support/Local Whisperer"
+SUPPORT_ROOT="${DUCKWHISPERER_SUPPORT_DIR:-${PLUME_SUPPORT_DIR:-$HOME/Library/Application Support/DuckWhisperer}}"
+LEGACY_SUPPORT_ROOTS=(
+  "$HOME/Library/Application Support/Plume"
+  "$HOME/Library/Application Support/Local Whisperer"
+)
 DEFAULT_MODEL_FILE="ggml-small.en.bin"
 DEFAULT_MODEL_SRC="$SUPPORT_ROOT/Models/$DEFAULT_MODEL_FILE"
-LEGACY_DEFAULT_MODEL_SRC="$LEGACY_SUPPORT_ROOT/Models/$DEFAULT_MODEL_FILE"
 SWIFT_SOURCES=()
 SIGNING_IDENTITY_WAS_SET=0
 
@@ -49,9 +51,9 @@ fi
 sign_app() {
   local identity="$1"
   if [[ "$identity" == "-" ]]; then
-    echo "Signing Plume ad-hoc. Set SIGNING_IDENTITY to a stable code-signing identity to preserve Accessibility trust across rebuilds." >&2
+    echo "Signing DuckWhisperer ad-hoc. Set SIGNING_IDENTITY to a stable code-signing identity to preserve Accessibility trust across rebuilds." >&2
   else
-    echo "Signing Plume with: $identity" >&2
+    echo "Signing DuckWhisperer with: $identity" >&2
   fi
   codesign --force --deep --sign "$identity" "$APP_DIR"
 }
@@ -61,12 +63,17 @@ if [[ ! -d "$FRAMEWORK_SRC" ]]; then
   exit 1
 fi
 
-if [[ ("${INSTALL_DEFAULT_MODEL:-1}" == "1" || "${INSTALL_TRANSLATION:-0}" == "1") && ! -d "$SUPPORT_ROOT" && -d "$LEGACY_SUPPORT_ROOT" ]]; then
-  mkdir -p "$(dirname "$SUPPORT_ROOT")"
-  ditto "$LEGACY_SUPPORT_ROOT" "$SUPPORT_ROOT"
+if [[ ("${INSTALL_DEFAULT_MODEL:-1}" == "1" || "${INSTALL_TRANSLATION:-0}" == "1") && ! -d "$SUPPORT_ROOT" ]]; then
+  for legacy_support_root in "${LEGACY_SUPPORT_ROOTS[@]}"; do
+    if [[ -d "$legacy_support_root" ]]; then
+      mkdir -p "$(dirname "$SUPPORT_ROOT")"
+      ditto "$legacy_support_root" "$SUPPORT_ROOT"
+      break
+    fi
+  done
 fi
 
-if [[ "$APP_DIR" != "$ROOT_DIR/dist/Plume.app" ]]; then
+if [[ "$APP_DIR" != "$ROOT_DIR/dist/DuckWhisperer.app" ]]; then
   echo "Refusing to clean unexpected app directory: $APP_DIR" >&2
   exit 1
 fi
@@ -75,16 +82,16 @@ mkdir -p "$MACOS_DIR" "$RESOURCES_DIR" "$FRAMEWORKS_DIR" "$MODEL_DST_DIR" "$TRAN
 cp "$ROOT_DIR/Info.plist" "$CONTENTS_DIR/Info.plist"
 while IFS= read -r source; do
   SWIFT_SOURCES+=("$source")
-done < <(find "$ROOT_DIR/Sources/Plume" -name '*.swift' -print | sort)
+done < <(find "$ROOT_DIR/Sources/DuckWhisperer" -name '*.swift' -print | sort)
 if [[ "${#SWIFT_SOURCES[@]}" -eq 0 ]]; then
-  echo "No Swift sources found under Sources/Plume." >&2
+  echo "No Swift sources found under Sources/DuckWhisperer." >&2
   exit 1
 fi
 
 swift \
   -module-cache-path "$MODULE_CACHE_DIR/icon-script" \
-  "$ROOT_DIR/scripts/generate_plume_icon.swift" \
-  "$RESOURCES_DIR/Plume.icns"
+  "$ROOT_DIR/scripts/generate_duckwhisperer_icon.swift" \
+  "$RESOURCES_DIR/DuckWhisperer.icns"
 if [[ -f "$ROOT_DIR/Resources/UserGuide.html" ]]; then
   cp "$ROOT_DIR/Resources/UserGuide.html" "$RESOURCES_DIR/UserGuide.html"
 fi
@@ -106,11 +113,17 @@ swiftc \
   -Xlinker -rpath \
   -Xlinker "@executable_path/../Frameworks" \
   "${SWIFT_SOURCES[@]}" \
-  -o "$MACOS_DIR/Plume"
+  -o "$MACOS_DIR/DuckWhisperer"
 
 if [[ "${BUNDLE_DEFAULT_MODEL:-0}" == "1" ]]; then
-  if [[ ! -f "$DEFAULT_MODEL_SRC" && -f "$LEGACY_DEFAULT_MODEL_SRC" ]]; then
-    DEFAULT_MODEL_SRC="$LEGACY_DEFAULT_MODEL_SRC"
+  if [[ ! -f "$DEFAULT_MODEL_SRC" ]]; then
+    for legacy_support_root in "${LEGACY_SUPPORT_ROOTS[@]}"; do
+      legacy_default_model_src="$legacy_support_root/Models/$DEFAULT_MODEL_FILE"
+      if [[ -f "$legacy_default_model_src" ]]; then
+        DEFAULT_MODEL_SRC="$legacy_default_model_src"
+        break
+      fi
+    done
   fi
   if [[ ! -f "$DEFAULT_MODEL_SRC" ]]; then
     "$ROOT_DIR/scripts/setup_default_model.sh"
@@ -129,7 +142,7 @@ if ! codesign --verify --deep --strict "$APP_DIR" >/dev/null 2>&1; then
     sign_app "-"
     codesign --verify --deep --strict "$APP_DIR"
   else
-    echo "Plume signature verification failed for SIGNING_IDENTITY=$SIGNING_IDENTITY" >&2
+    echo "DuckWhisperer signature verification failed for SIGNING_IDENTITY=$SIGNING_IDENTITY" >&2
     codesign --verify --deep --strict "$APP_DIR"
     exit 1
   fi

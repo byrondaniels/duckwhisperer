@@ -1,13 +1,13 @@
 # TikTok Demo Scripts
 
-Plume demos should look like a normal person using their Mac, not a developer walking through settings. Record vertical 9:16, keep the menu-bar plume visible when possible, and show the paste moment clearly.
+DuckWhisperer demos should look like a normal person using their Mac, not a developer walking through settings. Record vertical 9:16, keep the menu-bar icon visible when possible, and show the paste moment clearly.
 
 ## 1. The Hook
 
 On-screen text: "I got tired of Mac dictation missing my words."
 
 Action:
-Open a blank text field, hit `Option+Space`, say one natural sentence, hit `Option+Space` again, and show Plume pasting it.
+Open a blank text field, hit `Option+Space`, say one natural sentence, hit `Option+Space` again, and show DuckWhisperer pasting it.
 
 Voiceover:
 "This runs locally on my Mac and pastes straight into whatever field I'm using."
@@ -30,7 +30,7 @@ Action:
 Say: "turn this into bullets follow up with Alex about the design, send the draft to Priya, and ship the build Friday."
 
 Voiceover:
-"You can start with a command phrase, and Plume formats the rest."
+"You can start with a command phrase, and DuckWhisperer formats the rest."
 
 ## 4. Works Offline
 

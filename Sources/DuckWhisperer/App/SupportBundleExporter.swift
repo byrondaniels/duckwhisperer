@@ -6,7 +6,7 @@ enum SupportBundleExporter {
     static func suggestedFilename() -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd-HHmm"
-        return "Plume-Support-\(formatter.string(from: Date())).zip"
+        return "DuckWhisperer-Support-\(formatter.string(from: Date())).zip"
     }
 
     static func export(
@@ -18,7 +18,7 @@ enum SupportBundleExporter {
     ) throws {
         let fileManager = FileManager.default
         let stagingURL = fileManager.temporaryDirectory
-            .appendingPathComponent("Plume-Support-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("DuckWhisperer-Support-\(UUID().uuidString)", isDirectory: true)
         defer {
             try? fileManager.removeItem(at: stagingURL)
         }
@@ -84,7 +84,7 @@ enum SupportBundleExporter {
         let installedModelPath = ModelStore.installedURL(for: selectedModel, inputLanguage: inputLanguage)?.path ?? "missing"
 
         return """
-        Plume Support Diagnostics
+        DuckWhisperer Support Diagnostics
         Generated: \(ISO8601DateFormatter().string(from: Date()))
 
         App
@@ -145,7 +145,7 @@ enum SupportBundleExporter {
         guard process.terminationStatus == 0 else {
             let data = errorPipe.fileHandleForReading.readDataToEndOfFile()
             let message = String(data: data, encoding: .utf8) ?? "ditto failed"
-            throw PlumeError.supportBundleFailed("Could not create archive: \(message)")
+            throw DuckWhispererError.supportBundleFailed("Could not create archive: \(message)")
         }
     }
 }

@@ -1,6 +1,6 @@
 import Foundation
 
-enum PlumeError: LocalizedError {
+enum DuckWhispererError: LocalizedError {
     case audioReadFailed(String)
     case hotKeyFailed(OSStatus)
     case modelDownloadFailed(String)

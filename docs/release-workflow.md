@@ -1,4 +1,4 @@
-# Plume Release Workflow
+# DuckWhisperer Release Workflow
 
 This is the packaging path for a non-developer release.
 
@@ -11,12 +11,12 @@ This is the packaging path for a non-developer release.
 The default artifact is:
 
 ```text
-release/Plume-<version>-<build>.dmg
+release/DuckWhisperer-<version>-<build>.dmg
 ```
 
 The DMG contains:
 
-- `Plume.app`
+- `DuckWhisperer.app`
 - an `Applications` shortcut for drag-and-drop install
 - `Start Here.html` with the first-run instructions
 
@@ -38,20 +38,20 @@ Local ad-hoc builds work for testing, but a public release should use a Develope
 SIGNING_IDENTITY="Developer ID Application: Your Name (TEAMID)" ./scripts/package_release.sh
 ```
 
-The script signs `Plume.app` through `scripts/build_app.sh` and writes release notes next to the artifact.
+The script signs `DuckWhisperer.app` through `scripts/build_app.sh` and writes release notes next to the artifact.
 
 ## Notarize A Public DMG
 
 After building with a Developer ID certificate, notarize and staple the DMG:
 
 ```bash
-NOTARYTOOL_PROFILE=plume-release ./scripts/notarize_release.sh
+NOTARYTOOL_PROFILE=duckwhisperer-release ./scripts/notarize_release.sh
 ```
 
 Create that stored Apple profile once with:
 
 ```bash
-xcrun notarytool store-credentials plume-release --apple-id "you@example.com" --team-id "TEAMID" --password "app-specific-password"
+xcrun notarytool store-credentials duckwhisperer-release --apple-id "you@example.com" --team-id "TEAMID" --password "app-specific-password"
 ```
 
 You can also pass credentials through `APPLE_ID`, `APPLE_TEAM_ID`, and `APPLE_APP_SPECIFIC_PASSWORD`. The script submits the DMG, waits for the result, staples the ticket, and validates the package with `spctl`.
@@ -60,7 +60,7 @@ You can also pass credentials through `APPLE_ID`, `APPLE_TEAM_ID`, and `APPLE_AP
 
 The release app bundles Best Accuracy English dictation so a new user can install and transcribe without a terminal or first-run model download.
 
-These remain opt-in downloads inside Plume:
+These remain opt-in downloads inside DuckWhisperer:
 
 - non-English speech models
 - local translation packages
@@ -74,8 +74,8 @@ Before publishing:
 2. Run `./scripts/package_release.sh`.
 3. For a public build, run `./scripts/notarize_release.sh`.
 4. Open the DMG.
-5. Drag `Plume.app` to `Applications`.
-6. Open Plume from Applications.
+5. Drag `DuckWhisperer.app` to `Applications`.
+6. Open DuckWhisperer from Applications.
 7. Open `Finish Setup...`.
 8. Grant Microphone and Paste-Back permissions.
 9. Open `Try It Here...`, record once, and confirm the text appears.
@@ -84,7 +84,7 @@ Before publishing:
 
 ## User Customization Checklist
 
-Plume's menu-bar settings cover normal non-dev customization:
+DuckWhisperer's menu-bar settings cover normal non-dev customization:
 
 - `Writing Mode`: email, notes, bullets, raw dictation, Slack casual, and more
 - `Saved Words...`: personal dictionary replacements

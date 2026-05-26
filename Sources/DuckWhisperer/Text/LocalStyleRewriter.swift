@@ -12,7 +12,7 @@ enum LocalStyleRewriter {
         let runnerURL = try StyleRewriteStore.installedRunnerURL()
         let modelURL = StyleRewriteStore.modelURL(for: .enhancedRobot)
         guard FileManager.default.fileExists(atPath: modelURL.path) else {
-            throw PlumeError.styleRewriteRuntimeMissing("Install the Enhanced Robot model from Speed & Accuracy.")
+            throw DuckWhispererError.styleRewriteRuntimeMissing("Install the Enhanced Robot model from Speed & Accuracy.")
         }
 
         let prompt = robotPrompt(for: trimmed)
@@ -82,7 +82,7 @@ enum LocalStyleRewriter {
         if waitGroup.wait(timeout: .now() + timeoutSeconds) == .timedOut {
             process.terminate()
             process.waitUntilExit()
-            throw PlumeError.styleRewriteFailed("The local robot model timed out.")
+            throw DuckWhispererError.styleRewriteFailed("The local robot model timed out.")
         }
 
         let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
@@ -90,7 +90,7 @@ enum LocalStyleRewriter {
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
         guard process.terminationStatus == 0 else {
-            throw PlumeError.styleRewriteFailed("llama-cli exited with \(process.terminationStatus).")
+            throw DuckWhispererError.styleRewriteFailed("llama-cli exited with \(process.terminationStatus).")
         }
 
         return output

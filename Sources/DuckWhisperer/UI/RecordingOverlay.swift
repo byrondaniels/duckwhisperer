@@ -88,7 +88,7 @@ private final class RecordingOverlayView: NSView {
         drawingTransform.translateX(by: 12, yBy: 30)
         drawingTransform.concat()
         drawCrescendo()
-        drawPlumeMark(level: audioLevel)
+        drawDuckWhispererMark(level: audioLevel)
         NSGraphicsContext.restoreGraphicsState()
         drawText()
         drawProgress()
@@ -101,7 +101,7 @@ private final class RecordingOverlayView: NSView {
         drawingTransform.scale(by: 1.55)
         drawingTransform.concat()
         drawCrescendo()
-        drawPlumeMark(level: audioLevel)
+        drawDuckWhispererMark(level: audioLevel)
         NSGraphicsContext.restoreGraphicsState()
 
         let textX: CGFloat = 225
@@ -284,7 +284,7 @@ private final class RecordingOverlayView: NSView {
         shine.fill()
     }
 
-    private func drawPlumeMark(level: CGFloat) {
+    private func drawDuckWhispererMark(level: CGFloat) {
         let center = NSPoint(x: 72, y: 43)
         let energy = max(0, min(1, level))
         let scale = 1 + energy * 0.018
@@ -419,51 +419,51 @@ private final class RecordingOverlayView: NSView {
     }
 
     private func drawMascotHead(energy: CGFloat) {
-        let backPlume = NSBezierPath()
-        backPlume.move(to: NSPoint(x: 57, y: 49))
-        backPlume.curve(
+        let backDuckWhisperer = NSBezierPath()
+        backDuckWhisperer.move(to: NSPoint(x: 57, y: 49))
+        backDuckWhisperer.curve(
             to: NSPoint(x: 76, y: 12),
             controlPoint1: NSPoint(x: 55, y: 30),
             controlPoint2: NSPoint(x: 62, y: 17)
         )
-        backPlume.curve(
+        backDuckWhisperer.curve(
             to: NSPoint(x: 76, y: 51),
             controlPoint1: NSPoint(x: 84, y: 24),
             controlPoint2: NSPoint(x: 86, y: 41)
         )
-        backPlume.curve(
+        backDuckWhisperer.curve(
             to: NSPoint(x: 57, y: 49),
             controlPoint1: NSPoint(x: 71, y: 48),
             controlPoint2: NSPoint(x: 64, y: 48)
         )
-        backPlume.close()
+        backDuckWhisperer.close()
         NSGradient(colors: [
             NSColor(calibratedRed: 1.0, green: 0.92, blue: 0.56, alpha: 1),
             NSColor(calibratedRed: 1.0, green: 0.64, blue: 0.06, alpha: 1)
-        ])?.draw(in: backPlume, angle: 245)
+        ])?.draw(in: backDuckWhisperer, angle: 245)
 
-        let frontPlume = NSBezierPath()
-        frontPlume.move(to: NSPoint(x: 70, y: 51))
-        frontPlume.curve(
+        let frontDuckWhisperer = NSBezierPath()
+        frontDuckWhisperer.move(to: NSPoint(x: 70, y: 51))
+        frontDuckWhisperer.curve(
             to: NSPoint(x: 100, y: 8),
             controlPoint1: NSPoint(x: 72, y: 26),
             controlPoint2: NSPoint(x: 86, y: 12)
         )
-        frontPlume.curve(
+        frontDuckWhisperer.curve(
             to: NSPoint(x: 88, y: 52),
             controlPoint1: NSPoint(x: 102, y: 27),
             controlPoint2: NSPoint(x: 100, y: 44)
         )
-        frontPlume.curve(
+        frontDuckWhisperer.curve(
             to: NSPoint(x: 70, y: 51),
             controlPoint1: NSPoint(x: 82, y: 50),
             controlPoint2: NSPoint(x: 76, y: 50)
         )
-        frontPlume.close()
+        frontDuckWhisperer.close()
         NSGradient(colors: [
             NSColor(calibratedRed: 1.0, green: 0.96, blue: 0.70, alpha: 1),
             NSColor(calibratedRed: 1.0, green: 0.71, blue: 0.10, alpha: 1)
-        ])?.draw(in: frontPlume, angle: 235)
+        ])?.draw(in: frontDuckWhisperer, angle: 235)
 
         let face = NSBezierPath(ovalIn: NSRect(x: 51, y: 38, width: 42, height: 28))
         NSGradient(colors: [

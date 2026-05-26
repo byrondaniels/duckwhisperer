@@ -255,14 +255,14 @@ enum TranslationStore {
 
     private static func installArgosPack(_ pack: TranslationPackChoice) throws {
         guard let packageFilename = pack.packageFilename else {
-            throw PlumeError.translationInstallFailed("Missing package filename for \(pack.title).")
+            throw DuckWhispererError.translationInstallFailed("Missing package filename for \(pack.title).")
         }
 
         try ensureArgosRuntime()
 
         let packageURL = packageDownloadsURL.appendingPathComponent(packageFilename)
         guard let remotePackageURL = pack.packageURL else {
-            throw PlumeError.translationInstallFailed("Missing package URL for \(pack.title).")
+            throw DuckWhispererError.translationInstallFailed("Missing package URL for \(pack.title).")
         }
         try download(remotePackageURL, to: packageURL)
         defer { try? FileManager.default.removeItem(at: packageURL) }
@@ -360,7 +360,7 @@ enum TranslationStore {
                     ]
                 )
             } catch {
-                throw PlumeError.translationInstallFailed(
+                throw DuckWhispererError.translationInstallFailed(
                     "\(error.localizedDescription)\n\nInstall Homebrew Python 3.13 or 3.12, then rerun scripts/setup_local_translation.sh."
                 )
             }
@@ -386,7 +386,7 @@ enum TranslationStore {
                     ]
                 )
             } catch {
-                throw PlumeError.translationInstallFailed(
+                throw DuckWhispererError.translationInstallFailed(
                     "\(error.localizedDescription)\n\nInstall Homebrew Python 3.13 or 3.12, then try installing the translator again."
                 )
             }
@@ -419,7 +419,7 @@ enum TranslationStore {
             return URL(fileURLWithPath: path)
         }
 
-        throw PlumeError.translationInstallFailed("Could not find Python 3.11, 3.12, or 3.13 to create the translation environment. Install one with Homebrew, for example: brew install python@3.13")
+        throw DuckWhispererError.translationInstallFailed("Could not find Python 3.11, 3.12, or 3.13 to create the translation environment. Install one with Homebrew, for example: brew install python@3.13")
     }
 
     private static func isSupportedPython(_ pythonURL: URL) -> Bool {
@@ -472,11 +472,11 @@ enum TranslationStore {
             }
             if let response = response as? HTTPURLResponse,
                !(200...299).contains(response.statusCode) {
-                result = .failure(PlumeError.translationInstallFailed("HTTP \(response.statusCode) while downloading \(sourceURL.lastPathComponent)."))
+                result = .failure(DuckWhispererError.translationInstallFailed("HTTP \(response.statusCode) while downloading \(sourceURL.lastPathComponent)."))
                 return
             }
             guard let temporaryURL else {
-                result = .failure(PlumeError.translationInstallFailed("No downloaded translation package was returned."))
+                result = .failure(DuckWhispererError.translationInstallFailed("No downloaded translation package was returned."))
                 return
             }
 
@@ -521,7 +521,7 @@ enum TranslationStore {
                 data: errorPipe.fileHandleForReading.readDataToEndOfFile(),
                 encoding: .utf8
             )?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            throw PlumeError.translationInstallFailed(
+            throw DuckWhispererError.translationInstallFailed(
                 errorOutput.isEmpty ? "\(executableURL.lastPathComponent) exited with \(process.terminationStatus)." : errorOutput
             )
         }

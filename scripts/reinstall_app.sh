@@ -2,9 +2,11 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-APP_NAME="Plume.app"
+APP_NAME="DuckWhisperer.app"
 APP_SRC="$ROOT_DIR/dist/$APP_NAME"
-APP_DST="${PLUME_INSTALL_DIR:-/Applications}/$APP_NAME"
+APP_INSTALL_DIR="${DUCKWHISPERER_INSTALL_DIR:-${PLUME_INSTALL_DIR:-/Applications}}"
+APP_DST="$APP_INSTALL_DIR/$APP_NAME"
+LEGACY_APP_DST="$APP_INSTALL_DIR/Plume.app"
 FRAMEWORK_DIR="$ROOT_DIR/vendor/whisper-xcframework/build-apple/whisper.xcframework"
 
 cd "$ROOT_DIR"
@@ -17,6 +19,9 @@ replace_app_bundle() {
 
   if [[ -e "$APP_DST" ]]; then
     rm -rf "$APP_DST"
+  fi
+  if [[ -e "$LEGACY_APP_DST" && "$LEGACY_APP_DST" != "$APP_DST" ]]; then
+    rm -rf "$LEGACY_APP_DST"
   fi
 
   ditto "$APP_SRC" "$APP_DST"
@@ -40,9 +45,10 @@ stop_app() {
   fi
 }
 
-echo "Rebuilding Plume without reinstalling runtime models..."
+echo "Rebuilding DuckWhisperer without reinstalling runtime models..."
 INSTALL_DEFAULT_MODEL=0 INSTALL_TRANSLATION=0 ./scripts/build_app.sh
 
+stop_app DuckWhisperer DuckWhisperer
 stop_app Plume Plume
 
 echo "Installing $APP_NAME to $APP_DST..."
@@ -51,14 +57,14 @@ replace_app_bundle
 echo "Refreshing macOS app registration..."
 /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$APP_DST" || true
 
-echo "Launching Plume..."
+echo "Launching DuckWhisperer..."
 open "$APP_DST"
 
 cat <<EOF
 
-Plume was reinstalled.
+DuckWhisperer was reinstalled.
 
-If this build was ad-hoc signed and automatic paste stops working, toggle Plume off/on in:
+If this build was ad-hoc signed and automatic paste stops working, toggle DuckWhisperer off/on in:
 System Settings -> Privacy & Security -> Accessibility
 
 To reduce Accessibility resets across rebuilds, sign with a stable identity:
