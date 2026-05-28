@@ -241,6 +241,8 @@ Install translators from `Speed & Accuracy`, or install the default Argos French
 ./scripts/setup_local_translation.sh
 ```
 
+Installed translators can be removed from the same `Speed & Accuracy` translator list. Removing a translator deletes only that downloaded pack; the app will ask before downloading it again.
+
 The translation setup intentionally avoids Python versions that would require native source builds. The Argos setup currently looks for Python 3.13, then 3.12, then 3.11, and installs `argostranslate==1.11.0` plus `sentencepiece==0.2.1` from binary wheels. Dedicated input -> English translators are lazy installs from `Speed & Accuracy`; the first one may also install a local Transformers/PyTorch runtime.
 
 Translation runtime data is stored in:

@@ -388,11 +388,11 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
         if installingTranslationPackIDs.contains(pack.id) {
             return "Installing..."
         }
-        return TranslationStore.isInstalled(pack) ? "Installed" : "Install"
+        return TranslationStore.isInstalled(pack) ? "Remove" : "Install"
     }
 
     private func canAct(on pack: TranslationPackChoice) -> Bool {
-        !installingTranslationPackIDs.contains(pack.id) && !TranslationStore.isInstalled(pack)
+        !installingTranslationPackIDs.contains(pack.id)
     }
 
     @objc private func handleModelAction(_ sender: NSButton) {
@@ -412,13 +412,16 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
 
     @objc private func handleTranslationPackAction(_ sender: NSButton) {
         guard let id = sender.identifier?.rawValue,
-              let pack = TranslationPackChoice.choice(for: id),
-              !TranslationStore.isInstalled(pack)
+              let pack = TranslationPackChoice.choice(for: id)
         else {
             return
         }
 
-        confirmAndInstall(pack)
+        if TranslationStore.isInstalled(pack) {
+            confirmAndDelete(pack)
+        } else {
+            confirmAndInstall(pack)
+        }
     }
 
     private func confirmAndDownload(_ choice: ModelChoice) {
@@ -538,7 +541,25 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
         }
     }
 
+    private func confirmAndDelete(_ pack: TranslationPackChoice) {
+        let alert = NSAlert()
+        alert.messageText = "Remove \(pack.title)?"
+        alert.informativeText = "This removes the downloaded translator from this Mac. You can install it again anytime."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Remove")
+        alert.addButton(withTitle: "Cancel")
 
+        guard alert.runModal() == .alertFirstButtonReturn else {
+            return
+        }
+
+        do {
+            try TranslationStore.delete(pack)
+        } catch {
+            showError(error)
+        }
+        rebuild()
+    }
 
     private func showError(_ error: Error) {
         let alert = NSAlert(error: error)

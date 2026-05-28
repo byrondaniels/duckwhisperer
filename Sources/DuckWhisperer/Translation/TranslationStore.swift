@@ -278,6 +278,14 @@ enum TranslationStore {
         }
     }
 
+    static func delete(_ pack: TranslationPackChoice) throws {
+        let installedURL = localURL(for: pack)
+        guard FileManager.default.fileExists(atPath: installedURL.path) else {
+            return
+        }
+        try FileManager.default.removeItem(at: installedURL)
+    }
+
     private static func installArgosPack(_ pack: TranslationPackChoice) throws {
         guard let packageFilename = pack.packageFilename else {
             throw DuckWhispererError.translationInstallFailed("Missing package filename for \(pack.title).")
