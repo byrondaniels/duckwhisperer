@@ -170,9 +170,9 @@ Run the full local verification loop before pushing changes:
 - Local speech transcription with lazy input-language downloads
 - Built-in input choices for English, Spanish, French, Tagalog, Chinese, Hindi, Arabic, Bengali, Portuguese, Russian, Urdu, Indonesian, German, Japanese, Korean, Turkish, Vietnamese, Italian, Polish, and Dutch
 - Optional English -> French/Dutch output translation plus per-language input -> English translator downloads
-- Built-in British, Gen Z, Alien, Cowboy, Pirate, Robot, Shakespeare, and Quack style modes
+- Built-in British, Gen Z, Gen Alpha, Boomer, Alien, Cowboy, Pirate, Robot, Shakespeare, and Quack style modes
 - Writing profiles: Smart Clean, Raw Dictation, Clean Email, Slack Casual, Meeting Notes, Code Prompt, and Bullet Notes
-- Command phrases such as "make this shorter", "turn this into bullets", "rewrite professionally", "translate to Dutch", "alien mode", "cowboy mode", and "quack mode"
+- Command phrases such as "make this shorter", "turn this into bullets", "rewrite professionally", "translate to Dutch", "gen alpha mode", "boomer mode", "alien mode", "cowboy mode", and "quack mode"
 - Green HUD command badge when a spoken command phrase is recognized
 - Per-app defaults for model, output language, and writing profile
 - Personal dictionary replacements stored locally
@@ -226,7 +226,7 @@ Delete a downloaded model anytime from `Speed & Accuracy` → `Open Speed & Accu
 
 ## Translation
 
-Output defaults to `Same as Input`. You can also choose English, French, Dutch, British, Gen Z, Alien, Cowboy, Pirate, Robot, Shakespeare, or Quack.
+Output defaults to `Same as Input`. You can also choose English, French, Dutch, British, Gen Z, Gen Alpha, Boomer, Alien, Cowboy, Pirate, Robot, Shakespeare, or Quack.
 
 Non-English input to English can use individual local text translators. For example, Tagalog -> English installs only the Tagalog -> English translator, then DuckWhisperer transcribes Tagalog text first and translates that text to English. If the matching translator is not installed, the app asks before downloading it.
 
@@ -244,7 +244,7 @@ Translation runtime data is stored in:
 ~/Library/Application Support/DuckWhisperer/Translation
 ```
 
-Fun modes are built into the app under `Output Language`. British, Gen Z, Alien, Cowboy, Pirate, Robot, Shakespeare, and Quack output do not require a model, package, or network call.
+Fun modes are built into the app under `Output Language`. British, Gen Z, Gen Alpha, Boomer, Alien, Cowboy, Pirate, Robot, Shakespeare, and Quack output do not require a model, package, or network call.
 
 ## Product Features
 
