@@ -175,7 +175,7 @@ private final class RecordingOverlayView: NSView {
     }
 
     private func drawText() {
-        let textX: CGFloat = 148
+        let textX: CGFloat = 168
         let maxWidth = bounds.width - textX - 18
 
         let titleAttributes: [NSAttributedString.Key: Any] = [
@@ -255,7 +255,7 @@ private final class RecordingOverlayView: NSView {
 
     private func drawCrescendo() {
         let level = max(0, min(1, audioLevel))
-        let idlePulse = 0.030 + 0.020 * ((sin(animationPhase * 0.85) + 1) / 2)
+        let idlePulse = 0.018 + 0.010 * ((sin(animationPhase * 0.85) + 1) / 2)
         let voiceEnergy = level > 0.018 ? max(pow(level, 0.54), 0.18) : 0
         let lift = max(voiceEnergy, idlePulse)
         let shimmer = (sin(animationPhase * 1.6) + 1) / 2
@@ -263,15 +263,15 @@ private final class RecordingOverlayView: NSView {
         NSGraphicsContext.saveGraphicsState()
         let shadow = NSShadow()
         shadow.shadowColor = NSColor(calibratedRed: 1.0, green: 0.62, blue: 0.12, alpha: 0.12 + lift * 0.34)
-        shadow.shadowBlurRadius = 10 + lift * 28
-        shadow.shadowOffset = NSSize(width: 0, height: 3 + lift * 5)
+        shadow.shadowBlurRadius = 10 + lift * 10
+        shadow.shadowOffset = NSSize(width: 0, height: 3 + lift * 2)
         shadow.set()
 
         let stageRect = NSRect(
-            x: 14 - lift * 10,
-            y: 11 - lift * 6,
-            width: 120 + lift * 20,
-            height: 66 + lift * 12
+            x: 14 - lift * 3,
+            y: 11 - lift * 2,
+            width: 120 + lift * 6,
+            height: 66 + lift * 4
         )
         let stage = NSBezierPath(roundedRect: stageRect, xRadius: 18, yRadius: 18)
         NSGradient(
@@ -285,11 +285,11 @@ private final class RecordingOverlayView: NSView {
         for index in 0..<3 {
             let offset = CGFloat(index)
             let ripple = (sin(animationPhase * 1.35 + offset * 0.9) + 1) / 2
-            let inset = CGFloat(index) * -3.5 - lift * (2.5 + offset * 1.8) - ripple * lift * 2.6
+            let inset = CGFloat(index) * -3.5 - lift * (1.0 + offset * 0.6) - ripple * lift * 0.8
             let ring = NSBezierPath(
                 roundedRect: stageRect.insetBy(dx: inset, dy: inset * 0.55),
-                xRadius: 19 + lift * 6,
-                yRadius: 19 + lift * 6
+                xRadius: 19 + lift * 2,
+                yRadius: 19 + lift * 2
             )
             NSColor(
                 calibratedRed: 1.0,
@@ -297,7 +297,7 @@ private final class RecordingOverlayView: NSView {
                 blue: 0.16,
                 alpha: (0.030 + lift * 0.080) / (offset + 1)
             ).setStroke()
-            ring.lineWidth = 1.0 + lift * 1.2
+            ring.lineWidth = 1.0 + lift * 0.5
             ring.stroke()
         }
 
@@ -307,10 +307,10 @@ private final class RecordingOverlayView: NSView {
 
         let shine = NSBezierPath(
             roundedRect: NSRect(
-                x: 24 + shimmer * 8,
+                x: 24 + shimmer * 3,
                 y: 17,
-                width: 72 + lift * 22,
-                height: 14 + lift * 3
+                width: 72 + lift * 8,
+                height: 14 + lift * 1
             ),
             xRadius: 8,
             yRadius: 8
@@ -395,7 +395,7 @@ private final class RecordingOverlayView: NSView {
 
     private func drawMascotWaves(energy: CGFloat) {
         let raw = max(0, min(1, energy))
-        let idle = 0.055 + 0.030 * ((sin(animationPhase * 1.2) + 1) / 2)
+        let idle = 0.045 + 0.012 * ((sin(animationPhase * 1.2) + 1) / 2)
         let loudness = raw > 0.018 ? max(pow(raw, 0.56), 0.24) : idle
         let baseColor = NSColor(calibratedRed: 1.0, green: 0.76, blue: 0.12, alpha: 0.24 + loudness * 0.58)
         let groups: [CGFloat] = [24, 128]
@@ -403,11 +403,11 @@ private final class RecordingOverlayView: NSView {
 
         for groupX in groups {
             for (index, baseHeight) in baseHeights.enumerated() {
-                let phase = (sin(animationPhase * (1.35 + loudness * 1.5) + CGFloat(index) * 0.72 + groupX * 0.035) + 1) / 2
+                let phase = (sin(animationPhase * (0.9 + loudness * 0.4) + CGFloat(index) * 0.72 + groupX * 0.035) + 1) / 2
                 let polarity = CGFloat(3 - abs(index - 2))
                 let barHeight = baseHeight * (0.52 + loudness * 0.76)
                     + loudness * (8 + polarity * 6)
-                    + phase * (2.0 + loudness * 10.0)
+                    + phase * (1.5 + loudness * 3.0)
                 let barWidth: CGFloat = 3.8 + loudness * 2.2
                 let barX = groupX + CGFloat(index - 2) * 8 - barWidth / 2
                 let barRect = NSRect(x: barX, y: 43 - barHeight / 2, width: barWidth, height: barHeight)
@@ -536,7 +536,7 @@ private final class RecordingOverlayView: NSView {
     }
 }
 final class RecordingOverlayController {
-    private static let standardSize = NSSize(width: 360, height: 142)
+    private static let standardSize = NSSize(width: 384, height: 142)
     private static let presenterSize = NSSize(width: 560, height: 220)
     private static let overlayCollectionBehavior: NSWindow.CollectionBehavior = [
         .canJoinAllSpaces,
@@ -781,13 +781,13 @@ final class RecordingOverlayController {
             return
         }
 
-        let smoothing: CGFloat = targetAudioLevel > displayedAudioLevel ? 0.30 : 0.10
+        let smoothing: CGFloat = targetAudioLevel > displayedAudioLevel ? 0.22 : 0.10
         displayedAudioLevel += (targetAudioLevel - displayedAudioLevel) * smoothing
         if abs(displayedAudioLevel - targetAudioLevel) < 0.002 {
             displayedAudioLevel = targetAudioLevel
         }
 
-        animationPhase += 0.038 + displayedAudioLevel * 0.24
+        animationPhase += 0.032 + displayedAudioLevel * 0.08
         overlayView.setAnimationState(audioLevel: displayedAudioLevel, animationPhase: animationPhase)
     }
 }
