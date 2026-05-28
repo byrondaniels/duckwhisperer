@@ -91,6 +91,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     private var lastPasteWasTryIt = false
     private var downloadingSpeechModelKeys = Set<String>()
     private var installingTranslationPackIDs = Set<String>()
+    private var workingStatusText: String?
+    private var workingIndicatorTimer: Timer?
+    private var workingIndicatorFrame = 0
 
     private var selectedModel: ModelChoice {
         ModelChoice.choice(for: UserDefaults.standard.string(forKey: selectedModelIDKey))
@@ -838,7 +841,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         timeSavedMenuItem.title = DictationStatsStore.current().menuSummary
 
         let permissionSuffix = hasAutoPastePermission ? "" : " - Paste-Back Needs Permission"
-        statusItem.button?.toolTip = "\(appDisplayName): \(state.statusText)\(permissionSuffix)"
+        statusItem.button?.toolTip = "\(appDisplayName): \(workingStatusText ?? state.statusText)\(permissionSuffix)"
         let routeText = overlayLanguageRouteText(inputLanguage: selectedInputLanguage, outputLanguage: selectedOutputLanguage)
         let routeSuffix = routeText.isEmpty ? "" : " - \(routeText)"
         let formattingSuffix = preserveCapitalization ? "" : " - Lowercase Mode"
@@ -846,6 +849,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     }
 
     private func plainStatusText() -> String {
+        if let workingStatusText {
+            return workingStatusText
+        }
         switch state {
         case .ready:
             return "Ready - Voice Typing"
@@ -856,6 +862,40 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         case .error(let message):
             return "Needs Attention - \(message)"
         }
+    }
+
+    private func beginWorking(_ statusText: String) {
+        workingStatusText = statusText
+        workingIndicatorFrame = 0
+        workingIndicatorTimer?.invalidate()
+        let timer = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
+            self?.advanceWorkingIndicator()
+        }
+        workingIndicatorTimer = timer
+        RunLoop.main.add(timer, forMode: .common)
+        advanceWorkingIndicator()
+        refreshPermissionUI()
+    }
+
+    private func endWorking() {
+        workingStatusText = nil
+        workingIndicatorTimer?.invalidate()
+        workingIndicatorTimer = nil
+        if let button = statusItem.button {
+            button.title = ""
+            button.imagePosition = .imageOnly
+        }
+        refreshPermissionUI()
+    }
+
+    private func advanceWorkingIndicator() {
+        guard let button = statusItem.button, workingStatusText != nil else {
+            return
+        }
+        let dots = String(repeating: "•", count: workingIndicatorFrame % 3 + 1)
+        button.imagePosition = .imageLeading
+        button.title = " \(dots)"
+        workingIndicatorFrame += 1
     }
 
     private func languageRouteText(inputLanguage: InputLanguageChoice, outputLanguage: OutputLanguage) -> String {
@@ -1015,7 +1055,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         downloadingSpeechModelKeys.insert(key)
         onDownloadStateChange?(true)
         let downloadStatus = inputLanguage.isEnglish ? "Downloading English speech..." : "Downloading multilingual speech..."
-        setState(.error(downloadStatus))
+        beginWorking(downloadStatus)
 
         URLSession.shared.downloadTask(with: choice.downloadURL(for: inputLanguage)) { [weak self] temporaryURL, response, error in
             DispatchQueue.main.async {
@@ -1042,6 +1082,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                     NSSound.beep()
                 }
 
+                self.endWorking()
                 self.rebuildInputLanguageMenu()
                 self.rebuildPerformanceMenu()
                 self.rebuildModelMenu()
@@ -1108,7 +1149,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         }
 
         installingTranslationPackIDs.insert(pack.id)
-        setState(.error("Installing \(pack.title)..."))
+        beginWorking("Installing \(pack.title)...")
 
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             do {
@@ -1116,6 +1157,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                 DispatchQueue.main.async {
                     guard let self else { return }
                     self.installingTranslationPackIDs.remove(pack.id)
+                    self.endWorking()
                     self.rebuildOutputMenu()
                     self.modelExplorer.refresh(currentModel: self.selectedModel, inputLanguage: self.selectedInputLanguage)
                     completion(true)
@@ -1124,6 +1166,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                 DispatchQueue.main.async {
                     guard let self else { return }
                     self.installingTranslationPackIDs.remove(pack.id)
+                    self.endWorking()
                     self.setState(.error(error.localizedDescription))
                     NSSound.beep()
                     completion(false)
