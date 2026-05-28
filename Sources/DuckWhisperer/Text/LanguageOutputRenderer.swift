@@ -13,6 +13,8 @@ enum LanguageOutputRenderer {
             return StyledSpeech.genZ(text)
         case "genalpha":
             return StyledSpeech.genAlpha(text)
+        case "millennial":
+            return StyledSpeech.millennial(text)
         case "boomer":
             return StyledSpeech.boomer(text)
         case "alien":

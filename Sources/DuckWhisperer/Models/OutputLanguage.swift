@@ -63,6 +63,7 @@ struct OutputLanguage: Equatable {
         OutputLanguage(id: "british", title: "British", translationTargetCode: nil),
         OutputLanguage(id: "genz", title: "Gen Z", translationTargetCode: nil),
         OutputLanguage(id: "genalpha", title: "Gen Alpha", translationTargetCode: nil),
+        OutputLanguage(id: "millennial", title: "Millennial", translationTargetCode: nil),
         OutputLanguage(id: "boomer", title: "Boomer", translationTargetCode: nil),
         OutputLanguage(id: "alien", title: "Alien", translationTargetCode: nil),
         OutputLanguage(id: "cowboy", title: "Cowboy", translationTargetCode: nil),

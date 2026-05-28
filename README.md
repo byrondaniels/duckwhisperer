@@ -170,9 +170,9 @@ Run the full local verification loop before pushing changes:
 - Local speech transcription with lazy input-language downloads
 - Built-in input choices for English, Spanish, French, Tagalog, Chinese, Hindi, Arabic, Bengali, Portuguese, Russian, Urdu, Indonesian, German, Japanese, Korean, Turkish, Vietnamese, Italian, Polish, and Dutch
 - Optional English -> French/Dutch output translation plus per-language input -> English translator downloads
-- Built-in British, Gen Z, Gen Alpha, Boomer, Alien, Cowboy, Pirate, Robot, Shakespeare, and Quack style modes
+- Built-in British, Gen Z, Gen Alpha, Millennial, Boomer, Alien, Cowboy, Pirate, Robot, Shakespeare, and Quack style modes
 - Writing profiles: Smart Clean, Raw Dictation, Clean Email, Slack Casual, Meeting Notes, Code Prompt, and Bullet Notes
-- Command phrases such as "make this shorter", "turn this into bullets", "rewrite professionally", "translate to Dutch", "gen alpha mode", "boomer mode", "alien mode", "cowboy mode", and "quack mode"
+- Command phrases such as "make this shorter", "turn this into bullets", "rewrite professionally", "translate to Dutch", "gen alpha mode", "millennial mode", "boomer mode", "alien mode", "cowboy mode", and "quack mode"
 - Green HUD command badge when a spoken command phrase is recognized
 - Per-app defaults for model, output language, and writing profile
 - Personal dictionary replacements stored locally
