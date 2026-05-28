@@ -7,37 +7,69 @@ enum StyledSpeech {
     }
 
     private static let britishReplacements = [
+        Replacement(source: "apartment", target: "flat"),
+        Replacement(source: "attorney", target: "solicitor"),
         Replacement(source: "awesome", target: "brilliant"),
+        Replacement(source: "baby stroller", target: "pram"),
         Replacement(source: "bathroom", target: "loo"),
+        Replacement(source: "canceled", target: "cancelled"),
+        Replacement(source: "canceling", target: "cancelling"),
         Replacement(source: "candy", target: "sweets"),
         Replacement(source: "cell phone", target: "mobile"),
+        Replacement(source: "closet", target: "wardrobe"),
         Replacement(source: "color", target: "colour"),
+        Replacement(source: "cookie", target: "biscuit"),
+        Replacement(source: "diaper", target: "nappy"),
+        Replacement(source: "elevator", target: "lift"),
+        Replacement(source: "eraser", target: "rubber"),
         Replacement(source: "favorite", target: "favourite"),
+        Replacement(source: "faucet", target: "tap"),
+        Replacement(source: "flashlight", target: "torch"),
         Replacement(source: "fries", target: "chips"),
         Replacement(source: "garbage", target: "rubbish"),
         Replacement(source: "gas", target: "petrol"),
         Replacement(source: "gotten", target: "got"),
+        Replacement(source: "hood", target: "bonnet"),
         Replacement(source: "line", target: "queue"),
+        Replacement(source: "mail", target: "post"),
+        Replacement(source: "math", target: "maths"),
+        Replacement(source: "mom", target: "mum"),
         Replacement(source: "movie", target: "film"),
         Replacement(source: "pants", target: "trousers"),
         Replacement(source: "parking lot", target: "car park"),
+        Replacement(source: "potato chips", target: "crisps"),
+        Replacement(source: "restroom", target: "loo"),
+        Replacement(source: "schedule", target: "timetable"),
         Replacement(source: "sidewalk", target: "pavement"),
         Replacement(source: "soccer", target: "football"),
+        Replacement(source: "sneakers", target: "trainers"),
+        Replacement(source: "store", target: "shop"),
+        Replacement(source: "stroller", target: "pram"),
+        Replacement(source: "subway", target: "underground"),
         Replacement(source: "sweater", target: "jumper"),
+        Replacement(source: "takeout", target: "takeaway"),
         Replacement(source: "trash", target: "rubbish"),
         Replacement(source: "truck", target: "lorry"),
+        Replacement(source: "trunk", target: "boot"),
         Replacement(source: "vacation", target: "holiday"),
+        Replacement(source: "wrench", target: "spanner"),
+        Replacement(source: "yard", target: "garden"),
         Replacement(source: "yeah", target: "yes"),
-        Replacement(source: "yep", target: "yes")
+        Replacement(source: "yep", target: "yes"),
+        Replacement(source: "zip code", target: "postcode")
     ]
 
     private static let genZReplacements = [
+        Replacement(source: "absolutely not", target: "hard pass"),
         Replacement(source: "are you serious", target: "are you fr"),
+        Replacement(source: "as soon as possible", target: "asap"),
         Replacement(source: "a big deal", target: "major"),
         Replacement(source: "a lot", target: "a ton"),
         Replacement(source: "all right", target: "bet"),
         Replacement(source: "bad idea", target: "not the move"),
         Replacement(source: "calm down", target: "chill"),
+        Replacement(source: "do you understand", target: "does that track"),
+        Replacement(source: "do you want to", target: "are you down to"),
         Replacement(source: "for real", target: "fr"),
         Replacement(source: "good idea", target: "the move"),
         Replacement(source: "help me", target: "help me out"),
@@ -49,29 +81,37 @@ enum StyledSpeech {
         Replacement(source: "i like it", target: "it hits"),
         Replacement(source: "i think", target: "i feel like"),
         Replacement(source: "let me know", target: "lmk"),
+        Replacement(source: "look into this", target: "check this out"),
         Replacement(source: "makes sense", target: "tracks"),
         Replacement(source: "no problem", target: "all good"),
         Replacement(source: "not good", target: "not it"),
         Replacement(source: "okay", target: "bet"),
         Replacement(source: "ok", target: "bet"),
+        Replacement(source: "sounds good", target: "sounds solid"),
         Replacement(source: "thank you", target: "ty"),
+        Replacement(source: "that is amazing", target: "that goes hard"),
         Replacement(source: "that is annoying", target: "that's rough"),
         Replacement(source: "that is good", target: "that hits"),
         Replacement(source: "that is great", target: "that goes hard"),
         Replacement(source: "that is perfect", target: "that's chef's kiss"),
         Replacement(source: "that is ridiculous", target: "that's wild"),
+        Replacement(source: "that is very good", target: "that hits"),
+        Replacement(source: "that's amazing", target: "that goes hard"),
         Replacement(source: "that's annoying", target: "that's rough"),
         Replacement(source: "that's good", target: "that hits"),
         Replacement(source: "that's great", target: "that goes hard"),
         Replacement(source: "that's perfect", target: "that's chef's kiss"),
         Replacement(source: "that's ridiculous", target: "that's wild"),
+        Replacement(source: "that's very good", target: "that hits"),
         Replacement(source: "that makes sense", target: "that tracks"),
+        Replacement(source: "this is a big deal", target: "this is major"),
         Replacement(source: "this is amazing", target: "this goes hard"),
         Replacement(source: "this is bad", target: "this is not it"),
         Replacement(source: "this is good", target: "this hits"),
         Replacement(source: "this is great", target: "this goes hard"),
         Replacement(source: "this is perfect", target: "this is chef's kiss"),
         Replacement(source: "this is ridiculous", target: "this is wild"),
+        Replacement(source: "this is very good", target: "this hits"),
         Replacement(source: "too much", target: "a lot"),
         Replacement(source: "we should", target: "we should probably"),
         Replacement(source: "what is going on", target: "what is happening"),
@@ -81,20 +121,24 @@ enum StyledSpeech {
         Replacement(source: "you're right", target: "you're valid"),
         Replacement(source: "you're wrong", target: "that's not it"),
         Replacement(source: "annoying", target: "rough"),
+        Replacement(source: "amazing", target: "fire"),
         Replacement(source: "awesome", target: "fire"),
         Replacement(source: "bad", target: "not it"),
         Replacement(source: "boring", target: "mid"),
         Replacement(source: "busy", target: "booked"),
+        Replacement(source: "careful", target: "locked in"),
         Replacement(source: "completely", target: "fully"),
         Replacement(source: "confusing", target: "messy"),
         Replacement(source: "cool", target: "based"),
         Replacement(source: "crazy", target: "wild"),
+        Replacement(source: "deadline", target: "due date"),
         Replacement(source: "difficult", target: "rough"),
         Replacement(source: "definitely", target: "for sure"),
         Replacement(source: "easy", target: "light work"),
         Replacement(source: "excellent", target: "iconic"),
         Replacement(source: "excited", target: "hyped"),
         Replacement(source: "expensive", target: "pricey"),
+        Replacement(source: "focused", target: "locked in"),
         Replacement(source: "funny", target: "hilarious"),
         Replacement(source: "good", target: "solid"),
         Replacement(source: "great", target: "fire"),
@@ -107,6 +151,7 @@ enum StyledSpeech {
         Replacement(source: "no", target: "nah"),
         Replacement(source: "perfect", target: "chef's kiss"),
         Replacement(source: "please", target: "pls"),
+        Replacement(source: "problem", target: "issue"),
         Replacement(source: "quickly", target: "quick"),
         Replacement(source: "really", target: "lowkey"),
         Replacement(source: "ridiculous", target: "wild"),
@@ -125,69 +170,209 @@ enum StyledSpeech {
     ]
 
     private static let alienReplacements = [
+        Replacement(source: "answer", target: "decoded response"),
+        Replacement(source: "boss", target: "sector commander"),
+        Replacement(source: "call", target: "transmission"),
+        Replacement(source: "client", target: "earth contact"),
+        Replacement(source: "company", target: "colony"),
+        Replacement(source: "computer", target: "terminal"),
+        Replacement(source: "customer", target: "earth contact"),
+        Replacement(source: "deadline", target: "orbital deadline"),
+        Replacement(source: "document", target: "data slate"),
+        Replacement(source: "email", target: "signal"),
+        Replacement(source: "finish", target: "conclude"),
+        Replacement(source: "good", target: "stable"),
+        Replacement(source: "great", target: "stellar"),
         Replacement(source: "hello", target: "greetings"),
         Replacement(source: "hi", target: "greetings"),
+        Replacement(source: "idea", target: "signal"),
+        Replacement(source: "issue", target: "anomaly"),
+        Replacement(source: "later", target: "next orbit"),
+        Replacement(source: "manager", target: "sector commander"),
+        Replacement(source: "meeting", target: "council transmission"),
+        Replacement(source: "message", target: "transmission"),
+        Replacement(source: "no", target: "negative"),
+        Replacement(source: "office", target: "command deck"),
         Replacement(source: "people", target: "earthlings"),
         Replacement(source: "person", target: "earthling"),
-        Replacement(source: "team", target: "crew of this vessel"),
-        Replacement(source: "meeting", target: "council transmission"),
-        Replacement(source: "idea", target: "signal"),
+        Replacement(source: "phone", target: "comms device"),
+        Replacement(source: "plan", target: "navigation chart"),
         Replacement(source: "problem", target: "anomaly"),
-        Replacement(source: "work", target: "mission"),
+        Replacement(source: "project", target: "expedition"),
+        Replacement(source: "question", target: "query"),
+        Replacement(source: "schedule", target: "star chart"),
+        Replacement(source: "start", target: "initiate"),
+        Replacement(source: "task", target: "objective"),
+        Replacement(source: "team", target: "crew of this vessel"),
+        Replacement(source: "thanks", target: "gratitude signal"),
         Replacement(source: "today", target: "this solar cycle"),
-        Replacement(source: "tomorrow", target: "the next solar cycle")
+        Replacement(source: "tomorrow", target: "the next solar cycle"),
+        Replacement(source: "update", target: "status ping"),
+        Replacement(source: "work", target: "mission"),
+        Replacement(source: "yes", target: "affirmative")
     ]
 
     private static let cowboyReplacements = [
+        Replacement(source: "answer", target: "reply"),
+        Replacement(source: "bad", target: "rough"),
+        Replacement(source: "boss", target: "trail boss"),
+        Replacement(source: "call", target: "holler"),
+        Replacement(source: "client", target: "customer"),
+        Replacement(source: "company", target: "outfit"),
+        Replacement(source: "deadline", target: "sundown"),
+        Replacement(source: "document", target: "paperwork"),
+        Replacement(source: "email", target: "telegram"),
+        Replacement(source: "excellent", target: "top-notch"),
+        Replacement(source: "finish", target: "wrap up"),
         Replacement(source: "hello", target: "howdy"),
         Replacement(source: "hi", target: "howdy"),
         Replacement(source: "friend", target: "partner"),
-        Replacement(source: "team", target: "posse"),
+        Replacement(source: "hard", target: "tough"),
+        Replacement(source: "idea", target: "notion"),
+        Replacement(source: "issue", target: "trouble"),
+        Replacement(source: "later", target: "down the trail"),
+        Replacement(source: "manager", target: "trail boss"),
         Replacement(source: "meeting", target: "roundup"),
-        Replacement(source: "problem", target: "trouble"),
+        Replacement(source: "message", target: "note"),
+        Replacement(source: "no", target: "nope"),
+        Replacement(source: "office", target: "ranch"),
+        Replacement(source: "plan", target: "trail map"),
         Replacement(source: "good", target: "mighty fine"),
         Replacement(source: "great", target: "mighty fine"),
+        Replacement(source: "problem", target: "trouble"),
+        Replacement(source: "project", target: "trail ride"),
+        Replacement(source: "question", target: "ask"),
+        Replacement(source: "schedule", target: "trail map"),
+        Replacement(source: "soon", target: "directly"),
+        Replacement(source: "start", target: "saddle up"),
+        Replacement(source: "task", target: "chore"),
+        Replacement(source: "team", target: "posse"),
         Replacement(source: "yes", target: "yep"),
-        Replacement(source: "thanks", target: "much obliged")
+        Replacement(source: "thanks", target: "much obliged"),
+        Replacement(source: "update", target: "word")
     ]
 
     private static let pirateReplacements = [
+        Replacement(source: "answer", target: "reply"),
+        Replacement(source: "bad", target: "foul"),
+        Replacement(source: "boss", target: "captain"),
+        Replacement(source: "call", target: "hail"),
+        Replacement(source: "client", target: "patron"),
+        Replacement(source: "company", target: "fleet"),
+        Replacement(source: "customer", target: "patron"),
+        Replacement(source: "deadline", target: "tide"),
+        Replacement(source: "document", target: "map"),
+        Replacement(source: "email", target: "message in a bottle"),
+        Replacement(source: "finish", target: "make port"),
+        Replacement(source: "good", target: "fine"),
+        Replacement(source: "great", target: "grand"),
         Replacement(source: "hello", target: "ahoy"),
         Replacement(source: "hi", target: "ahoy"),
         Replacement(source: "friend", target: "matey"),
-        Replacement(source: "team", target: "crew"),
-        Replacement(source: "boss", target: "captain"),
+        Replacement(source: "idea", target: "treasure map"),
+        Replacement(source: "issue", target: "squall"),
+        Replacement(source: "later", target: "after the tide"),
         Replacement(source: "meeting", target: "parley"),
+        Replacement(source: "message", target: "dispatch"),
+        Replacement(source: "money", target: "doubloons"),
+        Replacement(source: "plan", target: "course"),
+        Replacement(source: "problem", target: "squall"),
+        Replacement(source: "project", target: "voyage"),
+        Replacement(source: "question", target: "query"),
+        Replacement(source: "schedule", target: "sailing orders"),
+        Replacement(source: "soon", target: "afore long"),
+        Replacement(source: "start", target: "set sail"),
+        Replacement(source: "task", target: "errand"),
+        Replacement(source: "team", target: "crew"),
+        Replacement(source: "update", target: "dispatch"),
         Replacement(source: "yes", target: "aye"),
         Replacement(source: "no", target: "nay"),
-        Replacement(source: "money", target: "doubloons"),
         Replacement(source: "thanks", target: "fair winds")
     ]
 
     private static let robotReplacements = [
+        Replacement(source: "answer", target: "response"),
+        Replacement(source: "bad", target: "suboptimal"),
+        Replacement(source: "boss", target: "primary operator"),
+        Replacement(source: "call", target: "voice protocol"),
+        Replacement(source: "client", target: "external user"),
+        Replacement(source: "company", target: "organization"),
+        Replacement(source: "deadline", target: "time constraint"),
+        Replacement(source: "document", target: "file"),
+        Replacement(source: "easy", target: "low-complexity"),
+        Replacement(source: "email", target: "message packet"),
+        Replacement(source: "finish", target: "complete"),
+        Replacement(source: "good", target: "optimal"),
+        Replacement(source: "great", target: "highly optimal"),
+        Replacement(source: "hard", target: "high-complexity"),
         Replacement(source: "hello", target: "greetings"),
         Replacement(source: "hi", target: "greetings"),
+        Replacement(source: "i think", target: "i calculate"),
+        Replacement(source: "issue", target: "fault"),
+        Replacement(source: "later", target: "at a later timestamp"),
+        Replacement(source: "manager", target: "primary operator"),
+        Replacement(source: "maybe", target: "probability uncertain"),
+        Replacement(source: "meeting", target: "sync protocol"),
+        Replacement(source: "message", target: "data packet"),
         Replacement(source: "yes", target: "affirmative"),
         Replacement(source: "no", target: "negative"),
-        Replacement(source: "maybe", target: "probability uncertain"),
-        Replacement(source: "good", target: "optimal"),
-        Replacement(source: "bad", target: "suboptimal"),
+        Replacement(source: "plan", target: "execution plan"),
         Replacement(source: "problem", target: "error condition"),
+        Replacement(source: "project", target: "process"),
+        Replacement(source: "question", target: "query"),
+        Replacement(source: "schedule", target: "execution schedule"),
+        Replacement(source: "soon", target: "imminently"),
+        Replacement(source: "start", target: "initialize"),
+        Replacement(source: "task", target: "operation"),
+        Replacement(source: "team", target: "unit"),
         Replacement(source: "think", target: "process"),
-        Replacement(source: "thanks", target: "gratitude protocol complete")
+        Replacement(source: "thanks", target: "acknowledgement received"),
+        Replacement(source: "update", target: "status report"),
+        Replacement(source: "work", target: "process")
     ]
 
     private static let shakespeareReplacements = [
+        Replacement(source: "answer", target: "reply"),
+        Replacement(source: "bad", target: "ill"),
+        Replacement(source: "before", target: "ere"),
+        Replacement(source: "boss", target: "lord"),
+        Replacement(source: "call", target: "summons"),
+        Replacement(source: "client", target: "patron"),
+        Replacement(source: "company", target: "house"),
+        Replacement(source: "deadline", target: "appointed hour"),
+        Replacement(source: "document", target: "parchment"),
+        Replacement(source: "email", target: "missive"),
+        Replacement(source: "finish", target: "conclude"),
+        Replacement(source: "friend", target: "good companion"),
+        Replacement(source: "good", target: "fair"),
+        Replacement(source: "great", target: "grand"),
         Replacement(source: "hello", target: "good morrow"),
         Replacement(source: "hi", target: "good morrow"),
+        Replacement(source: "idea", target: "notion"),
+        Replacement(source: "issue", target: "matter"),
+        Replacement(source: "later", target: "anon"),
+        Replacement(source: "manager", target: "steward"),
+        Replacement(source: "maybe", target: "perchance"),
+        Replacement(source: "meeting", target: "council"),
+        Replacement(source: "message", target: "missive"),
+        Replacement(source: "no", target: "nay"),
+        Replacement(source: "plan", target: "design"),
+        Replacement(source: "please", target: "prithee"),
+        Replacement(source: "problem", target: "vexing matter"),
+        Replacement(source: "project", target: "endeavour"),
+        Replacement(source: "question", target: "query"),
+        Replacement(source: "quickly", target: "with haste"),
         Replacement(source: "very", target: "most"),
         Replacement(source: "really", target: "verily"),
-        Replacement(source: "before", target: "ere"),
-        Replacement(source: "quickly", target: "with haste"),
-        Replacement(source: "friend", target: "good companion"),
-        Replacement(source: "problem", target: "vexing matter"),
+        Replacement(source: "schedule", target: "order of the day"),
+        Replacement(source: "soon", target: "presently"),
+        Replacement(source: "start", target: "commence"),
+        Replacement(source: "task", target: "labour"),
+        Replacement(source: "team", target: "fellowship"),
         Replacement(source: "yes", target: "aye"),
-        Replacement(source: "thanks", target: "many thanks")
+        Replacement(source: "thanks", target: "many thanks"),
+        Replacement(source: "update", target: "tidings"),
+        Replacement(source: "work", target: "labour")
     ]
 
     static func british(_ text: String) -> String {
@@ -195,13 +380,7 @@ enum StyledSpeech {
             return text
         }
 
-        var output = apply(britishReplacements, to: text)
-        if sentenceCount(in: output) == 1,
-           !containsCasualBritishCue(output),
-           !output.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            output = appendBeforeFinalPunctuation("mate", to: output)
-        }
-        return output
+        return apply(britishReplacements, to: text)
     }
 
     static func genZ(_ text: String) -> String {
@@ -219,13 +398,7 @@ enum StyledSpeech {
             return text
         }
 
-        var output = apply(alienReplacements, to: text)
-        if sentenceCount(in: output) <= 2,
-           !containsWholeWord("earthling", in: output),
-           !containsWholeWord("transmission", in: output) {
-            output = prefixFirstSentence("Greetings, earthling", in: output)
-        }
-        return appendBeforeFinalPunctuation("transmission complete", to: output)
+        return apply(alienReplacements, to: text)
     }
 
     static func cowboy(_ text: String) -> String {
@@ -234,15 +407,7 @@ enum StyledSpeech {
             return text
         }
 
-        var output = apply(cowboyReplacements, to: text)
-        if sentenceCount(in: output) <= 2,
-           !containsWholeWord("howdy", in: output) {
-            output = prefixFirstSentence("Howdy", in: output)
-        }
-        if !containsWholeWord("partner", in: output) {
-            output = appendBeforeFinalPunctuation("partner", to: output)
-        }
-        return output
+        return apply(cowboyReplacements, to: text)
     }
 
     static func pirate(_ text: String) -> String {
@@ -251,15 +416,7 @@ enum StyledSpeech {
             return text
         }
 
-        var output = apply(pirateReplacements, to: text)
-        if sentenceCount(in: output) <= 2,
-           !containsWholeWord("ahoy", in: output) {
-            output = prefixFirstSentence("Ahoy", in: output)
-        }
-        if !containsWholeWord("arr", in: output) {
-            output = appendBeforeFinalPunctuation("arr", to: output)
-        }
-        return output
+        return apply(pirateReplacements, to: text)
     }
 
     static func robot(_ text: String) -> String {
@@ -268,11 +425,7 @@ enum StyledSpeech {
             return text
         }
 
-        var output = apply(robotReplacements, to: text)
-        if !output.localizedCaseInsensitiveContains("beep boop") {
-            output = "Beep boop. \(output)"
-        }
-        return appendBeforeFinalPunctuation("end of line", to: output)
+        return apply(robotReplacements, to: text)
     }
 
     static func shakespeare(_ text: String) -> String {
@@ -281,26 +434,25 @@ enum StyledSpeech {
             return text
         }
 
-        var output = apply(shakespeareReplacements, to: text)
-        if sentenceCount(in: output) <= 2,
-           !containsWholeWord("verily", in: output) {
-            output = prefixFirstSentence("Verily", in: output)
-        }
-        if !containsWholeWord("forsooth", in: output) {
-            output = appendBeforeFinalPunctuation("forsooth", to: output)
-        }
-        return output
+        return apply(shakespeareReplacements, to: text)
     }
 
     private static func apply(_ replacements: [Replacement], to text: String) -> String {
-        replacements.reduce(text) { partial, replacement in
-            replacePhrase(replacement.source, with: replacement.target, in: partial)
+        let sortedReplacements = replacements.sorted {
+            if $0.source.count == $1.source.count {
+                return $0.source < $1.source
+            }
+            return $0.source.count > $1.source.count
         }
-    }
-
-    private static func replacePhrase(_ source: String, with target: String, in text: String) -> String {
-        let escaped = NSRegularExpression.escapedPattern(for: source)
-        let pattern = #"(?i)(?<![A-Za-z0-9])"# + escaped + #"(?![A-Za-z0-9])"#
+        let replacementBySource = Dictionary(
+            uniqueKeysWithValues: sortedReplacements.map { replacement in
+                (replacement.source.lowercased(), replacement.target)
+            }
+        )
+        let escapedSources = sortedReplacements
+            .map { NSRegularExpression.escapedPattern(for: $0.source) }
+            .joined(separator: "|")
+        let pattern = #"(?i)(?<![A-Za-z0-9])(?:\#(escapedSources))(?![A-Za-z0-9])"#
         guard let regex = try? NSRegularExpression(pattern: pattern) else {
             return text
         }
@@ -316,7 +468,10 @@ enum StyledSpeech {
                 continue
             }
             let matched = String(output[range])
-            output.replaceSubrange(range, with: casedReplacement(target, matching: matched))
+            guard let replacement = replacementBySource[matched.lowercased()] else {
+                continue
+            }
+            output.replaceSubrange(range, with: casedReplacement(replacement, matching: matched))
         }
 
         return output
@@ -341,53 +496,7 @@ enum StyledSpeech {
         return String(first).uppercased() + String(text.dropFirst())
     }
 
-    private static func sentenceCount(in text: String) -> Int {
-        let count = text.filter { ".!?".contains($0) }.count
-        return max(1, count)
-    }
-
-    private static func containsCasualBritishCue(_ text: String) -> Bool {
-        ["mate", "brilliant", "queue", "rubbish", "loo"].contains { cue in
-            containsWholeWord(cue, in: text)
-        }
-    }
-
-    private static func containsWholeWord(_ word: String, in text: String) -> Bool {
-        let escaped = NSRegularExpression.escapedPattern(for: word)
-        let pattern = #"(?i)(?<![A-Za-z0-9])"# + escaped + #"(?![A-Za-z0-9])"#
-        return text.range(of: pattern, options: .regularExpression) != nil
-    }
-
     private static func containsAlphanumeric(in text: String) -> Bool {
         text.unicodeScalars.contains { CharacterSet.alphanumerics.contains($0) }
-    }
-
-    private static func prefixFirstSentence(_ prefix: String, in text: String) -> String {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty,
-              !trimmed.localizedCaseInsensitiveContains(prefix)
-        else {
-            return text
-        }
-
-        return "\(prefix), \(lowercaseFirst(trimmed))"
-    }
-
-    private static func lowercaseFirst(_ text: String) -> String {
-        guard let first = text.first else {
-            return text
-        }
-        return String(first).lowercased() + String(text.dropFirst())
-    }
-
-    private static func appendBeforeFinalPunctuation(_ phrase: String, to text: String) -> String {
-        guard let last = text.last,
-              ".!?".contains(last)
-        else {
-            return "\(text) \(phrase)."
-        }
-
-        let body = text.dropLast().trimmingCharacters(in: .whitespacesAndNewlines)
-        return "\(body), \(phrase)\(last)"
     }
 }

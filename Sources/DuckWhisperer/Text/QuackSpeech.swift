@@ -7,12 +7,21 @@ enum QuackSpeech {
         "quaaack",
         "quaaaack",
         "quaaaaack",
+        "quaaaaaack",
+        "quackk",
+        "quackkk",
+        "quuack",
+        "quuuack",
         "QUACK",
+        "QUAACK",
         "QUAAACK",
+        "QUAAAACK",
         "quack-quack",
         "quack quack",
         "quaack-quack",
         "quaaack quack",
+        "quaaaack quack",
+        "quack-quaaack",
         "QUACK-QUACK"
     ]
 
