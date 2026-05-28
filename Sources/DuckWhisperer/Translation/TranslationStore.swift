@@ -15,6 +15,7 @@ struct TranslationPackChoice: Equatable {
     let packageFilename: String?
     let packageDirectoryName: String
     let downloadSizeText: String
+    let sourcePrefix: String?
 
     var packageURL: URL? {
         guard let packageFilename else {
@@ -46,6 +47,7 @@ struct TranslationPackChoice: Equatable {
         self.packageFilename = packageFilename
         self.packageDirectoryName = packageDirectoryName
         self.downloadSizeText = downloadSizeText
+        self.sourcePrefix = nil
     }
 
     init(
@@ -56,7 +58,8 @@ struct TranslationPackChoice: Equatable {
         detail: String,
         huggingFaceModelID: String,
         packageDirectoryName: String,
-        downloadSizeText: String
+        downloadSizeText: String,
+        sourcePrefix: String? = nil
     ) {
         self.id = id
         self.title = title
@@ -67,6 +70,7 @@ struct TranslationPackChoice: Equatable {
         self.packageFilename = nil
         self.packageDirectoryName = packageDirectoryName
         self.downloadSizeText = downloadSizeText
+        self.sourcePrefix = sourcePrefix
     }
 
     static let all: [TranslationPackChoice] = [
@@ -109,6 +113,27 @@ struct TranslationPackChoice: Equatable {
             packageFilename: "translate-nl_en-1_8.argosmodel",
             packageDirectoryName: "translate-nl_en-1_8",
             downloadSizeText: "68 MB"
+        ),
+        TranslationPackChoice(
+            id: "translation-nl-opus",
+            title: "Dutch Output - OPUS Dedicated",
+            sourceCode: "en",
+            targetCode: "nl",
+            detail: "English speech -> Dutch text using a dedicated OPUS model",
+            huggingFaceModelID: "Helsinki-NLP/opus-mt-en-nl",
+            packageDirectoryName: "Helsinki-NLP__opus-mt-en-nl",
+            downloadSizeText: "about 320 MB"
+        ),
+        TranslationPackChoice(
+            id: "translation-nl-opus-germanic",
+            title: "Dutch Output - OPUS Germanic",
+            sourceCode: "en",
+            targetCode: "nl",
+            detail: "English speech -> Dutch text using the OPUS West Germanic model",
+            huggingFaceModelID: "Helsinki-NLP/opus-mt-en-gmw",
+            packageDirectoryName: "Helsinki-NLP__opus-mt-en-gmw",
+            downloadSizeText: "about 296 MB",
+            sourcePrefix: ">>nld<<"
         ),
         TranslationPackChoice.helsinki("es", "Spanish", "Helsinki-NLP/opus-mt-es-en", "312 MB"),
         TranslationPackChoice.helsinki("tl", "Tagalog", "Helsinki-NLP/opus-mt-tl-en", "296 MB"),

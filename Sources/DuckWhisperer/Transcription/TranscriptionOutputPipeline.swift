@@ -25,8 +25,7 @@ enum TranscriptionOutputPipeline {
             packs.append(sourceToEnglish)
         }
 
-        if let targetCode = outputLanguage.translationTargetCode,
-           let englishToTarget = TranslationPackChoice.choice(sourceCode: "en", targetCode: targetCode) {
+        if let englishToTarget = englishToTargetPack(for: outputLanguage) {
             packs.append(englishToTarget)
         }
 
@@ -82,5 +81,18 @@ enum TranscriptionOutputPipeline {
         }
 
         return englishBaseText
+    }
+
+    private static func englishToTargetPack(for outputLanguage: OutputLanguage) -> TranslationPackChoice? {
+        guard let targetCode = outputLanguage.translationTargetCode else {
+            return nil
+        }
+        if let packID = outputLanguage.translationPackID,
+           let pack = TranslationPackChoice.choice(for: packID),
+           pack.sourceCode == "en",
+           pack.targetCode == targetCode {
+            return pack
+        }
+        return TranslationPackChoice.choice(sourceCode: "en", targetCode: targetCode)
     }
 }

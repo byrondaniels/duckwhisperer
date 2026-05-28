@@ -40,7 +40,7 @@ def text_chunks(text: str, max_words: int = 180) -> list[str]:
     return chunks or [text]
 
 
-def translate_with_huggingface(text: str, model_dir: str) -> str:
+def translate_with_huggingface(text: str, model_dir: str, source_prefix: str | None = None) -> str:
     try:
         import torch
         from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
@@ -54,6 +54,8 @@ def translate_with_huggingface(text: str, model_dir: str) -> str:
     outputs = []
     with torch.no_grad():
         for chunk in text_chunks(text):
+            if source_prefix:
+                chunk = f"{source_prefix} {chunk}"
             encoded = tokenizer(
                 chunk,
                 return_tensors="pt",
@@ -75,6 +77,7 @@ def main() -> int:
     parser.add_argument("--from", dest="source", default="en", choices=sorted(LANGUAGE_NAMES))
     parser.add_argument("--to", required=True, choices=sorted(LANGUAGE_NAMES))
     parser.add_argument("--hf-model-dir", help="Use a local Hugging Face Marian model directory instead of Argos.")
+    parser.add_argument("--source-prefix", help="Prefix each source chunk, for multilingual Marian target tags.")
     args = parser.parse_args()
 
     text = sys.stdin.read().strip()
@@ -83,7 +86,7 @@ def main() -> int:
 
     if args.hf_model_dir:
         try:
-            translated = translate_with_huggingface(text, args.hf_model_dir)
+            translated = translate_with_huggingface(text, args.hf_model_dir, args.source_prefix)
         except Exception as exc:
             sys.stderr.write(f"Dedicated local translation failed: {exc}\n")
             return 4

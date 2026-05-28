@@ -12,17 +12,30 @@ enum LocalTranslator {
         guard let targetCode = outputLanguage.translationTargetCode else {
             return text
         }
-        return try translate(text, from: "en", to: targetCode)
+        let requestedPack = outputLanguage.translationPackID.flatMap { TranslationPackChoice.choice(for: $0) }
+        return try translate(text, from: "en", to: targetCode, using: requestedPack)
     }
 
-    static func translate(_ text: String, from sourceCode: String, to targetCode: String) throws -> String {
+    static func translate(
+        _ text: String,
+        from sourceCode: String,
+        to targetCode: String,
+        using requestedPack: TranslationPackChoice? = nil
+    ) throws -> String {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, sourceCode != targetCode else {
             return text
         }
 
         let runtime = try translationRuntime()
-        let pack = TranslationPackChoice.choice(sourceCode: sourceCode, targetCode: targetCode)
+        let pack: TranslationPackChoice?
+        if let requestedPack,
+           requestedPack.sourceCode == sourceCode,
+           requestedPack.targetCode == targetCode {
+            pack = requestedPack
+        } else {
+            pack = TranslationPackChoice.choice(sourceCode: sourceCode, targetCode: targetCode)
+        }
         let process = Process()
         process.executableURL = runtime.pythonURL
         var arguments = [runtime.scriptURL.path, "--from", sourceCode, "--to", targetCode]
@@ -32,6 +45,9 @@ enum LocalTranslator {
                 throw DuckWhispererError.translationModelMissing(modelURL.path)
             }
             arguments.append(contentsOf: ["--hf-model-dir", modelURL.path])
+            if let sourcePrefix = pack.sourcePrefix {
+                arguments.append(contentsOf: ["--source-prefix", sourcePrefix])
+            }
         }
         process.arguments = arguments
 

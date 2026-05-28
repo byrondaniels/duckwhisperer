@@ -76,6 +76,24 @@ enum CommandPhraseProcessor {
             )
         }
 
+        if let body = stripPrefix(["translate to dutch opus", "output in dutch opus", "dutch opus"], from: normalized) {
+            return CommandPhraseResult(
+                text: body,
+                outputLanguage: OutputLanguage.choice(for: "nl-opus"),
+                writingProfile: writingProfile,
+                commandName: "Dutch OPUS"
+            )
+        }
+
+        if let body = stripPrefix(["translate to dutch germanic", "output in dutch germanic", "dutch germanic"], from: normalized) {
+            return CommandPhraseResult(
+                text: body,
+                outputLanguage: OutputLanguage.choice(for: "nl-opus-germanic"),
+                writingProfile: writingProfile,
+                commandName: "Dutch Germanic"
+            )
+        }
+
         if let body = stripPrefix(["translate to dutch", "output in dutch"], from: normalized) {
             return CommandPhraseResult(
                 text: body,

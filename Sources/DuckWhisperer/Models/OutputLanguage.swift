@@ -5,12 +5,20 @@ struct OutputLanguage: Equatable {
     let title: String
     let languageCode: String?
     let translationTargetCode: String?
+    let translationPackID: String?
 
-    init(id: String, title: String, languageCode: String? = nil, translationTargetCode: String? = nil) {
+    init(
+        id: String,
+        title: String,
+        languageCode: String? = nil,
+        translationTargetCode: String? = nil,
+        translationPackID: String? = nil
+    ) {
         self.id = id
         self.title = title
         self.languageCode = languageCode
         self.translationTargetCode = translationTargetCode
+        self.translationPackID = translationPackID
     }
 
     var isSameAsInput: Bool {
@@ -38,6 +46,20 @@ struct OutputLanguage: Equatable {
         OutputLanguage(id: "en", title: "English", languageCode: "en"),
         OutputLanguage(id: "fr", title: "French", languageCode: "fr", translationTargetCode: "fr"),
         OutputLanguage(id: "nl", title: "Dutch", languageCode: "nl", translationTargetCode: "nl"),
+        OutputLanguage(
+            id: "nl-opus",
+            title: "Dutch - OPUS Dedicated",
+            languageCode: "nl",
+            translationTargetCode: "nl",
+            translationPackID: "translation-nl-opus"
+        ),
+        OutputLanguage(
+            id: "nl-opus-germanic",
+            title: "Dutch - OPUS Germanic",
+            languageCode: "nl",
+            translationTargetCode: "nl",
+            translationPackID: "translation-nl-opus-germanic"
+        ),
         OutputLanguage(id: "british", title: "British", translationTargetCode: nil),
         OutputLanguage(id: "genz", title: "Gen Z", translationTargetCode: nil),
         OutputLanguage(id: "genalpha", title: "Gen Alpha", translationTargetCode: nil),

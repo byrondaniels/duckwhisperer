@@ -226,11 +226,16 @@ Delete a downloaded model anytime from `Speed & Accuracy` → `Open Speed & Accu
 
 ## Translation
 
-Output defaults to `Same as Input`. You can also choose English, French, Dutch, British, Gen Z, Gen Alpha, Boomer, Alien, Cowboy, Pirate, Robot, Shakespeare, or Quack.
+Output defaults to `Same as Input`. You can also choose English, French, Dutch, Dutch - OPUS Dedicated, Dutch - OPUS Germanic, British, Gen Z, Gen Alpha, Boomer, Alien, Cowboy, Pirate, Robot, Shakespeare, or Quack.
 
 Non-English input to English can use individual local text translators. For example, Tagalog -> English installs only the Tagalog -> English translator, then DuckWhisperer transcribes Tagalog text first and translates that text to English. If the matching translator is not installed, the app asks before downloading it.
 
-French and Dutch output use local Argos Translate packages after the transcript is available in English. Install them from `Speed & Accuracy`, or run:
+French and default Dutch output use local Argos Translate packages after the transcript is available in English. DuckWhisperer also includes two optional English -> Dutch OPUS test models:
+
+- `Dutch - OPUS Dedicated`: `Helsinki-NLP/opus-mt-en-nl`
+- `Dutch - OPUS Germanic`: `Helsinki-NLP/opus-mt-en-gmw` with Dutch target tagging
+
+Install translators from `Speed & Accuracy`, or install the default Argos French/Dutch packs with:
 
 ```bash
 ./scripts/setup_local_translation.sh
