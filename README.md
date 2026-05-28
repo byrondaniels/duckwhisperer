@@ -189,7 +189,7 @@ Run the full local verification loop before pushing changes:
 - Audio-reactive recording overlay with live preview, elapsed time, profile/model context, cancel hint, and transcription progress percentage
 - Paste recovery window with `Paste Again`, `Copy`, `Fix Permission`, and `Try In DuckWhisperer`
 - Support bundle export for debugging installs without including transcript history
-- Manual update check from `Settings`
+- Manual and once-daily GitHub release update check from `Settings`
 - DuckWhisperer menu-bar icon and app icon
 - `Preserve Capitalization` toggle
 - Fallback transcript window when macOS does not allow auto-paste
