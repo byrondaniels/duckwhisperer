@@ -141,8 +141,8 @@ enum CommandPhraseProcessor {
     }
 
     private static let playfulModes: [(id: String, title: String, phrases: [String])] = [
-        ("genz", "Gen Z", ["gen z mode", "make this gen z", "make this genz"]),
-        ("genalpha", "Gen Alpha", ["gen alpha mode", "make this gen alpha", "make this genalpha"]),
+        ("genz", "Gen Z", ["gen z mode", "gen zee mode", "gen zed mode", "generation z mode", "make this gen z", "make this gen zee", "make this gen zed", "make this generation z", "make this genz"]),
+        ("genalpha", "Gen Alpha", ["gen alpha mode", "generation alpha mode", "make this gen alpha", "make this generation alpha", "make this genalpha"]),
         ("boomer", "Boomer", ["boomer mode", "make this boomer"]),
         ("alien", "Alien", ["alien mode", "make this alien"]),
         ("cowboy", "Cowboy", ["cowboy mode", "make this cowboy"]),
