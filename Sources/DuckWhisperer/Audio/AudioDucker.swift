@@ -14,7 +14,7 @@ final class AudioDucker {
         }
 
         previousVolume = currentVolume
-        let duckedVolume = min(currentVolume, 35)
+        let duckedVolume = min(currentVolume, 15)
         guard duckedVolume < currentVolume else {
             return
         }

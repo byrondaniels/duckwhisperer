@@ -268,7 +268,7 @@ Transcript history stores recent outputs locally in macOS user defaults. Use the
 
 Command phrases are interpreted at the start of a dictation. For example, saying "turn this into bullets follow up with Alex and ship the build" applies the Bullet Notes profile to the remaining text.
 
-Audio ducking lowers system output volume while recording and restores it afterward. It is off by default.
+Audio ducking lowers system output volume to 15% while recording and restores it afterward. It is off by default.
 
 Presenter Mode makes the recording overlay larger and hides technical context so the app reads clearly on camera. See `docs/tiktok-demo-scripts.md` for short demo ideas.
 
