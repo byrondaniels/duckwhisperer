@@ -10,6 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     private let modelMenu = NSMenu()
     private let inputLanguageMenu = NSMenu()
     private let outputMenu = NSMenu()
+    private let styleIntensityMenu = NSMenu()
     private let profileMenu = NSMenu()
     private let performanceMenu = NSMenu()
     private let historyMenu = NSMenu()
@@ -101,6 +102,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
 
     private var selectedOutputLanguage: OutputLanguage {
         OutputLanguage.choice(for: UserDefaults.standard.string(forKey: selectedOutputLanguageIDKey))
+    }
+
+    private var selectedStyleIntensity: StyleIntensityChoice {
+        let stored = UserDefaults.standard.object(forKey: selectedStyleIntensityPercentKey) as? Int
+        return StyleIntensityChoice.choice(for: stored)
     }
 
     private var selectedWritingProfile: WritingProfile {
@@ -276,6 +282,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         menu.addItem(profileMenuItem())
         menu.addItem(inputLanguageMenuItem())
         menu.addItem(outputMenuItem())
+        menu.addItem(styleIntensityMenuItem())
         menu.addItem(performanceMenuItem())
         menu.addItem(recordShortcutMenuItem())
         menu.addItem(preserveCapitalizationMenuItem)
@@ -342,6 +349,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         rebuildPresenterModeMenuItem()
         rebuildInputLanguageMenu()
         rebuildOutputMenu()
+        rebuildStyleIntensityMenu()
         rebuildProfileMenu()
         rebuildPerformanceMenu()
         rebuildHistoryMenu()
@@ -380,6 +388,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     private func outputMenuItem() -> NSMenuItem {
         let item = NSMenuItem(title: "Output Language", action: nil, keyEquivalent: "")
         item.submenu = outputMenu
+        return item
+    }
+
+    private func styleIntensityMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(title: "Style Intensity", action: nil, keyEquivalent: "")
+        item.submenu = styleIntensityMenu
         return item
     }
 
@@ -511,6 +525,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             item.representedObject = language.id
             item.state = language == current || (language.isSameAsInput && current.matchesInput(inputLanguage)) ? .on : .off
             outputMenu.addItem(item)
+        }
+    }
+
+    private func rebuildStyleIntensityMenu() {
+        styleIntensityMenu.removeAllItems()
+        let current = selectedStyleIntensity
+
+        for choice in StyleIntensityChoice.all {
+            let item = NSMenuItem(title: choice.title, action: #selector(selectStyleIntensity(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = choice.percent
+            item.state = choice == current ? .on : .off
+            item.toolTip = choice.detail
+            styleIntensityMenu.addItem(item)
         }
     }
 
@@ -720,6 +748,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         rebuildPresenterModeMenuItem()
         rebuildInputLanguageMenu()
         rebuildOutputMenu()
+        rebuildStyleIntensityMenu()
         rebuildProfileMenu()
         rebuildPerformanceMenu()
         rebuildHistoryMenu()
@@ -1125,6 +1154,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         setState(.ready)
     }
 
+    @objc private func selectStyleIntensity(_ sender: NSMenuItem) {
+        guard state != .recording, state != .transcribing else {
+            NSSound.beep()
+            return
+        }
+
+        guard let percent = sender.representedObject as? Int else {
+            return
+        }
+
+        UserDefaults.standard.set(StyleIntensityChoice.choice(for: percent).percent, forKey: selectedStyleIntensityPercentKey)
+        rebuildStyleIntensityMenu()
+        setState(.ready)
+    }
+
     @objc private func selectWritingProfile(_ sender: NSMenuItem) {
         guard state != .recording, state != .transcribing else {
             NSSound.beep()
@@ -1211,6 +1255,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                 selectedModel: selectedModel,
                 inputLanguage: selectedInputLanguage,
                 outputLanguage: selectedOutputLanguage,
+                styleIntensity: selectedStyleIntensity,
                 writingProfile: selectedWritingProfile
             )
             NSWorkspace.shared.activateFileViewerSelecting([url])
@@ -1412,6 +1457,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         let inputLanguage = activeInputLanguage ?? selectedInputLanguage
         let outputLanguage = activeOutputLanguage ?? selectedOutputLanguage
         let writingProfile = activeWritingProfile ?? selectedWritingProfile
+        let styleIntensityPercent = selectedStyleIntensity.percent
         let modelChoice = activeModelChoice ?? selectedModel
         let appName = activeAppName
         let shouldPreserveCapitalization = preserveCapitalization
@@ -1470,7 +1516,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                     AppLog.write("translation failed for \(commandResult.outputLanguage.title); falling back to \(fallbackDescription): \(error.localizedDescription)")
                     translatedOutput = dictionaryOutput
                 }
-                let languageOutput = self.applyLanguageOutput(to: translatedOutput, outputLanguage: commandResult.outputLanguage)
+                let languageOutput = self.applyLanguageOutput(
+                    to: translatedOutput,
+                    outputLanguage: commandResult.outputLanguage,
+                    styleIntensityPercent: styleIntensityPercent
+                )
                 let profileOutput = WritingProfileRenderer.render(languageOutput, profile: commandResult.writingProfile)
                 let output = self.applyOutputFormatting(
                     to: profileOutput,
@@ -1588,8 +1638,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         NSPasteboard.general.setString(text, forType: .string)
     }
 
-    private func applyLanguageOutput(to text: String, outputLanguage: OutputLanguage) -> String {
-        LanguageOutputRenderer.render(text, outputLanguage: outputLanguage)
+    private func applyLanguageOutput(
+        to text: String,
+        outputLanguage: OutputLanguage,
+        styleIntensityPercent: Int
+    ) -> String {
+        LanguageOutputRenderer.render(
+            text,
+            outputLanguage: outputLanguage,
+            styleIntensityPercent: styleIntensityPercent
+        )
     }
 
     private func applyOutputFormatting(to text: String, preserveCapitalization: Bool) -> String {

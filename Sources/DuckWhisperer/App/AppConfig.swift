@@ -6,6 +6,7 @@ let cancelHotKeyIdentifier: UInt32 = 3
 let selectedModelIDKey = "SelectedModelID"
 let selectedInputLanguageIDKey = "SelectedInputLanguageID"
 let selectedOutputLanguageIDKey = "SelectedOutputLanguageID"
+let selectedStyleIntensityPercentKey = "SelectedStyleIntensityPercent"
 let selectedWritingProfileIDKey = "SelectedWritingProfileID"
 let preserveCapitalizationKey = "PreserveCapitalization"
 let audioDuckingEnabledKey = "AudioDuckingEnabled"

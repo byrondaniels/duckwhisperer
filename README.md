@@ -24,7 +24,7 @@ The DMG is small (~8 MB); the English speech model downloads on first launch aft
 Use `Option+Space` once to start recording and `Option+Space` again to stop, transcribe, and paste. Change the trigger from `Recording Shortcut` in the menu if `Option+Space` clashes with another app.
 Press `Escape` while recording or transcribing to cancel without pasting.
 
-Open the menu-bar icon for `Try It Here`, `Undo Last Paste`, `Writing Mode`, `Input Language`, `Output Language`, `Speed & Accuracy`, `Recording Shortcut`, `Preserve Capitalization`, `Saved Words`, `History`, `Finish Setup`, and `Settings`. Power-user knobs (model downloads, Per-App Defaults, audio ducking, presenter mode) live under `Settings`.
+Open the menu-bar icon for `Try It Here`, `Undo Last Paste`, `Writing Mode`, `Input Language`, `Output Language`, `Style Intensity`, `Speed & Accuracy`, `Recording Shortcut`, `Preserve Capitalization`, `Saved Words`, `History`, `Finish Setup`, and `Settings`. Power-user knobs (model downloads, Per-App Defaults, audio ducking, presenter mode) live under `Settings`.
 `Finish Setup` is the first-run setup wizard and paste-back dashboard. It checks Microphone, paste-back permission, and speech-model availability with big status icons, downloads the model in place, and gives users a safe `Try It Here` path. It opens automatically whenever setup is incomplete.
 
 ## Fresh Machine Setup
@@ -171,6 +171,7 @@ Run the full local verification loop before pushing changes:
 - Built-in input choices for English, Spanish, French, Tagalog, Chinese, Hindi, Arabic, Bengali, Portuguese, Russian, Urdu, Indonesian, German, Japanese, Korean, Turkish, Vietnamese, Italian, Polish, and Dutch
 - Optional English -> French/Dutch output translation plus per-language input -> English translator downloads
 - Built-in British, Gen Z, Gen Alpha, Millennial, Boomer, Alien, Cowboy, Pirate, Robot, Shakespeare, and Quack style modes
+- `Style Intensity` controls how aggressively style modes rewrite text: 0% keeps the transcript unchanged, 100% applies every matching phrase and word rewrite
 - Writing profiles: Smart Clean, Raw Dictation, Clean Email, Slack Casual, Meeting Notes, Code Prompt, and Bullet Notes
 - Command phrases such as "make this shorter", "turn this into bullets", "rewrite professionally", "translate to Dutch", "gen alpha mode", "millennial mode", "boomer mode", "alien mode", "cowboy mode", and "quack mode"
 - Green HUD command badge when a spoken command phrase is recognized

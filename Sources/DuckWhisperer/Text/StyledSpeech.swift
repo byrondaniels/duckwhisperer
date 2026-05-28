@@ -345,10 +345,30 @@ enum StyledSpeech {
         Replacement(source: "works perfectly", target: "hits"),
         Replacement(source: "works smoothly", target: "hits"),
         Replacement(source: "works cleanly", target: "hits"),
-        Replacement(source: "really good", target: "fire"),
+        Replacement(source: "really good", target: "bussin"),
         Replacement(source: "very good", target: "fire"),
         Replacement(source: "pretty good", target: "solid"),
-        Replacement(source: "super good", target: "fire"),
+        Replacement(source: "super good", target: "bussin"),
+        Replacement(source: "tastes good", target: "bussin"),
+        Replacement(source: "tastes great", target: "bussin"),
+        Replacement(source: "tastes amazing", target: "bussin"),
+        Replacement(source: "tastes excellent", target: "bussin"),
+        Replacement(source: "tastes delicious", target: "bussin"),
+        Replacement(source: "tastes incredible", target: "bussin"),
+        Replacement(source: "this tastes good", target: "this is bussin"),
+        Replacement(source: "this tastes great", target: "this is bussin"),
+        Replacement(source: "this tastes amazing", target: "this is bussin"),
+        Replacement(source: "that tastes good", target: "that's bussin"),
+        Replacement(source: "that tastes great", target: "that's bussin"),
+        Replacement(source: "that tastes amazing", target: "that's bussin"),
+        Replacement(source: "food is good", target: "food is bussin"),
+        Replacement(source: "food is great", target: "food is bussin"),
+        Replacement(source: "meal is good", target: "meal is bussin"),
+        Replacement(source: "meal is great", target: "meal is bussin"),
+        Replacement(source: "delicious", target: "bussin"),
+        Replacement(source: "tasty", target: "bussin"),
+        Replacement(source: "yummy", target: "bussin"),
+        Replacement(source: "flavorful", target: "bussin"),
         Replacement(source: "that is awful", target: "that's rough"),
         Replacement(source: "that is terrible", target: "that's rough"),
         Replacement(source: "that is poor", target: "that's rough"),
@@ -448,6 +468,7 @@ enum StyledSpeech {
         Replacement(source: "weird idea", target: "sus take"),
         Replacement(source: "that makes sense", target: "that's valid"),
         Replacement(source: "this makes sense", target: "this is valid"),
+        Replacement(source: "it makes sense", target: "it's valid"),
         Replacement(source: "makes sense", target: "valid"),
         Replacement(source: "i agree", target: "same"),
         Replacement(source: "i disagree", target: "nah"),
@@ -683,10 +704,30 @@ enum StyledSpeech {
         Replacement(source: "works perfectly", target: "goes hard"),
         Replacement(source: "works smoothly", target: "goes hard"),
         Replacement(source: "works cleanly", target: "goes hard"),
-        Replacement(source: "really good", target: "goated"),
+        Replacement(source: "really good", target: "bussin"),
         Replacement(source: "very good", target: "goated"),
         Replacement(source: "pretty good", target: "valid"),
-        Replacement(source: "super good", target: "goated"),
+        Replacement(source: "super good", target: "bussin"),
+        Replacement(source: "tastes good", target: "bussin"),
+        Replacement(source: "tastes great", target: "bussin"),
+        Replacement(source: "tastes amazing", target: "bussin"),
+        Replacement(source: "tastes excellent", target: "bussin"),
+        Replacement(source: "tastes delicious", target: "bussin"),
+        Replacement(source: "tastes incredible", target: "bussin"),
+        Replacement(source: "this tastes good", target: "this is bussin"),
+        Replacement(source: "this tastes great", target: "this is bussin"),
+        Replacement(source: "this tastes amazing", target: "this is bussin"),
+        Replacement(source: "that tastes good", target: "that's bussin"),
+        Replacement(source: "that tastes great", target: "that's bussin"),
+        Replacement(source: "that tastes amazing", target: "that's bussin"),
+        Replacement(source: "food is good", target: "food is bussin"),
+        Replacement(source: "food is great", target: "food is bussin"),
+        Replacement(source: "meal is good", target: "meal is bussin"),
+        Replacement(source: "meal is great", target: "meal is bussin"),
+        Replacement(source: "delicious", target: "bussin"),
+        Replacement(source: "tasty", target: "bussin"),
+        Replacement(source: "yummy", target: "bussin"),
+        Replacement(source: "flavorful", target: "bussin"),
         Replacement(source: "that is awful", target: "that's cooked"),
         Replacement(source: "that is terrible", target: "that's cooked"),
         Replacement(source: "that is poor", target: "that's cooked"),
@@ -786,6 +827,7 @@ enum StyledSpeech {
         Replacement(source: "weird idea", target: "sus take"),
         Replacement(source: "that makes sense", target: "that's valid"),
         Replacement(source: "this makes sense", target: "this is valid"),
+        Replacement(source: "it makes sense", target: "it's valid"),
         Replacement(source: "makes sense", target: "valid"),
         Replacement(source: "i agree", target: "same"),
         Replacement(source: "i disagree", target: "nah"),
@@ -979,6 +1021,60 @@ enum StyledSpeech {
         Replacement(source: "works", target: "works nicely"),
         Replacement(source: "wrong", target: "off"),
         Replacement(source: "yes", target: "yep"),
+        Replacement(source: "could you", target: "can you"),
+        Replacement(source: "would you", target: "can you"),
+        Replacement(source: "please help", target: "pls help"),
+        Replacement(source: "please fix", target: "pls fix this"),
+        Replacement(source: "please check", target: "pls double-check"),
+        Replacement(source: "want to", target: "wanna"),
+        Replacement(source: "have to", target: "gotta"),
+        Replacement(source: "going to", target: "gonna"),
+        Replacement(source: "kind of", target: "kinda"),
+        Replacement(source: "sort of", target: "sorta"),
+        Replacement(source: "good idea", target: "iconic idea"),
+        Replacement(source: "great idea", target: "iconic idea"),
+        Replacement(source: "bad idea", target: "rough idea"),
+        Replacement(source: "that makes sense", target: "that tracks"),
+        Replacement(source: "this makes sense", target: "this tracks"),
+        Replacement(source: "it makes sense", target: "it tracks"),
+        Replacement(source: "makes sense", target: "tracks"),
+        Replacement(source: "i agree", target: "same"),
+        Replacement(source: "i disagree", target: "hard disagree"),
+        Replacement(source: "i like it", target: "I'm into it"),
+        Replacement(source: "i love it", target: "obsessed"),
+        Replacement(source: "i hate it", target: "not loving it"),
+        Replacement(source: "works for me", target: "works for me lol"),
+        Replacement(source: "not ideal", target: "rough"),
+        Replacement(source: "not great", target: "rough"),
+        Replacement(source: "not bad", target: "decent"),
+        Replacement(source: "too much", target: "a lot"),
+        Replacement(source: "over the top", target: "extra"),
+        Replacement(source: "low key", target: "low-key"),
+        Replacement(source: "high key", target: "high-key"),
+        Replacement(source: "to be honest", target: "tbh"),
+        Replacement(source: "to be fair", target: "tbf"),
+        Replacement(source: "by the way", target: "btw"),
+        Replacement(source: "in my opinion", target: "imo"),
+        Replacement(source: "suspicious", target: "sketchy"),
+        Replacement(source: "sketchy", target: "sketch"),
+        Replacement(source: "awkward", target: "awkward lol"),
+        Replacement(source: "embarrassing", target: "cringe"),
+        Replacement(source: "cringe", target: "cringey"),
+        Replacement(source: "average", target: "meh"),
+        Replacement(source: "ordinary", target: "basic"),
+        Replacement(source: "decent", target: "solid"),
+        Replacement(source: "acceptable", target: "fine"),
+        Replacement(source: "reasonable", target: "fair"),
+        Replacement(source: "legitimate", target: "legit"),
+        Replacement(source: "slick", target: "clean"),
+        Replacement(source: "stunning", target: "iconic"),
+        Replacement(source: "delayed", target: "dragging"),
+        Replacement(source: "unnecessary", target: "extra"),
+        Replacement(source: "overcomplicated", target: "messy"),
+        Replacement(source: "nostalgic", target: "throwback"),
+        Replacement(source: "throwback", target: "nostalgia hit"),
+        Replacement(source: "presentation", target: "deck"),
+        Replacement(source: "documentation", target: "docs"),
         Replacement(source: "yeah", target: "yep")
     ]
 
@@ -1031,6 +1127,7 @@ enum StyledSpeech {
         Replacement(source: "that's ridiculous", target: "that's nonsense"),
         Replacement(source: "that's very good", target: "that's quite fine"),
         Replacement(source: "that makes sense", target: "that sounds reasonable"),
+        Replacement(source: "it makes sense", target: "it sounds reasonable"),
         Replacement(source: "this is a big deal", target: "this is a major matter"),
         Replacement(source: "this is amazing", target: "this is terrific"),
         Replacement(source: "this is bad", target: "this is poor"),
@@ -1503,7 +1600,80 @@ enum StyledSpeech {
         Replacement(source: "very", target: "mighty"),
         Replacement(source: "weird", target: "odd"),
         Replacement(source: "work", target: "chores"),
-        Replacement(source: "working", target: "riding")
+        Replacement(source: "working", target: "riding"),
+        Replacement(source: "are you serious", target: "are ya joshing me"),
+        Replacement(source: "calm down", target: "hold your horses"),
+        Replacement(source: "do you understand", target: "you follow"),
+        Replacement(source: "help me", target: "lend me a hand"),
+        Replacement(source: "i like it", target: "that sits right with me"),
+        Replacement(source: "i love it", target: "I sure do like it"),
+        Replacement(source: "i disagree", target: "I reckon otherwise"),
+        Replacement(source: "makes sense", target: "tracks true"),
+        Replacement(source: "not good", target: "not worth a lick"),
+        Replacement(source: "not great", target: "not mighty fine"),
+        Replacement(source: "not ideal", target: "not quite right"),
+        Replacement(source: "that makes sense", target: "that tracks true"),
+        Replacement(source: "this makes sense", target: "this tracks true"),
+        Replacement(source: "it makes sense", target: "it tracks true"),
+        Replacement(source: "you are right", target: "you're right as rain"),
+        Replacement(source: "you are wrong", target: "you're barking up the wrong tree"),
+        Replacement(source: "you're right", target: "you're right as rain"),
+        Replacement(source: "you're wrong", target: "you're barking up the wrong tree"),
+        Replacement(source: "check this", target: "look this over"),
+        Replacement(source: "fix this", target: "mend this up"),
+        Replacement(source: "send this", target: "send this along"),
+        Replacement(source: "write this", target: "put this down"),
+        Replacement(source: "make this", target: "rustle this up"),
+        Replacement(source: "this works", target: "this rides smooth"),
+        Replacement(source: "that works", target: "that rides smooth"),
+        Replacement(source: "does not work", target: "won't ride"),
+        Replacement(source: "doesn't work", target: "won't ride"),
+        Replacement(source: "not working", target: "not riding"),
+        Replacement(source: "customer", target: "buyer"),
+        Replacement(source: "computer", target: "machine"),
+        Replacement(source: "delete", target: "cut loose"),
+        Replacement(source: "different", target: "different brand"),
+        Replacement(source: "final", target: "last stop"),
+        Replacement(source: "fine", target: "fair enough"),
+        Replacement(source: "focused", target: "eyes on the trail"),
+        Replacement(source: "help", target: "lend a hand"),
+        Replacement(source: "huge", target: "big ol'"),
+        Replacement(source: "incorrect", target: "off trail"),
+        Replacement(source: "interface", target: "control panel"),
+        Replacement(source: "large", target: "big ol'"),
+        Replacement(source: "maybe", target: "mayhap"),
+        Replacement(source: "model", target: "horse"),
+        Replacement(source: "need", target: "need to rustle up"),
+        Replacement(source: "new", target: "fresh"),
+        Replacement(source: "nice", target: "mighty fine"),
+        Replacement(source: "now", target: "right quick"),
+        Replacement(source: "old", target: "old trail"),
+        Replacement(source: "open", target: "open up"),
+        Replacement(source: "output", target: "result"),
+        Replacement(source: "perfect", target: "just right"),
+        Replacement(source: "people", target: "folks"),
+        Replacement(source: "reason", target: "why of it"),
+        Replacement(source: "remove", target: "cut out"),
+        Replacement(source: "ridiculous", target: "dadgum ridiculous"),
+        Replacement(source: "right", target: "right as rain"),
+        Replacement(source: "rough", target: "bumpy"),
+        Replacement(source: "sad", target: "sorry"),
+        Replacement(source: "seriously", target: "honest"),
+        Replacement(source: "simple", target: "plain"),
+        Replacement(source: "slow", target: "slower than molasses"),
+        Replacement(source: "small", target: "little ol'"),
+        Replacement(source: "smooth", target: "smooth riding"),
+        Replacement(source: "sorry", target: "pardon me"),
+        Replacement(source: "surprised", target: "taken aback"),
+        Replacement(source: "test", target: "try out"),
+        Replacement(source: "text", target: "note"),
+        Replacement(source: "thing", target: "thingamajig"),
+        Replacement(source: "today", target: "this here day"),
+        Replacement(source: "tomorrow", target: "come tomorrow"),
+        Replacement(source: "translation", target: "word swap"),
+        Replacement(source: "try", target: "give it a whirl"),
+        Replacement(source: "use", target: "put to work"),
+        Replacement(source: "want", target: "aim to")
     ]
 
     private static let pirateReplacements = [
@@ -1628,7 +1798,81 @@ enum StyledSpeech {
         Replacement(source: "very", target: "mighty"),
         Replacement(source: "weird", target: "odd"),
         Replacement(source: "work", target: "labour"),
-        Replacement(source: "working", target: "sailing")
+        Replacement(source: "working", target: "sailing"),
+        Replacement(source: "are you serious", target: "are ye in earnest"),
+        Replacement(source: "calm down", target: "steady the ship"),
+        Replacement(source: "do you understand", target: "do ye follow the chart"),
+        Replacement(source: "help me", target: "lend me a hand"),
+        Replacement(source: "i like it", target: "that suits me fine"),
+        Replacement(source: "i love it", target: "I be fond of it"),
+        Replacement(source: "i disagree", target: "I say nay"),
+        Replacement(source: "makes sense", target: "charts true"),
+        Replacement(source: "not good", target: "foul sailing"),
+        Replacement(source: "not great", target: "not grand"),
+        Replacement(source: "not ideal", target: "off course"),
+        Replacement(source: "that makes sense", target: "that charts true"),
+        Replacement(source: "this makes sense", target: "this charts true"),
+        Replacement(source: "it makes sense", target: "it charts true"),
+        Replacement(source: "you are right", target: "ye be right"),
+        Replacement(source: "you are wrong", target: "ye be off course"),
+        Replacement(source: "you're right", target: "ye be right"),
+        Replacement(source: "you're wrong", target: "ye be off course"),
+        Replacement(source: "check this", target: "inspect this cargo"),
+        Replacement(source: "fix this", target: "patch this leak"),
+        Replacement(source: "send this", target: "dispatch this"),
+        Replacement(source: "write this", target: "mark this in the log"),
+        Replacement(source: "make this", target: "rig this up"),
+        Replacement(source: "this works", target: "this sails fair"),
+        Replacement(source: "that works", target: "that sails fair"),
+        Replacement(source: "does not work", target: "does not sail"),
+        Replacement(source: "doesn't work", target: "does not sail"),
+        Replacement(source: "not working", target: "not sailing"),
+        Replacement(source: "computer", target: "ship's machine"),
+        Replacement(source: "delete", target: "scuttle"),
+        Replacement(source: "different", target: "another course"),
+        Replacement(source: "final", target: "final port"),
+        Replacement(source: "fine", target: "fair"),
+        Replacement(source: "focused", target: "eyes on the horizon"),
+        Replacement(source: "help", target: "lend a hand"),
+        Replacement(source: "huge", target: "mighty"),
+        Replacement(source: "incorrect", target: "off course"),
+        Replacement(source: "interface", target: "helm"),
+        Replacement(source: "large", target: "mighty"),
+        Replacement(source: "maybe", target: "mayhap"),
+        Replacement(source: "model", target: "vessel"),
+        Replacement(source: "need", target: "need aboard"),
+        Replacement(source: "new", target: "fresh"),
+        Replacement(source: "nice", target: "fine"),
+        Replacement(source: "now", target: "this tide"),
+        Replacement(source: "old", target: "barnacled"),
+        Replacement(source: "open", target: "unfurl"),
+        Replacement(source: "output", target: "dispatch"),
+        Replacement(source: "perfect", target: "shipshape"),
+        Replacement(source: "people", target: "crew"),
+        Replacement(source: "reason", target: "cause"),
+        Replacement(source: "remove", target: "cast off"),
+        Replacement(source: "ridiculous", target: "blasted silly"),
+        Replacement(source: "right", target: "true"),
+        Replacement(source: "rough", target: "stormy"),
+        Replacement(source: "sad", target: "sorry"),
+        Replacement(source: "seriously", target: "truly"),
+        Replacement(source: "simple", target: "plain"),
+        Replacement(source: "slow", target: "sluggish"),
+        Replacement(source: "small", target: "wee"),
+        Replacement(source: "smooth", target: "smooth sailing"),
+        Replacement(source: "sorry", target: "beg pardon"),
+        Replacement(source: "surprised", target: "taken aback"),
+        Replacement(source: "test", target: "sea trial"),
+        Replacement(source: "text", target: "note"),
+        Replacement(source: "thing", target: "trinket"),
+        Replacement(source: "today", target: "this tide"),
+        Replacement(source: "tomorrow", target: "next tide"),
+        Replacement(source: "translation", target: "word chart"),
+        Replacement(source: "try", target: "give it a sail"),
+        Replacement(source: "use", target: "put aboard"),
+        Replacement(source: "want", target: "be after"),
+        Replacement(source: "you", target: "ye"),
+        Replacement(source: "your", target: "yer")
     ]
 
     private static let robotReplacements = [
@@ -1713,51 +1957,146 @@ enum StyledSpeech {
         Replacement(source: "yes", target: "aye"),
         Replacement(source: "thanks", target: "many thanks"),
         Replacement(source: "update", target: "tidings"),
-        Replacement(source: "work", target: "labour")
+        Replacement(source: "work", target: "labour"),
+        Replacement(source: "as soon as possible", target: "with all haste"),
+        Replacement(source: "can you", target: "prithee"),
+        Replacement(source: "can you please", target: "prithee"),
+        Replacement(source: "could you", target: "prithee"),
+        Replacement(source: "could you please", target: "prithee"),
+        Replacement(source: "do you want to", target: "wouldst thou"),
+        Replacement(source: "good idea", target: "fair notion"),
+        Replacement(source: "great idea", target: "noble notion"),
+        Replacement(source: "bad idea", target: "ill notion"),
+        Replacement(source: "great job", target: "fine labour"),
+        Replacement(source: "i agree", target: "I am of thy mind"),
+        Replacement(source: "i am not sure", target: "I know not"),
+        Replacement(source: "i do not know", target: "I know not"),
+        Replacement(source: "i don't know", target: "I know not"),
+        Replacement(source: "i think", target: "methinks"),
+        Replacement(source: "let me know", target: "send me word"),
+        Replacement(source: "no problem", target: "no vexation"),
+        Replacement(source: "right now", target: "this instant"),
+        Replacement(source: "sounds good", target: "sounds fair"),
+        Replacement(source: "thank you", target: "gramercy"),
+        Replacement(source: "that is bad", target: "that is ill"),
+        Replacement(source: "that is good", target: "that is fair"),
+        Replacement(source: "that is great", target: "that is grand"),
+        Replacement(source: "that is perfect", target: "that is most fitting"),
+        Replacement(source: "that's bad", target: "that's ill"),
+        Replacement(source: "that's good", target: "that's fair"),
+        Replacement(source: "that's great", target: "that's grand"),
+        Replacement(source: "that's perfect", target: "that's most fitting"),
+        Replacement(source: "this is bad", target: "this is ill"),
+        Replacement(source: "this is good", target: "this is fair"),
+        Replacement(source: "this is great", target: "this is grand"),
+        Replacement(source: "this is perfect", target: "this is most fitting"),
+        Replacement(source: "works great", target: "works most well"),
+        Replacement(source: "works well", target: "works well enough"),
+        Replacement(source: "looks good", target: "looks fair"),
+        Replacement(source: "looks great", target: "looks grand"),
+        Replacement(source: "please help", target: "prithee lend aid"),
+        Replacement(source: "please fix", target: "prithee mend"),
+        Replacement(source: "please check", target: "prithee inspect"),
+        Replacement(source: "want to", target: "would fain"),
+        Replacement(source: "have to", target: "must needs"),
+        Replacement(source: "going to", target: "shall"),
+        Replacement(source: "kind of", target: "somewhat"),
+        Replacement(source: "sort of", target: "somewhat"),
+        Replacement(source: "not ideal", target: "ill fit"),
+        Replacement(source: "not great", target: "not grand"),
+        Replacement(source: "not bad", target: "fair enough"),
+        Replacement(source: "too much", target: "o'er much"),
+        Replacement(source: "to be honest", target: "in sooth"),
+        Replacement(source: "by the way", target: "by my troth"),
+        Replacement(source: "in my opinion", target: "as I do judge"),
+        Replacement(source: "amazing", target: "wondrous"),
+        Replacement(source: "annoying", target: "vexing"),
+        Replacement(source: "app", target: "instrument"),
+        Replacement(source: "awesome", target: "wondrous"),
+        Replacement(source: "beautiful", target: "beauteous"),
+        Replacement(source: "big", target: "mighty"),
+        Replacement(source: "boring", target: "dull"),
+        Replacement(source: "broken", target: "marred"),
+        Replacement(source: "build", target: "fashion"),
+        Replacement(source: "busy", target: "occupied"),
+        Replacement(source: "careful", target: "wary"),
+        Replacement(source: "change", target: "alter"),
+        Replacement(source: "check", target: "inspect"),
+        Replacement(source: "clean", target: "fair"),
+        Replacement(source: "confusing", target: "perplexing"),
+        Replacement(source: "cool", target: "fair"),
+        Replacement(source: "crazy", target: "mad"),
+        Replacement(source: "create", target: "fashion"),
+        Replacement(source: "difficult", target: "arduous"),
+        Replacement(source: "done", target: "finished"),
+        Replacement(source: "easy", target: "simple"),
+        Replacement(source: "excited", target: "stirred"),
+        Replacement(source: "fast", target: "swift"),
+        Replacement(source: "fix", target: "mend"),
+        Replacement(source: "funny", target: "mirthful"),
+        Replacement(source: "hard", target: "arduous"),
+        Replacement(source: "important", target: "grave"),
+        Replacement(source: "interesting", target: "curious"),
+        Replacement(source: "money", target: "coin"),
+        Replacement(source: "notes", target: "scribblings"),
+        Replacement(source: "office", target: "chamber"),
+        Replacement(source: "overcomplicated", target: "overwrought"),
+        Replacement(source: "phone", target: "speaking box"),
+        Replacement(source: "review", target: "inspect"),
+        Replacement(source: "send", target: "dispatch"),
+        Replacement(source: "smart", target: "clever"),
+        Replacement(source: "solid", target: "stout"),
+        Replacement(source: "strange", target: "odd"),
+        Replacement(source: "tired", target: "weary"),
+        Replacement(source: "weird", target: "strange"),
+        Replacement(source: "working", target: "labouring"),
+        Replacement(source: "wrong", target: "amiss"),
+        Replacement(source: "you", target: "thou"),
+        Replacement(source: "your", target: "thy")
     ]
 
-    static func british(_ text: String) -> String {
+    static func british(_ text: String, intensityPercent: Int = 100) -> String {
         guard containsAlphanumeric(in: text) else {
             return text
         }
 
-        return apply(britishReplacements, to: text)
+        return apply(britishReplacements, to: text, intensityPercent: intensityPercent)
     }
 
-    static func genZ(_ text: String) -> String {
+    static func genZ(_ text: String, intensityPercent: Int = 100) -> String {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, containsAlphanumeric(in: trimmed) else {
             return text
         }
 
-        return apply(genZReplacements, to: text)
+        return apply(genZReplacements, to: text, intensityPercent: intensityPercent)
     }
 
-    static func genAlpha(_ text: String) -> String {
+    static func genAlpha(_ text: String, intensityPercent: Int = 100) -> String {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, containsAlphanumeric(in: trimmed) else {
             return text
         }
 
-        return apply(genAlphaReplacements, to: text)
+        return apply(genAlphaReplacements, to: text, intensityPercent: intensityPercent)
     }
 
-    static func millennial(_ text: String) -> String {
+    static func millennial(_ text: String, intensityPercent: Int = 100) -> String {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, containsAlphanumeric(in: trimmed) else {
             return text
         }
 
-        return apply(millennialReplacements, to: text)
+        return apply(millennialReplacements, to: text, intensityPercent: intensityPercent)
     }
 
-    static func boomer(_ text: String) -> String {
+    static func boomer(_ text: String, intensityPercent: Int = 100) -> String {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, containsAlphanumeric(in: trimmed) else {
             return text
         }
 
-        return apply(boomerReplacements, to: text)
+        return apply(boomerReplacements, to: text, intensityPercent: intensityPercent)
     }
 
     static func alien(_ text: String) -> String {
@@ -1769,22 +2108,22 @@ enum StyledSpeech {
         return apply(alienReplacements, to: text)
     }
 
-    static func cowboy(_ text: String) -> String {
+    static func cowboy(_ text: String, intensityPercent: Int = 100) -> String {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, containsAlphanumeric(in: trimmed) else {
             return text
         }
 
-        return apply(cowboyReplacements, to: text)
+        return apply(cowboyReplacements, to: text, intensityPercent: intensityPercent)
     }
 
-    static func pirate(_ text: String) -> String {
+    static func pirate(_ text: String, intensityPercent: Int = 100) -> String {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, containsAlphanumeric(in: trimmed) else {
             return text
         }
 
-        return apply(pirateReplacements, to: text)
+        return apply(pirateReplacements, to: text, intensityPercent: intensityPercent)
     }
 
     static func robot(_ text: String) -> String {
@@ -1796,16 +2135,37 @@ enum StyledSpeech {
         return apply(robotReplacements, to: text)
     }
 
-    static func shakespeare(_ text: String) -> String {
+    static func shakespeare(_ text: String, intensityPercent: Int = 100) -> String {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, containsAlphanumeric(in: trimmed) else {
             return text
         }
 
-        return apply(shakespeareReplacements, to: text)
+        return apply(shakespeareReplacements, to: text, intensityPercent: intensityPercent)
     }
 
-    private static func apply(_ replacements: [Replacement], to text: String) -> String {
+    private static func apply(_ replacements: [Replacement], to text: String, intensityPercent: Int = 100) -> String {
+        let intensity = max(0, min(100, intensityPercent))
+        guard intensity > 0 else {
+            return text
+        }
+
+        let phraseReplacements = replacements.filter { replacementWordCount($0.source) > 1 }
+        let wordReplacements = replacements.filter { replacementWordCount($0.source) <= 1 }
+
+        let afterPhrasePass = applySinglePass(phraseReplacements, to: text, intensityPercent: intensity)
+        return applySinglePass(wordReplacements, to: afterPhrasePass, intensityPercent: intensity)
+    }
+
+    private static func applySinglePass(
+        _ replacements: [Replacement],
+        to text: String,
+        intensityPercent: Int
+    ) -> String {
+        guard !replacements.isEmpty else {
+            return text
+        }
+
         let sortedReplacements = replacements.sorted {
             if $0.source.count == $1.source.count {
                 return $0.source < $1.source
@@ -1839,10 +2199,51 @@ enum StyledSpeech {
             guard let replacement = replacementBySource[matched.lowercased()] else {
                 continue
             }
+            guard shouldApply(source: matched, replacement: replacement, intensityPercent: intensityPercent) else {
+                continue
+            }
             output.replaceSubrange(range, with: casedReplacement(replacement, matching: matched))
         }
 
         return output
+    }
+
+    private static func shouldApply(source: String, replacement: String, intensityPercent: Int) -> Bool {
+        guard intensityPercent < 100 else {
+            return true
+        }
+        guard intensityPercent > 0 else {
+            return false
+        }
+
+        let wordCount = max(replacementWordCount(source), replacementWordCount(replacement))
+        let baseThreshold: Int
+        let variability: Int
+        if wordCount >= 4 {
+            baseThreshold = 5
+            variability = 31
+        } else if wordCount >= 2 {
+            baseThreshold = 10
+            variability = 36
+        } else {
+            baseThreshold = 35
+            variability = 66
+        }
+        let threshold = min(100, baseThreshold + stableBucket(for: "\(source)->\(replacement)", modulo: variability))
+        return intensityPercent >= threshold
+    }
+
+    private static func replacementWordCount(_ text: String) -> Int {
+        text.split { !$0.isLetter && !$0.isNumber && $0 != "'" }.count
+    }
+
+    private static func stableBucket(for text: String, modulo: Int) -> Int {
+        var hash = 2_166_136_261
+        for byte in text.utf8 {
+            hash ^= Int(byte)
+            hash = (hash &* 16_777_619) & 0x7fffffff
+        }
+        return hash % modulo
     }
 
     private static func casedReplacement(_ replacement: String, matching matched: String) -> String {

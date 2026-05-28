@@ -39,6 +39,14 @@ func runSmokeTranscriptionIfRequested() {
         } else {
             writingProfileID = nil
         }
+        let styleIntensityPercent: Int
+        if let intensityIndex = arguments.firstIndex(of: "--style-intensity"),
+           arguments.indices.contains(intensityIndex + 1),
+           let percent = Int(arguments[intensityIndex + 1]) {
+            styleIntensityPercent = StyleIntensityChoice.choice(for: percent).percent
+        } else {
+            styleIntensityPercent = StyleIntensityChoice.defaultChoice.percent
+        }
         let choice = ModelChoice.choice(for: modelID)
         let inputLanguage = InputLanguageChoice.choice(for: inputLanguageID)
         let outputLanguage = OutputLanguage.choice(for: outputLanguageID)
@@ -64,7 +72,11 @@ func runSmokeTranscriptionIfRequested() {
         )
         let output: String
         if translatedOutput.unicodeScalars.contains(where: { CharacterSet.alphanumerics.contains($0) }) {
-            output = LanguageOutputRenderer.render(translatedOutput, outputLanguage: outputLanguage)
+            output = LanguageOutputRenderer.render(
+                translatedOutput,
+                outputLanguage: outputLanguage,
+                styleIntensityPercent: styleIntensityPercent
+            )
         } else {
             output = translatedOutput
         }

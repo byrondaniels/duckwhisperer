@@ -14,6 +14,7 @@ enum SupportBundleExporter {
         selectedModel: ModelChoice,
         inputLanguage: InputLanguageChoice,
         outputLanguage: OutputLanguage,
+        styleIntensity: StyleIntensityChoice,
         writingProfile: WritingProfile
     ) throws {
         let fileManager = FileManager.default
@@ -28,6 +29,7 @@ enum SupportBundleExporter {
             selectedModel: selectedModel,
             inputLanguage: inputLanguage,
             outputLanguage: outputLanguage,
+            styleIntensity: styleIntensity,
             writingProfile: writingProfile
         ).write(
             to: stagingURL.appendingPathComponent("diagnostics.txt"),
@@ -60,6 +62,7 @@ enum SupportBundleExporter {
         selectedModel: ModelChoice,
         inputLanguage: InputLanguageChoice,
         outputLanguage: OutputLanguage,
+        styleIntensity: StyleIntensityChoice,
         writingProfile: WritingProfile
     ) -> String {
         let microphoneStatus: String
@@ -108,6 +111,7 @@ enum SupportBundleExporter {
         Model path: \(installedModelPath)
         Input language: \(inputLanguage.title)
         Output language: \(outputLanguage.effectiveTitle(for: inputLanguage))
+        Style intensity: \(styleIntensity.percent)%
         Writing mode: \(writingProfile.title)
 
         Stats
