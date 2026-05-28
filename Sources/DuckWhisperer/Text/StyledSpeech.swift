@@ -210,16 +210,7 @@ enum StyledSpeech {
             return text
         }
 
-        var output = apply(genZReplacements, to: text)
-        if sentenceCount(in: output) <= 2 {
-            output = prefixFirstSentence("Lowkey", in: output)
-        }
-        if !containsWholeWord("fr", in: output),
-           !containsWholeWord("ngl", in: output),
-           !containsWholeWord("lowkey", in: output) {
-            output = appendBeforeFinalPunctuation("fr", to: output)
-        }
-        return output
+        return apply(genZReplacements, to: text)
     }
 
     static func alien(_ text: String) -> String {
