@@ -10,6 +10,7 @@ private final class RecordingOverlayView: NSView {
     }()
 
     var audioLevel: CGFloat = 0
+    var audioAccent: CGFloat = 0
     var animationPhase: CGFloat = 0
 
     var progressPercent: Int? {
@@ -56,8 +57,9 @@ private final class RecordingOverlayView: NSView {
         true
     }
 
-    func setAnimationState(audioLevel: CGFloat, animationPhase: CGFloat) {
+    func setAnimationState(audioLevel: CGFloat, audioAccent: CGFloat, animationPhase: CGFloat) {
         self.audioLevel = audioLevel
+        self.audioAccent = audioAccent
         self.animationPhase = animationPhase
         needsDisplay = true
     }
@@ -103,7 +105,7 @@ private final class RecordingOverlayView: NSView {
         drawingTransform.scale(by: mascotScale)
         drawingTransform.concat()
         drawCrescendo()
-        drawDuckWhispererMark(level: audioLevel)
+        drawDuckWhispererMark(level: audioLevel, accent: audioAccent)
         NSGraphicsContext.restoreGraphicsState()
 
         drawCenteredPreview()
@@ -117,7 +119,7 @@ private final class RecordingOverlayView: NSView {
         drawingTransform.scale(by: 1.55)
         drawingTransform.concat()
         drawCrescendo()
-        drawDuckWhispererMark(level: audioLevel)
+        drawDuckWhispererMark(level: audioLevel, accent: audioAccent)
         NSGraphicsContext.restoreGraphicsState()
 
         let textX: CGFloat = 225
@@ -314,9 +316,10 @@ private final class RecordingOverlayView: NSView {
 
     private func drawCrescendo() {
         let level = max(0, min(1, audioLevel))
+        let accent = max(0, min(1, audioAccent))
         let idlePulse = 0.018 + 0.010 * ((sin(animationPhase * 0.85) + 1) / 2)
         let voiceEnergy = level > 0.018 ? max(pow(level, 0.54), 0.18) : 0
-        let lift = max(voiceEnergy, idlePulse)
+        let lift = min(1, max(voiceEnergy, idlePulse) + accent * 0.16)
         let shimmer = (sin(animationPhase * 1.6) + 1) / 2
 
         NSGraphicsContext.saveGraphicsState()
@@ -378,12 +381,13 @@ private final class RecordingOverlayView: NSView {
         shine.fill()
     }
 
-    private func drawDuckWhispererMark(level: CGFloat) {
+    private func drawDuckWhispererMark(level: CGFloat, accent: CGFloat) {
         let center = NSPoint(x: 72, y: 43)
         let energy = max(0, min(1, level))
+        let vocalAccent = max(0, min(1, accent))
         let isSpeaking = energy > 0.020
-        let scale = 1 + energy * 0.006
-        let bob = isSpeaking ? sin(animationPhase * 0.62) * energy * 0.16 : 0
+        let scale = 1 + energy * 0.005 + vocalAccent * 0.004
+        let bob = isSpeaking ? sin(animationPhase * 0.62) * energy * 0.12 - vocalAccent * 0.18 : 0
         NSGraphicsContext.saveGraphicsState()
         let transform = NSAffineTransform()
         transform.translateX(by: center.x, yBy: center.y)
@@ -392,7 +396,7 @@ private final class RecordingOverlayView: NSView {
         transform.translateX(by: -center.x, yBy: -center.y)
         transform.concat()
 
-        drawFlappingWings(energy: energy)
+        drawFlappingWings(energy: energy, accent: vocalAccent)
 
         if let hudArtwork = Self.hudArtwork {
             let dropShadow = NSShadow()
@@ -422,35 +426,59 @@ private final class RecordingOverlayView: NSView {
         NSGraphicsContext.restoreGraphicsState()
     }
 
-    private func drawFlappingWings(energy: CGFloat) {
+    private func drawFlappingWings(energy: CGFloat, accent: CGFloat) {
         let raw = max(0, min(1, energy))
+        let vocalAccent = max(0, min(1, accent))
         let isSpeaking = raw > 0.030
         let loudness = isSpeaking ? max(pow(raw, 0.52), 0.24) : 0
-        let wavePhase = animationPhase * (0.72 + loudness * 0.82)
-        let waveAmplitude = isSpeaking ? smoothstep(loudness) : 0
+        let responsiveLoudness = min(1, loudness + vocalAccent * 0.22)
+        let wavePhase = animationPhase * (0.68 + responsiveLoudness * 0.76 + vocalAccent * 0.28)
+        let waveAmplitude = isSpeaking ? min(1, smoothstep(loudness) * 0.78 + vocalAccent * 0.46) : 0
 
         NSGraphicsContext.saveGraphicsState()
         let shadow = NSShadow()
-        shadow.shadowColor = NSColor(calibratedRed: 1.0, green: 0.58, blue: 0.10, alpha: 0.10 + loudness * 0.18)
-        shadow.shadowBlurRadius = 8 + loudness * 12
+        shadow.shadowColor = NSColor(calibratedRed: 1.0, green: 0.58, blue: 0.10, alpha: 0.10 + responsiveLoudness * 0.16 + vocalAccent * 0.08)
+        shadow.shadowBlurRadius = 8 + responsiveLoudness * 10 + vocalAccent * 5
         shadow.shadowOffset = NSSize(width: 0, height: 2)
         shadow.set()
 
-        drawWing(side: -1, pivot: NSPoint(x: 64, y: 48), loudness: loudness, wavePhase: wavePhase, waveAmplitude: waveAmplitude)
-        drawWing(side: 1, pivot: NSPoint(x: 88, y: 48), loudness: loudness, wavePhase: wavePhase, waveAmplitude: waveAmplitude)
+        drawWing(
+            side: -1,
+            pivot: NSPoint(x: 64, y: 48),
+            loudness: responsiveLoudness,
+            wavePhase: wavePhase,
+            waveAmplitude: waveAmplitude,
+            vocalAccent: vocalAccent
+        )
+        drawWing(
+            side: 1,
+            pivot: NSPoint(x: 88, y: 48),
+            loudness: responsiveLoudness,
+            wavePhase: wavePhase,
+            waveAmplitude: waveAmplitude,
+            vocalAccent: vocalAccent
+        )
         NSGraphicsContext.restoreGraphicsState()
     }
 
-    private func drawWing(side: CGFloat, pivot: NSPoint, loudness: CGFloat, wavePhase: CGFloat, waveAmplitude: CGFloat) {
+    private func drawWing(
+        side: CGFloat,
+        pivot: NSPoint,
+        loudness: CGFloat,
+        wavePhase: CGFloat,
+        waveAmplitude: CGFloat,
+        vocalAccent: CGFloat
+    ) {
         let offsets: [CGFloat] = [-1.90, -1.48, -1.08, -0.70, -0.33, 0.05, 0.42, 0.78, 1.12, 1.44, 1.74]
         let featherSpan = CGFloat(max(offsets.count - 1, 1))
-        let baseLift: CGFloat = -11 - loudness * 6
-        let open = 0.78 + loudness * 0.16
+        let baseLift: CGFloat = -11 - loudness * 5.2 - vocalAccent * 2.4
+        let open = 0.78 + loudness * 0.13 + vocalAccent * 0.055
 
         drawWingMembrane(
             side: side,
             pivot: pivot,
             loudness: loudness,
+            vocalAccent: vocalAccent,
             open: open,
             baseLift: baseLift,
             wavePhase: wavePhase,
@@ -462,13 +490,13 @@ private final class RecordingOverlayView: NSView {
             let progress = rank / featherSpan
             let featherPriority = CGFloat(offsets.count - index)
 
-            let rootWave = waveAmplitude * sin(wavePhase + 0.16 - progress * 0.28) * (0.45 + loudness * 1.0)
-            let midWave = waveAmplitude * sin(wavePhase - 0.52 - progress * 0.88) * (2.0 + loudness * 4.1)
-            let tipWave = waveAmplitude * sin(wavePhase - 1.12 - progress * 1.50) * (3.8 + loudness * 6.6)
-            let sweepWave = waveAmplitude * cos(wavePhase - 0.88 - progress * 1.05) * (1.6 + loudness * 3.6)
+            let rootWave = waveAmplitude * sin(wavePhase + 0.16 - progress * 0.28) * (0.35 + loudness * 0.80 + vocalAccent * 0.70)
+            let midWave = waveAmplitude * sin(wavePhase - 0.52 - progress * 0.88) * (1.55 + loudness * 3.35 + vocalAccent * 2.70)
+            let tipWave = waveAmplitude * sin(wavePhase - 1.12 - progress * 1.50) * (2.90 + loudness * 5.25 + vocalAccent * 4.40)
+            let sweepWave = waveAmplitude * cos(wavePhase - 0.88 - progress * 1.05) * (1.35 + loudness * 3.00 + vocalAccent * 2.10)
             let trailingDrop = 0.6 + pow(progress, 1.7) * (8.0 + loudness * 1.2)
 
-            let extensionLength = 62 + loudness * 14 + featherPriority * 4.4
+            let extensionLength = 62 + loudness * 10 + vocalAccent * 8 + featherPriority * 4.4
             let tipX = pivot.x + side * (extensionLength + abs(offset) * 2.6 + sweepWave)
             let tipY = pivot.y + offset * 7.4 * open + baseLift + trailingDrop + tipWave + rank * 0.30
             let shoulderX = pivot.x + side * (extensionLength * 0.42 + loudness * 6)
@@ -566,16 +594,17 @@ private final class RecordingOverlayView: NSView {
         side: CGFloat,
         pivot: NSPoint,
         loudness: CGFloat,
+        vocalAccent: CGFloat,
         open: CGFloat,
         baseLift: CGFloat,
         wavePhase: CGFloat,
         waveAmplitude: CGFloat
     ) {
-        let rootWave = waveAmplitude * sin(wavePhase + 0.10) * (0.45 + loudness * 0.9)
-        let midWave = waveAmplitude * sin(wavePhase - 0.56) * (1.8 + loudness * 3.6)
-        let tipWave = waveAmplitude * sin(wavePhase - 1.18) * (3.4 + loudness * 5.8)
-        let sweepWave = waveAmplitude * cos(wavePhase - 0.92) * (1.3 + loudness * 3.2)
-        let extensionLength = 112 + loudness * 9 + sweepWave
+        let rootWave = waveAmplitude * sin(wavePhase + 0.10) * (0.35 + loudness * 0.75 + vocalAccent * 0.55)
+        let midWave = waveAmplitude * sin(wavePhase - 0.56) * (1.35 + loudness * 2.90 + vocalAccent * 2.25)
+        let tipWave = waveAmplitude * sin(wavePhase - 1.18) * (2.65 + loudness * 4.70 + vocalAccent * 3.65)
+        let sweepWave = waveAmplitude * cos(wavePhase - 0.92) * (1.1 + loudness * 2.70 + vocalAccent * 1.75)
+        let extensionLength = 112 + loudness * 7 + vocalAccent * 6 + sweepWave
 
         let rootTop = NSPoint(x: pivot.x + side * 3, y: pivot.y - 10.5 * open + rootWave)
         let rootBottom = NSPoint(x: pivot.x + side * 5, y: pivot.y + 12.5 * open + rootWave * 0.4)
@@ -619,8 +648,8 @@ private final class RecordingOverlayView: NSView {
         NSGraphicsContext.saveGraphicsState()
         membrane.addClip()
         NSGradient(colors: [
-            NSColor(calibratedRed: 1.0, green: 0.82, blue: 0.22, alpha: 0.10 + loudness * 0.07),
-            NSColor(calibratedRed: 1.0, green: 0.55, blue: 0.08, alpha: 0.035 + loudness * 0.055)
+            NSColor(calibratedRed: 1.0, green: 0.82, blue: 0.22, alpha: 0.10 + loudness * 0.06 + vocalAccent * 0.035),
+            NSColor(calibratedRed: 1.0, green: 0.55, blue: 0.08, alpha: 0.035 + loudness * 0.045 + vocalAccent * 0.030)
         ])?.draw(in: membrane.bounds, angle: side < 0 ? 180 : 0)
         NSGraphicsContext.restoreGraphicsState()
     }
@@ -800,6 +829,8 @@ final class RecordingOverlayController {
     private var activeSpaceObserver: NSObjectProtocol?
     private var targetAudioLevel: CGFloat = 0
     private var displayedAudioLevel: CGFloat = 0
+    private var targetAudioAccent: CGFloat = 0
+    private var displayedAudioAccent: CGFloat = 0
     private var animationPhase: CGFloat = 0
 
     init() {
@@ -865,8 +896,10 @@ final class RecordingOverlayController {
         if !isVisible {
             targetAudioLevel = 0
             displayedAudioLevel = 0
+            targetAudioAccent = 0
+            displayedAudioAccent = 0
             animationPhase = 0
-            overlayView.setAnimationState(audioLevel: 0, animationPhase: 0)
+            overlayView.setAnimationState(audioLevel: 0, audioAccent: 0, animationPhase: 0)
         }
         startAnimationTimer()
         if isVisible {
@@ -891,7 +924,9 @@ final class RecordingOverlayController {
             overlayView.progressPercent = nil
             targetAudioLevel = 0
             displayedAudioLevel = 0
-            overlayView.setAnimationState(audioLevel: 0, animationPhase: animationPhase)
+            targetAudioAccent = 0
+            displayedAudioAccent = 0
+            overlayView.setAnimationState(audioLevel: 0, audioAccent: 0, animationPhase: animationPhase)
             overlayView.previewText = ""
             overlayView.commandText = nil
             stopAnimationTimer()
@@ -901,6 +936,7 @@ final class RecordingOverlayController {
         isVisible = false
         overlayView.progressPercent = nil
         targetAudioLevel = 0
+        targetAudioAccent = 0
         overlayView.previewText = ""
         overlayView.commandText = nil
 
@@ -913,7 +949,8 @@ final class RecordingOverlayController {
                 return
             }
             self.displayedAudioLevel = 0
-            self.overlayView.setAnimationState(audioLevel: 0, animationPhase: self.animationPhase)
+            self.displayedAudioAccent = 0
+            self.overlayView.setAnimationState(audioLevel: 0, audioAccent: 0, animationPhase: self.animationPhase)
             self.stopAnimationTimer()
             self.panel.orderOut(nil)
         }
@@ -1003,11 +1040,16 @@ final class RecordingOverlayController {
         let noiseFloor: CGFloat = 0.010
         guard clampedLevel > noiseFloor else {
             targetAudioLevel = 0
+            targetAudioAccent = 0
             return
         }
         let gatedLevel = max(0, (clampedLevel - noiseFloor) / (1 - noiseFloor))
-        let shapedLevel = pow(gatedLevel, 0.64) * 1.16
-        targetAudioLevel = min(0.96, max(0.12, shapedLevel))
+        let shapedLevel = min(0.98, pow(gatedLevel, 0.58) * 1.10)
+        let nextLevel = min(0.98, max(0.08, shapedLevel))
+        let levelRise = max(0, nextLevel - targetAudioLevel)
+        let displayRise = max(0, nextLevel - displayedAudioLevel)
+        targetAudioLevel = nextLevel
+        targetAudioAccent = min(1, max(targetAudioAccent * 0.55, levelRise * 4.6 + displayRise * 0.85))
     }
 
     private func startAnimationTimer() {
@@ -1033,15 +1075,32 @@ final class RecordingOverlayController {
             return
         }
 
-        let smoothing: CGFloat = targetAudioLevel > displayedAudioLevel ? 0.14 : 0.08
+        let smoothing: CGFloat = targetAudioLevel > displayedAudioLevel ? 0.23 : 0.10
         displayedAudioLevel += (targetAudioLevel - displayedAudioLevel) * smoothing
         if abs(displayedAudioLevel - targetAudioLevel) < 0.004 {
             displayedAudioLevel = targetAudioLevel
         }
 
-        if displayedAudioLevel > 0.020 {
-            animationPhase += 0.014 + displayedAudioLevel * 0.045
+        let accentSmoothing: CGFloat = targetAudioAccent > displayedAudioAccent ? 0.54 : 0.18
+        displayedAudioAccent += (targetAudioAccent - displayedAudioAccent) * accentSmoothing
+        targetAudioAccent *= 0.80
+        if targetAudioLevel <= 0.020 {
+            targetAudioAccent = 0
         }
-        overlayView.setAnimationState(audioLevel: displayedAudioLevel, animationPhase: animationPhase)
+        if displayedAudioLevel <= 0.018 && targetAudioAccent <= 0.020 {
+            displayedAudioAccent = 0
+        }
+        if displayedAudioAccent < 0.006 {
+            displayedAudioAccent = 0
+        }
+
+        if displayedAudioLevel > 0.020 {
+            animationPhase += 0.012 + displayedAudioLevel * 0.038 + displayedAudioAccent * 0.034
+        }
+        overlayView.setAnimationState(
+            audioLevel: displayedAudioLevel,
+            audioAccent: displayedAudioAccent,
+            animationPhase: animationPhase
+        )
     }
 }
