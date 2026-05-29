@@ -25,6 +25,15 @@ enum TranscriptionOutputPipeline {
             packs.append(sourceToEnglish)
         }
 
+        if let targetCode = outputLanguage.translationTargetCode,
+           AppleSystemTranslator.shouldHandle(
+                sourceCode: "en",
+                targetCode: targetCode,
+                requestedPackID: outputLanguage.translationPackID
+           ) {
+            return packs
+        }
+
         if let englishToTarget = englishToTargetPack(for: outputLanguage) {
             packs.append(englishToTarget)
         }
@@ -58,7 +67,8 @@ enum TranscriptionOutputPipeline {
     static func applyConfiguredOutputLanguage(
         to text: String,
         inputLanguage: InputLanguageChoice,
-        outputLanguage: OutputLanguage
+        outputLanguage: OutputLanguage,
+        preferAppleSystemTranslation: Bool = true
     ) throws -> String {
         if outputLanguage.matchesInput(inputLanguage) {
             return text
@@ -77,6 +87,19 @@ enum TranscriptionOutputPipeline {
         }
 
         if outputLanguage.requiresTranslation {
+            if preferAppleSystemTranslation,
+               let targetCode = outputLanguage.translationTargetCode,
+               AppleSystemTranslator.shouldHandle(
+                    sourceCode: "en",
+                    targetCode: targetCode,
+                    requestedPackID: outputLanguage.translationPackID
+               ) {
+                do {
+                    return try AppleSystemTranslator.translate(englishBaseText, from: "en", to: targetCode)
+                } catch {
+                    AppLog.write("Apple system translation failed for en -> \(targetCode): \(error.localizedDescription)")
+                }
+            }
             return try LocalTranslator.translate(englishBaseText, to: outputLanguage)
         }
 

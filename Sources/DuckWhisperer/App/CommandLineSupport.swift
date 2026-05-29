@@ -68,7 +68,8 @@ func runSmokeTranscriptionIfRequested() {
         let translatedOutput = try TranscriptionOutputPipeline.applyConfiguredOutputLanguage(
             to: transcript,
             inputLanguage: inputLanguage,
-            outputLanguage: outputLanguage
+            outputLanguage: outputLanguage,
+            preferAppleSystemTranslation: false
         )
         let output: String
         if translatedOutput.unicodeScalars.contains(where: { CharacterSet.alphanumerics.contains($0) }) {

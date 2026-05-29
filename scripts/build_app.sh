@@ -170,6 +170,8 @@ swiftc \
   -framework AVFoundation \
   -framework Carbon \
   -framework QuartzCore \
+  -Xlinker -weak_framework \
+  -Xlinker Translation \
   -Xlinker -rpath \
   -Xlinker "@executable_path/../Frameworks" \
   "${SWIFT_SOURCES[@]}" \

@@ -239,12 +239,16 @@ Output defaults to `Same as Input`. You can also choose English, French, Dutch, 
 
 Non-English input to English can use individual local text translators. For example, Tagalog -> English installs only the Tagalog -> English translator, then DuckWhisperer transcribes Tagalog text first and translates that text to English. If the matching translator is not installed, the app asks before downloading it.
 
-French and default Dutch output use local Argos Translate packages after the transcript is available in English. DuckWhisperer also includes two optional English -> Dutch OPUS test models:
+On macOS 26 or newer, default French and Dutch output first use Apple's local high-fidelity Translation framework after the transcript is available in English. DuckWhisperer applies a small office-context normalization pass before translation so common dictation terms like "deck", "vendor", and "redlines" translate as business language instead of literal objects. If Apple system translation is unavailable, DuckWhisperer falls back to installed local translator packs.
 
+DuckWhisperer still includes the older local packs as optional fallback/test models:
+
+- `French Output`: Argos English -> French
+- `Dutch Output`: Argos English -> Dutch
 - `Dutch - OPUS Dedicated`: `Helsinki-NLP/opus-mt-en-nl`
 - `Dutch - OPUS Germanic`: `Helsinki-NLP/opus-mt-en-gmw` with Dutch target tagging
 
-Install translators from `Speed & Accuracy`, or install the default Argos French/Dutch packs with:
+Install local fallback translators from `Speed & Accuracy`, or install the default Argos French/Dutch packs with:
 
 ```bash
 ./scripts/setup_local_translation.sh
