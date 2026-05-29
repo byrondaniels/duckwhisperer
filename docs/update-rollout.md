@@ -48,9 +48,59 @@ and CI can choose their own key management. CI can pass the public key as:
 SPARKLE_PUBLIC_ED_KEY="..." ./scripts/package_release.sh
 ```
 
-For appcast signing in CI, pass the private key through Sparkle's tooling using
-`--ed-key-file -`, or import it into the build keychain before running
-`generate_appcast`.
+For appcast signing in CI, pass the private key through the
+`SPARKLE_PRIVATE_ED_KEY` environment variable. The appcast script streams that
+secret into Sparkle's `generate_appcast --ed-key-file -` path so GitHub Actions
+does not need your local Keychain.
+
+Export the private key from the release machine when you are ready to configure
+CI:
+
+```bash
+vendor/Sparkle/bin/generate_keys --account duckwhisperer -x .sparkle-private-ed-key
+```
+
+Store the file contents as a GitHub Actions secret named
+`SPARKLE_PRIVATE_ED_KEY`, then delete the exported file. Do not commit it.
+
+Store the public key as a GitHub Actions secret named `SPARKLE_PUBLIC_ED_KEY`.
+The current release public key is:
+
+```text
+vt0SDGGts8p9uzCJQRz9gtnXzT5K+a5KSiTfmd/KCco=
+```
+
+## GitHub Free-Tier Publishing
+
+The simplest hosted updater path is now checked in at:
+
+```text
+.github/workflows/publish-sparkle.yml
+```
+
+It stays on GitHub's free public-repo path:
+
+1. GitHub Actions builds a ZIP update archive and signed Sparkle appcast.
+2. GitHub Pages deploys the static contents of `release/sparkle/`.
+3. Sparkle reads the appcast from:
+
+```text
+https://byrondaniels.github.io/duckwhisperer/appcast.xml
+```
+
+One-time repository setup:
+
+1. In GitHub, open `Settings -> Pages`.
+2. Set `Build and deployment -> Source` to `GitHub Actions`.
+3. Add repository secrets:
+   - `SPARKLE_PUBLIC_ED_KEY`
+   - `SPARKLE_PRIVATE_ED_KEY`
+4. Run `Publish Sparkle Updates` manually from the Actions tab, or push a
+   version tag such as `v0.1.3`.
+
+No appcast server, cron box, Terraform, or custom domain is required for this
+path. GitHub Pages serves `appcast.xml`, the update ZIP, and the release notes
+from one static deployment.
 
 ## Release Checklist
 
@@ -71,8 +121,9 @@ SIGNING_IDENTITY="Developer ID Application: Your Name (TEAMID)" \
 NOTARYTOOL_PROFILE=duckwhisperer-release ./scripts/notarize_release.sh
 ```
 
-5. Publish the DMG and the generated `release/appcast.xml`.
-6. Make sure `appcast.xml` is reachable at `SUFeedURL`.
+5. Publish the DMG for manual installs.
+6. Run the `Publish Sparkle Updates` GitHub Action, or publish
+   `release/sparkle/` yourself so `appcast.xml` is reachable at `SUFeedURL`.
 7. Open an older installed build and use `Settings -> Check For Updates...`.
 
 The release script stages Sparkle update archives in `release/sparkle/` to avoid
@@ -84,10 +135,9 @@ manual drag-and-drop installs.
 
 Cheapest path:
 
-- Host `appcast.xml` on GitHub Pages.
-- Host DMGs on GitHub Releases.
-- Run `scripts/generate_sparkle_appcast.sh` with `SPARKLE_DOWNLOAD_URL_PREFIX`
-  pointing at the release asset URL prefix.
+- Use the checked-in GitHub Actions workflow.
+- Serve Sparkle update files from GitHub Pages.
+- Attach the DMG to GitHub Releases for manual installers.
 
 More controlled path:
 

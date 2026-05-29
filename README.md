@@ -122,6 +122,14 @@ See `docs/release-workflow.md` for the full non-developer install test, signing 
 
 See `docs/go-to-market-plan.md` for the current market research, positioning, launch, pricing, and website strategy.
 
+## App Updates
+
+DuckWhisperer uses Sparkle 2 for in-app updates. The free-tier publishing path
+is GitHub Actions plus GitHub Pages: `.github/workflows/publish-sparkle.yml`
+builds the signed Sparkle ZIP/appcast and publishes it to the feed URL embedded
+in the app. See `docs/update-rollout.md` for the one-time Pages and Sparkle key
+setup.
+
 The build script automatically uses a local code-signing identity when one is available, preferring `Developer ID Application` and then local Apple development identities. If no identity exists, it falls back to ad-hoc signing.
 
 For release packages meant for other Macs, use a Developer ID certificate:

@@ -8,6 +8,7 @@ DOWNLOAD_URL_PREFIX="${SPARKLE_DOWNLOAD_URL_PREFIX:-}"
 RELEASE_NOTES_URL_PREFIX="${SPARKLE_RELEASE_NOTES_URL_PREFIX:-}"
 LINK_URL="${SPARKLE_LINK_URL:-https://github.com/byrondaniels/duckwhisperer}"
 GENERATE_APPCAST="$ROOT_DIR/vendor/Sparkle/bin/generate_appcast"
+PRIVATE_ED_KEY="${SPARKLE_PRIVATE_ED_KEY:-}"
 
 "$ROOT_DIR/scripts/bootstrap_sparkle.sh" >/dev/null
 
@@ -34,7 +35,19 @@ if [[ -n "$RELEASE_NOTES_URL_PREFIX" ]]; then
   args+=("--release-notes-url-prefix" "$RELEASE_NOTES_URL_PREFIX")
 fi
 
-"$GENERATE_APPCAST" "${args[@]}" "$ARCHIVES_DIR"
+if [[ -n "$PRIVATE_ED_KEY" ]]; then
+  args+=("--ed-key-file" "-")
+elif [[ "${CI:-}" == "true" ]]; then
+  echo "SPARKLE_PRIVATE_ED_KEY is required when generating a signed appcast in CI." >&2
+  echo "Export it from the Sparkle release keychain and store it as a GitHub Actions secret." >&2
+  exit 1
+fi
+
+if [[ -n "$PRIVATE_ED_KEY" ]]; then
+  printf '%s\n' "$PRIVATE_ED_KEY" | "$GENERATE_APPCAST" "${args[@]}" "$ARCHIVES_DIR"
+else
+  "$GENERATE_APPCAST" "${args[@]}" "$ARCHIVES_DIR"
+fi
 
 cat <<EOF
 

@@ -26,9 +26,26 @@ To also create a ZIP:
 PACKAGE_FORMAT=both ./scripts/package_release.sh
 ```
 
-## Optional GitHub Action
+## GitHub Free-Tier Update Publishing
 
-A GitHub Actions template lives at `docs/github-actions/package-macos.yml`. If the repository token has GitHub's `workflow` scope, place that file at `.github/workflows/package-macos.yml` to build DMG and ZIP artifacts from `workflow_dispatch` or version tags.
+The checked-in workflow at `.github/workflows/publish-sparkle.yml` builds the
+Sparkle ZIP update, signs the appcast, and deploys `release/sparkle/` to GitHub
+Pages. That keeps the update feed at the app's default `SUFeedURL`:
+
+```text
+https://byrondaniels.github.io/duckwhisperer/appcast.xml
+```
+
+One-time GitHub setup:
+
+1. Open `Settings -> Pages`.
+2. Set `Build and deployment -> Source` to `GitHub Actions`.
+3. Add `SPARKLE_PUBLIC_ED_KEY` and `SPARKLE_PRIVATE_ED_KEY` under
+   `Settings -> Secrets and variables -> Actions`.
+4. Run the `Publish Sparkle Updates` workflow manually, or push a `v*` tag.
+
+The workflow also uploads the release ZIP and appcast as Actions artifacts for
+inspection.
 
 ## Sparkle Updates
 
@@ -61,6 +78,17 @@ manual installs.
 Publish that file at the `SUFeedURL` embedded in the app, and publish the DMG
 at the URL referenced by the appcast.
 
+To generate and publish the appcast through GitHub Pages instead, use the
+`Publish Sparkle Updates` workflow. It sets:
+
+```bash
+PACKAGE_FORMAT=zip
+REQUIRE_SPARKLE_CONFIG=1
+GENERATE_SPARKLE_APPCAST=1
+```
+
+and points the appcast archive URLs at GitHub Pages.
+
 ## Sign A Public Build
 
 Local ad-hoc builds work for testing, but a public release should use a Developer ID certificate:
@@ -89,7 +117,10 @@ You can also pass credentials through `APPLE_ID`, `APPLE_TEAM_ID`, and `APPLE_AP
 
 ## What Ships
 
-The release app bundles Best Accuracy English dictation so a new user can install and transcribe without a terminal or first-run model download.
+The release app is intentionally small. It does not bundle a speech model by
+default; the default English speech model downloads on first launch after the
+user approves it. Use `BUNDLE_DEFAULT_MODEL=1` only when you want a larger
+offline-first package.
 
 These remain opt-in downloads inside DuckWhisperer:
 
