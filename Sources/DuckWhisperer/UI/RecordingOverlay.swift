@@ -381,8 +381,9 @@ private final class RecordingOverlayView: NSView {
     private func drawDuckWhispererMark(level: CGFloat) {
         let center = NSPoint(x: 72, y: 43)
         let energy = max(0, min(1, level))
-        let scale = 1 + energy * 0.012
-        let bob = sin(animationPhase * 0.92) * (0.18 + energy * 0.38)
+        let isSpeaking = energy > 0.020
+        let scale = 1 + energy * 0.006
+        let bob = isSpeaking ? sin(animationPhase * 0.62) * energy * 0.16 : 0
         NSGraphicsContext.saveGraphicsState()
         let transform = NSAffineTransform()
         transform.translateX(by: center.x, yBy: center.y)
@@ -423,14 +424,15 @@ private final class RecordingOverlayView: NSView {
 
     private func drawFlappingWings(energy: CGFloat) {
         let raw = max(0, min(1, energy))
-        let idle = 0.060 + 0.025 * ((sin(animationPhase * 0.90) + 1) / 2)
-        let loudness = raw > 0.018 ? max(pow(raw, 0.54), 0.20) : idle
-        let flap = sin(animationPhase * (1.7 + loudness * 2.4))
+        let isSpeaking = raw > 0.030
+        let loudness = isSpeaking ? max(pow(raw, 0.52), 0.24) : 0
+        let flapPhase = animationPhase * (0.78 + loudness * 0.95)
+        let flap = isSpeaking ? sin(flapPhase) * smoothstep(loudness) : 0
 
         NSGraphicsContext.saveGraphicsState()
         let shadow = NSShadow()
-        shadow.shadowColor = NSColor(calibratedRed: 1.0, green: 0.58, blue: 0.10, alpha: 0.12 + loudness * 0.20)
-        shadow.shadowBlurRadius = 10 + loudness * 10
+        shadow.shadowColor = NSColor(calibratedRed: 1.0, green: 0.58, blue: 0.10, alpha: 0.10 + loudness * 0.18)
+        shadow.shadowBlurRadius = 8 + loudness * 12
         shadow.shadowOffset = NSSize(width: 0, height: 2)
         shadow.set()
 
@@ -440,35 +442,39 @@ private final class RecordingOverlayView: NSView {
     }
 
     private func drawWing(side: CGFloat, pivot: NSPoint, loudness: CGFloat, flap: CGFloat) {
-        let offsets: [CGFloat] = [-2.3, -1.25, -0.25, 0.72, 1.62]
-        let wingLift = -8 - loudness * 20 - flap * (5 + loudness * 11)
-        let open = 0.66 + loudness * 0.48
+        let offsets: [CGFloat] = [-2.8, -1.52, -0.28, 0.90, 1.92, 2.74]
+        let glideLift: CGFloat = -13
+        let speechLift = -loudness * 12
+        let flapLift = -flap * (4 + loudness * 8)
+        let wingLift = glideLift + speechLift + flapLift
+        let open = 0.84 + loudness * 0.36
 
         for (index, offset) in offsets.enumerated() {
             let rank = CGFloat(index)
-            let extensionLength = 32 + loudness * 24 + (4 - rank) * 3
-            let tipX = pivot.x + side * (extensionLength + abs(offset) * 3.5)
-            let tipY = pivot.y + offset * 12 * open + wingLift + rank * 1.4
+            let featherPriority = CGFloat(offsets.count - index)
+            let extensionLength = 48 + loudness * 30 + featherPriority * 5.2
+            let tipX = pivot.x + side * (extensionLength + abs(offset) * 4.2)
+            let tipY = pivot.y + offset * 11.5 * open + wingLift + rank * 1.15
             let rootTop = NSPoint(
                 x: pivot.x + side * (2 + rank * 0.65),
-                y: pivot.y - 5 + rank * 1.2
+                y: pivot.y - 6 + rank * 1.0
             )
             let rootBottom = NSPoint(
                 x: pivot.x + side * (4 + rank * 0.55),
-                y: pivot.y + 7 + rank * 1.5
+                y: pivot.y + 8 + rank * 1.2
             )
 
             let path = NSBezierPath()
             path.move(to: rootTop)
             path.curve(
                 to: NSPoint(x: tipX, y: tipY),
-                controlPoint1: NSPoint(x: pivot.x + side * (12 + loudness * 5), y: rootTop.y + offset * 3 - loudness * 3),
-                controlPoint2: NSPoint(x: tipX - side * (14 + loudness * 7), y: tipY - 7)
+                controlPoint1: NSPoint(x: pivot.x + side * (20 + loudness * 8), y: rootTop.y + offset * 2.0 - loudness * 2),
+                controlPoint2: NSPoint(x: tipX - side * (24 + loudness * 9), y: tipY - 8 - loudness * 3)
             )
             path.curve(
                 to: rootBottom,
-                controlPoint1: NSPoint(x: tipX - side * (10 + loudness * 4), y: tipY + 8 + rank * 1.7),
-                controlPoint2: NSPoint(x: pivot.x + side * (18 + loudness * 5), y: rootBottom.y + offset * 2)
+                controlPoint1: NSPoint(x: tipX - side * (18 + loudness * 7), y: tipY + 10 + rank * 1.4),
+                controlPoint2: NSPoint(x: pivot.x + side * (24 + loudness * 7), y: rootBottom.y + offset * 1.4)
             )
             path.close()
 
@@ -487,15 +493,20 @@ private final class RecordingOverlayView: NSView {
             let vein = NSBezierPath()
             vein.lineCapStyle = .round
             vein.lineWidth = 0.7
-            vein.move(to: NSPoint(x: pivot.x + side * (10 + rank), y: pivot.y + rank * 1.0))
+            vein.move(to: NSPoint(x: pivot.x + side * (12 + rank), y: pivot.y + rank * 0.7))
             vein.curve(
-                to: NSPoint(x: tipX - side * 6, y: tipY + 2),
-                controlPoint1: NSPoint(x: pivot.x + side * 18, y: pivot.y + offset * 4 - loudness * 4),
-                controlPoint2: NSPoint(x: tipX - side * 16, y: tipY + 2)
+                to: NSPoint(x: tipX - side * 8, y: tipY + 2),
+                controlPoint1: NSPoint(x: pivot.x + side * 24, y: pivot.y + offset * 3 - loudness * 3),
+                controlPoint2: NSPoint(x: tipX - side * 22, y: tipY + 2)
             )
             NSColor.white.withAlphaComponent(0.12 + loudness * 0.10).setStroke()
             vein.stroke()
         }
+    }
+
+    private func smoothstep(_ value: CGFloat) -> CGFloat {
+        let clamped = max(0, min(1, value))
+        return clamped * clamped * (3 - 2 * clamped)
     }
 
     private func drawHudArtwork(_ image: NSImage, energy: CGFloat) {
@@ -651,7 +662,7 @@ private final class RecordingOverlayView: NSView {
     }
 }
 final class RecordingOverlayController {
-    private static let standardSize = NSSize(width: 400, height: 270)
+    private static let standardSize = NSSize(width: 440, height: 278)
     private static let presenterSize = NSSize(width: 560, height: 220)
     private static let overlayCollectionBehavior: NSWindow.CollectionBehavior = [
         .canJoinAllSpaces,
@@ -730,6 +741,12 @@ final class RecordingOverlayController {
             overlayView.hintText = hintText
         }
         overlayView.commandText = commandText
+        if !isVisible {
+            targetAudioLevel = 0
+            displayedAudioLevel = 0
+            animationPhase = 0
+            overlayView.setAnimationState(audioLevel: 0, animationPhase: 0)
+        }
         startAnimationTimer()
         if isVisible {
             revealOnActiveSpace()
@@ -862,15 +879,14 @@ final class RecordingOverlayController {
 
     func setAudioLevel(_ level: Float) {
         let clampedLevel = max(0, min(1, CGFloat(level)))
-        let noiseFloor: CGFloat = 0.004
-        let gatedLevel = max(0, (clampedLevel - noiseFloor) / (1 - noiseFloor))
-        guard gatedLevel > 0 else {
+        let noiseFloor: CGFloat = 0.010
+        guard clampedLevel > noiseFloor else {
             targetAudioLevel = 0
             return
         }
-
-        let shapedLevel = pow(gatedLevel, 0.58) * 1.28
-        targetAudioLevel = min(0.98, max(0.16, shapedLevel))
+        let gatedLevel = max(0, (clampedLevel - noiseFloor) / (1 - noiseFloor))
+        let shapedLevel = pow(gatedLevel, 0.64) * 1.16
+        targetAudioLevel = min(0.96, max(0.12, shapedLevel))
     }
 
     private func startAnimationTimer() {
@@ -896,13 +912,15 @@ final class RecordingOverlayController {
             return
         }
 
-        let smoothing: CGFloat = targetAudioLevel > displayedAudioLevel ? 0.22 : 0.10
+        let smoothing: CGFloat = targetAudioLevel > displayedAudioLevel ? 0.14 : 0.08
         displayedAudioLevel += (targetAudioLevel - displayedAudioLevel) * smoothing
-        if abs(displayedAudioLevel - targetAudioLevel) < 0.002 {
+        if abs(displayedAudioLevel - targetAudioLevel) < 0.004 {
             displayedAudioLevel = targetAudioLevel
         }
 
-        animationPhase += 0.032 + displayedAudioLevel * 0.08
+        if displayedAudioLevel > 0.020 {
+            animationPhase += 0.014 + displayedAudioLevel * 0.045
+        }
         overlayView.setAnimationState(audioLevel: displayedAudioLevel, animationPhase: animationPhase)
     }
 }
