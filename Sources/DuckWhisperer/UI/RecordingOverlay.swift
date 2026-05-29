@@ -442,10 +442,10 @@ private final class RecordingOverlayView: NSView {
     }
 
     private func drawWing(side: CGFloat, pivot: NSPoint, loudness: CGFloat, wavePhase: CGFloat, waveAmplitude: CGFloat) {
-        let offsets: [CGFloat] = [-2.8, -1.52, -0.28, 0.90, 1.92, 2.74]
+        let offsets: [CGFloat] = [-1.90, -1.48, -1.08, -0.70, -0.33, 0.05, 0.42, 0.78, 1.12, 1.44, 1.74]
         let featherSpan = CGFloat(max(offsets.count - 1, 1))
-        let baseLift: CGFloat = -13 - loudness * 10
-        let open = 0.84 + loudness * 0.36
+        let baseLift: CGFloat = -11 - loudness * 6
+        let open = 0.78 + loudness * 0.16
 
         drawWingMembrane(
             side: side,
@@ -462,24 +462,25 @@ private final class RecordingOverlayView: NSView {
             let progress = rank / featherSpan
             let featherPriority = CGFloat(offsets.count - index)
 
-            let rootWave = waveAmplitude * sin(wavePhase + 0.18 - progress * 0.35) * (0.8 + loudness * 1.6)
-            let midWave = waveAmplitude * sin(wavePhase - 0.48 - progress * 0.90) * (3.8 + loudness * 7.0)
-            let tipWave = waveAmplitude * sin(wavePhase - 1.05 - progress * 1.55) * (6.8 + loudness * 10.5)
-            let sweepWave = waveAmplitude * cos(wavePhase - 0.82 - progress * 1.15) * (1.8 + loudness * 4.2)
+            let rootWave = waveAmplitude * sin(wavePhase + 0.16 - progress * 0.28) * (0.45 + loudness * 1.0)
+            let midWave = waveAmplitude * sin(wavePhase - 0.52 - progress * 0.88) * (2.0 + loudness * 4.1)
+            let tipWave = waveAmplitude * sin(wavePhase - 1.12 - progress * 1.50) * (3.8 + loudness * 6.6)
+            let sweepWave = waveAmplitude * cos(wavePhase - 0.88 - progress * 1.05) * (1.6 + loudness * 3.6)
+            let trailingDrop = 0.6 + pow(progress, 1.7) * (8.0 + loudness * 1.2)
 
-            let extensionLength = 53 + loudness * 29 + featherPriority * 5.0
-            let tipX = pivot.x + side * (extensionLength + abs(offset) * 4.4 + sweepWave)
-            let tipY = pivot.y + offset * 11.7 * open + baseLift + tipWave + rank * 1.05
-            let shoulderX = pivot.x + side * (extensionLength * 0.45 + loudness * 8)
-            let shoulderY = pivot.y + offset * 7.8 * open + baseLift * 0.56 + midWave + rank * 0.72
-            let lowerShoulderY = shoulderY + 11 + rank * 0.68 + midWave * 0.22
+            let extensionLength = 62 + loudness * 14 + featherPriority * 4.4
+            let tipX = pivot.x + side * (extensionLength + abs(offset) * 2.6 + sweepWave)
+            let tipY = pivot.y + offset * 7.4 * open + baseLift + trailingDrop + tipWave + rank * 0.30
+            let shoulderX = pivot.x + side * (extensionLength * 0.42 + loudness * 6)
+            let shoulderY = pivot.y + offset * 4.8 * open + baseLift * 0.54 + trailingDrop * 0.36 + midWave + rank * 0.18
+            let lowerShoulderY = shoulderY + 4.8 + progress * 2.8 + midWave * 0.14
             let rootTop = NSPoint(
-                x: pivot.x + side * (2 + rank * 0.65),
-                y: pivot.y - 6 + rank * 1.0 + rootWave
+                x: pivot.x + side * (2 + rank * 0.30),
+                y: pivot.y - 4.2 + rank * 0.24 + rootWave
             )
             let rootBottom = NSPoint(
-                x: pivot.x + side * (4 + rank * 0.55),
-                y: pivot.y + 8 + rank * 1.2 + rootWave * 0.45
+                x: pivot.x + side * (4 + rank * 0.32),
+                y: pivot.y + 6.0 + rank * 0.30 + rootWave * 0.45
             )
 
             let path = NSBezierPath()
@@ -487,45 +488,45 @@ private final class RecordingOverlayView: NSView {
             path.curve(
                 to: NSPoint(x: shoulderX, y: shoulderY),
                 controlPoint1: NSPoint(
-                    x: pivot.x + side * (15 + loudness * 5),
-                    y: rootTop.y + offset * 1.7 - loudness * 1.2 + midWave * 0.28
+                    x: pivot.x + side * (16 + loudness * 5),
+                    y: rootTop.y + offset * 0.8 - loudness * 0.8 + midWave * 0.20
                 ),
                 controlPoint2: NSPoint(
-                    x: shoulderX - side * (16 + loudness * 5),
-                    y: shoulderY - 9 - loudness * 2
+                    x: shoulderX - side * (17 + loudness * 5),
+                    y: shoulderY - 4.5 - loudness * 0.9
                 )
             )
             path.curve(
                 to: NSPoint(x: tipX, y: tipY),
                 controlPoint1: NSPoint(
-                    x: shoulderX + side * (18 + loudness * 7),
-                    y: shoulderY + midWave * 0.24
+                    x: shoulderX + side * (29 + loudness * 7),
+                    y: shoulderY + midWave * 0.16
                 ),
                 controlPoint2: NSPoint(
-                    x: tipX - side * (21 + loudness * 8),
-                    y: tipY - 10 - loudness * 2.5 + tipWave * 0.16
+                    x: tipX - side * (35 + loudness * 8),
+                    y: tipY - 4.5 - loudness * 1.3 + tipWave * 0.10
                 )
             )
             path.curve(
                 to: NSPoint(x: shoulderX, y: lowerShoulderY),
                 controlPoint1: NSPoint(
                     x: tipX - side * (14 + loudness * 6),
-                    y: tipY + 9 + rank * 1.0 + tipWave * 0.12
+                    y: tipY + 4.4 + progress * 1.4 + tipWave * 0.07
                 ),
                 controlPoint2: NSPoint(
-                    x: shoulderX + side * (15 + loudness * 6),
-                    y: lowerShoulderY + 7 + midWave * 0.30
+                    x: shoulderX + side * (17 + loudness * 6),
+                    y: lowerShoulderY + 3.2 + midWave * 0.18
                 )
             )
             path.curve(
                 to: rootBottom,
                 controlPoint1: NSPoint(
                     x: shoulderX - side * (18 + loudness * 6),
-                    y: lowerShoulderY + 5 + midWave * 0.16
+                    y: lowerShoulderY + 2.8 + midWave * 0.10
                 ),
                 controlPoint2: NSPoint(
-                    x: pivot.x + side * (23 + loudness * 7),
-                    y: rootBottom.y + offset * 1.2 - rootWave * 0.30
+                    x: pivot.x + side * (24 + loudness * 7),
+                    y: rootBottom.y + offset * 0.5 - rootWave * 0.30
                 )
             )
             path.close()
@@ -547,14 +548,14 @@ private final class RecordingOverlayView: NSView {
             vein.lineWidth = 0.7
             vein.move(to: NSPoint(x: pivot.x + side * (12 + rank), y: pivot.y + rank * 0.7))
             vein.curve(
-                to: NSPoint(x: shoulderX, y: shoulderY + 4),
-                controlPoint1: NSPoint(x: pivot.x + side * 23, y: pivot.y + offset * 2.6 - loudness * 2 + midWave * 0.18),
-                controlPoint2: NSPoint(x: shoulderX - side * 13, y: shoulderY + midWave * 0.20)
+                to: NSPoint(x: shoulderX, y: shoulderY + 2.2),
+                controlPoint1: NSPoint(x: pivot.x + side * 26, y: pivot.y + offset * 1.4 - loudness * 1.2 + midWave * 0.12),
+                controlPoint2: NSPoint(x: shoulderX - side * 18, y: shoulderY + midWave * 0.16)
             )
             vein.curve(
                 to: NSPoint(x: tipX - side * 8, y: tipY + 2),
-                controlPoint1: NSPoint(x: shoulderX + side * 16, y: shoulderY + 5 + midWave * 0.22),
-                controlPoint2: NSPoint(x: tipX - side * 22, y: tipY + 2 + tipWave * 0.10)
+                controlPoint1: NSPoint(x: shoulderX + side * 22, y: shoulderY + 3.2 + midWave * 0.14),
+                controlPoint2: NSPoint(x: tipX - side * 28, y: tipY + 2 + tipWave * 0.08)
             )
             NSColor.white.withAlphaComponent(0.12 + loudness * 0.10).setStroke()
             vein.stroke()
@@ -570,56 +571,56 @@ private final class RecordingOverlayView: NSView {
         wavePhase: CGFloat,
         waveAmplitude: CGFloat
     ) {
-        let rootWave = waveAmplitude * sin(wavePhase + 0.10) * (0.7 + loudness * 1.2)
-        let midWave = waveAmplitude * sin(wavePhase - 0.56) * (3.5 + loudness * 6.0)
-        let tipWave = waveAmplitude * sin(wavePhase - 1.18) * (6.5 + loudness * 9.5)
-        let sweepWave = waveAmplitude * cos(wavePhase - 0.92) * (1.4 + loudness * 3.8)
-        let extensionLength = 90 + loudness * 24 + sweepWave
+        let rootWave = waveAmplitude * sin(wavePhase + 0.10) * (0.45 + loudness * 0.9)
+        let midWave = waveAmplitude * sin(wavePhase - 0.56) * (1.8 + loudness * 3.6)
+        let tipWave = waveAmplitude * sin(wavePhase - 1.18) * (3.4 + loudness * 5.8)
+        let sweepWave = waveAmplitude * cos(wavePhase - 0.92) * (1.3 + loudness * 3.2)
+        let extensionLength = 112 + loudness * 9 + sweepWave
 
-        let rootTop = NSPoint(x: pivot.x + side * 3, y: pivot.y - 18 * open + rootWave)
-        let rootBottom = NSPoint(x: pivot.x + side * 5, y: pivot.y + 25 * open + rootWave * 0.4)
+        let rootTop = NSPoint(x: pivot.x + side * 3, y: pivot.y - 10.5 * open + rootWave)
+        let rootBottom = NSPoint(x: pivot.x + side * 5, y: pivot.y + 12.5 * open + rootWave * 0.4)
         let shoulder = NSPoint(
             x: pivot.x + side * (extensionLength * 0.54),
-            y: pivot.y - 15 * open + baseLift * 0.58 + midWave
+            y: pivot.y - 9.5 * open + baseLift * 0.60 + midWave
         )
         let lowerShoulder = NSPoint(
             x: pivot.x + side * (extensionLength * 0.48),
-            y: pivot.y + 16 * open + baseLift * 0.18 + midWave * 0.50
+            y: pivot.y + 7.5 * open + baseLift * 0.18 + midWave * 0.50
         )
         let tip = NSPoint(
             x: pivot.x + side * extensionLength,
-            y: pivot.y - 10 * open + baseLift + tipWave
+            y: pivot.y - 6.5 * open + baseLift + tipWave
         )
 
         let membrane = NSBezierPath()
         membrane.move(to: rootTop)
         membrane.curve(
             to: shoulder,
-            controlPoint1: NSPoint(x: pivot.x + side * (26 + loudness * 7), y: rootTop.y - 8 + midWave * 0.18),
-            controlPoint2: NSPoint(x: shoulder.x - side * (22 + loudness * 7), y: shoulder.y - 13)
+            controlPoint1: NSPoint(x: pivot.x + side * (34 + loudness * 7), y: rootTop.y - 4.8 + midWave * 0.14),
+            controlPoint2: NSPoint(x: shoulder.x - side * (28 + loudness * 7), y: shoulder.y - 7.5)
         )
         membrane.curve(
             to: tip,
-            controlPoint1: NSPoint(x: shoulder.x + side * (24 + loudness * 7), y: shoulder.y + midWave * 0.10),
-            controlPoint2: NSPoint(x: tip.x - side * (28 + loudness * 9), y: tip.y - 16 + tipWave * 0.12)
+            controlPoint1: NSPoint(x: shoulder.x + side * (32 + loudness * 7), y: shoulder.y + midWave * 0.08),
+            controlPoint2: NSPoint(x: tip.x - side * (36 + loudness * 9), y: tip.y - 8.5 + tipWave * 0.10)
         )
         membrane.curve(
             to: lowerShoulder,
-            controlPoint1: NSPoint(x: tip.x - side * (24 + loudness * 8), y: tip.y + 20 + tipWave * 0.12),
-            controlPoint2: NSPoint(x: lowerShoulder.x + side * (20 + loudness * 7), y: lowerShoulder.y + 12)
+            controlPoint1: NSPoint(x: tip.x - side * (30 + loudness * 8), y: tip.y + 8.5 + tipWave * 0.10),
+            controlPoint2: NSPoint(x: lowerShoulder.x + side * (26 + loudness * 7), y: lowerShoulder.y + 5.8)
         )
         membrane.curve(
             to: rootBottom,
-            controlPoint1: NSPoint(x: lowerShoulder.x - side * (22 + loudness * 6), y: lowerShoulder.y + 7),
-            controlPoint2: NSPoint(x: pivot.x + side * (30 + loudness * 7), y: rootBottom.y + 8)
+            controlPoint1: NSPoint(x: lowerShoulder.x - side * (28 + loudness * 6), y: lowerShoulder.y + 4.2),
+            controlPoint2: NSPoint(x: pivot.x + side * (34 + loudness * 7), y: rootBottom.y + 4.8)
         )
         membrane.close()
 
         NSGraphicsContext.saveGraphicsState()
         membrane.addClip()
         NSGradient(colors: [
-            NSColor(calibratedRed: 1.0, green: 0.82, blue: 0.22, alpha: 0.18 + loudness * 0.10),
-            NSColor(calibratedRed: 1.0, green: 0.55, blue: 0.08, alpha: 0.08 + loudness * 0.08)
+            NSColor(calibratedRed: 1.0, green: 0.82, blue: 0.22, alpha: 0.10 + loudness * 0.07),
+            NSColor(calibratedRed: 1.0, green: 0.55, blue: 0.08, alpha: 0.035 + loudness * 0.055)
         ])?.draw(in: membrane.bounds, angle: side < 0 ? 180 : 0)
         NSGraphicsContext.restoreGraphicsState()
     }
