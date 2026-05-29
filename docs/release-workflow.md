@@ -30,6 +30,37 @@ PACKAGE_FORMAT=both ./scripts/package_release.sh
 
 A GitHub Actions template lives at `docs/github-actions/package-macos.yml`. If the repository token has GitHub's `workflow` scope, place that file at `.github/workflows/package-macos.yml` to build DMG and ZIP artifacts from `workflow_dispatch` or version tags.
 
+## Sparkle Updates
+
+DuckWhisperer bundles Sparkle 2 for native macOS updates. Run this once on a release machine:
+
+```bash
+./scripts/setup_sparkle_keys.sh
+```
+
+For public update releases, require Sparkle configuration and generate the signed appcast:
+
+```bash
+SIGNING_IDENTITY="Developer ID Application: Your Name (TEAMID)" \
+  REQUIRE_SPARKLE_CONFIG=1 \
+  GENERATE_SPARKLE_APPCAST=1 \
+  ./scripts/package_release.sh
+```
+
+The appcast is written to:
+
+```text
+release/appcast.xml
+```
+
+The Sparkle archive set is kept separately under `release/sparkle/` so the
+appcast has only one update archive per bundle version. If both DMG and ZIP are
+created, the release script prefers ZIP for Sparkle and leaves the DMG for
+manual installs.
+
+Publish that file at the `SUFeedURL` embedded in the app, and publish the DMG
+at the URL referenced by the appcast.
+
 ## Sign A Public Build
 
 Local ad-hoc builds work for testing, but a public release should use a Developer ID certificate:

@@ -26,3 +26,7 @@ Resources/Translation/*.argosmodel
 
 # Local logs and scratch files
 *.log
+
+# Local Sparkle release configuration
+.sparkle-public-ed-key
+.sparkle-private-ed-key

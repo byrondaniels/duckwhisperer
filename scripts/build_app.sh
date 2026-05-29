@@ -9,6 +9,12 @@ RESOURCES_DIR="$CONTENTS_DIR/Resources"
 FRAMEWORKS_DIR="$CONTENTS_DIR/Frameworks"
 FRAMEWORK_SRC="$ROOT_DIR/vendor/whisper-xcframework/build-apple/whisper.xcframework/macos-arm64_x86_64/whisper.framework"
 FRAMEWORK_PARENT="$(dirname "$FRAMEWORK_SRC")"
+ENABLE_SPARKLE="${ENABLE_SPARKLE:-1}"
+SPARKLE_VENDOR_DIR="$ROOT_DIR/vendor/Sparkle"
+SPARKLE_FRAMEWORK_SRC="$SPARKLE_VENDOR_DIR/Sparkle.framework"
+SPARKLE_FRAMEWORK_PARENT="$SPARKLE_VENDOR_DIR"
+SPARKLE_FEED_URL="${SPARKLE_FEED_URL:-https://byrondaniels.github.io/duckwhisperer/appcast.xml}"
+SPARKLE_PUBLIC_ED_KEY_FILE="${SPARKLE_PUBLIC_ED_KEY_FILE:-$ROOT_DIR/.sparkle-public-ed-key}"
 MODEL_DST_DIR="$RESOURCES_DIR/Models"
 TRANSLATION_DST_DIR="$RESOURCES_DIR/Translation"
 MODULE_CACHE_DIR="$ROOT_DIR/build/module-cache"
@@ -20,6 +26,7 @@ LEGACY_SUPPORT_ROOTS=(
 DEFAULT_MODEL_FILE="ggml-small.en.bin"
 DEFAULT_MODEL_SRC="$SUPPORT_ROOT/Models/$DEFAULT_MODEL_FILE"
 SWIFT_SOURCES=()
+SWIFTC_FRAMEWORK_ARGS=()
 SIGNING_IDENTITY_WAS_SET=0
 
 find_default_signing_identity() {
@@ -58,9 +65,43 @@ sign_app() {
   codesign --force --deep --sign "$identity" "$APP_DIR"
 }
 
+sparkle_public_key() {
+  if [[ -n "${SPARKLE_PUBLIC_ED_KEY:-}" ]]; then
+    printf '%s\n' "$SPARKLE_PUBLIC_ED_KEY"
+    return
+  fi
+
+  if [[ -f "$SPARKLE_PUBLIC_ED_KEY_FILE" ]]; then
+    tr -d '\n' < "$SPARKLE_PUBLIC_ED_KEY_FILE"
+    printf '\n'
+  fi
+}
+
+set_plist_string() {
+  local key="$1"
+  local value="$2"
+  local plist="$CONTENTS_DIR/Info.plist"
+  /usr/libexec/PlistBuddy -c "Delete :$key" "$plist" >/dev/null 2>&1 || true
+  /usr/libexec/PlistBuddy -c "Add :$key string $value" "$plist"
+}
+
 if [[ ! -d "$FRAMEWORK_SRC" ]]; then
   echo "Missing whisper.framework. Download it with scripts/bootstrap_backend.sh first." >&2
   exit 1
+fi
+
+if [[ "$ENABLE_SPARKLE" == "1" ]]; then
+  if [[ ! -d "$SPARKLE_FRAMEWORK_SRC" ]]; then
+    "$ROOT_DIR/scripts/bootstrap_sparkle.sh"
+  fi
+  if [[ ! -d "$SPARKLE_FRAMEWORK_SRC" ]]; then
+    echo "Missing Sparkle.framework. Run scripts/bootstrap_sparkle.sh first." >&2
+    exit 1
+  fi
+  SWIFTC_FRAMEWORK_ARGS+=(
+    -F "$SPARKLE_FRAMEWORK_PARENT"
+    -framework Sparkle
+  )
 fi
 
 if [[ ("${INSTALL_DEFAULT_MODEL:-1}" == "1" || "${INSTALL_TRANSLATION:-0}" == "1") && ! -d "$SUPPORT_ROOT" ]]; then
@@ -80,6 +121,15 @@ fi
 rm -rf "$APP_DIR"
 mkdir -p "$MACOS_DIR" "$RESOURCES_DIR" "$FRAMEWORKS_DIR" "$MODEL_DST_DIR" "$TRANSLATION_DST_DIR" "$MODULE_CACHE_DIR"
 cp "$ROOT_DIR/Info.plist" "$CONTENTS_DIR/Info.plist"
+if [[ "$ENABLE_SPARKLE" == "1" ]]; then
+  set_plist_string "SUFeedURL" "$SPARKLE_FEED_URL"
+  public_key="$(sparkle_public_key)"
+  if [[ -n "$public_key" ]]; then
+    set_plist_string "SUPublicEDKey" "$public_key"
+  else
+    echo "Sparkle is linked, but SUPublicEDKey is not configured. Run scripts/setup_sparkle_keys.sh or set SPARKLE_PUBLIC_ED_KEY for release builds." >&2
+  fi
+fi
 while IFS= read -r source; do
   SWIFT_SOURCES+=("$source")
 done < <(find "$ROOT_DIR/Sources/DuckWhisperer" -name '*.swift' -print | sort)
@@ -102,6 +152,9 @@ if [[ -f "$ROOT_DIR/Resources/DuckWhispererOption3Hud.png" ]]; then
   cp "$ROOT_DIR/Resources/DuckWhispererOption3Hud.png" "$RESOURCES_DIR/DuckWhispererOption3Hud.png"
 fi
 ditto "$FRAMEWORK_SRC" "$FRAMEWORKS_DIR/whisper.framework"
+if [[ "$ENABLE_SPARKLE" == "1" ]]; then
+  ditto "$SPARKLE_FRAMEWORK_SRC" "$FRAMEWORKS_DIR/Sparkle.framework"
+fi
 find "$MODEL_DST_DIR" -maxdepth 1 -type f -name 'ggml-*.bin' -delete
 cp "$ROOT_DIR/translation/translate_local.py" "$TRANSLATION_DST_DIR/translate_local.py"
 
@@ -111,6 +164,7 @@ swiftc \
   -module-cache-path "$MODULE_CACHE_DIR" \
   -F "$FRAMEWORK_PARENT" \
   -framework whisper \
+  "${SWIFTC_FRAMEWORK_ARGS[@]}" \
   -framework AppKit \
   -framework ApplicationServices \
   -framework AVFoundation \

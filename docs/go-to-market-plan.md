@@ -317,7 +317,7 @@ Goal: make the product safe for nontechnical users.
 - Add first-run welcome and permission doctor as the default first experience.
 - Add support bundle export.
 - Add basic crash/error reporting path that preserves privacy.
-- Add version/update check.
+- Ship Sparkle 2 auto-update flow with signed appcast.
 - Finalize name and domain.
 - Write privacy policy and terms.
 - Create homepage with one video demo.

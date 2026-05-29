@@ -2,6 +2,7 @@ import AppKit
 import ApplicationServices
 import AVFoundation
 import Foundation
+import Sparkle
 import whisper
 
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemValidation {
@@ -27,6 +28,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     private let preserveCapitalizationMenuItem = NSMenuItem(title: "Preserve Capitalization", action: #selector(togglePreserveCapitalization), keyEquivalent: "")
     private let audioDuckingMenuItem = NSMenuItem(title: "Audio Ducking", action: #selector(toggleAudioDucking), keyEquivalent: "")
     private let presenterModeMenuItem = NSMenuItem(title: "Presenter Mode", action: #selector(togglePresenterMode), keyEquivalent: "")
+    private let checkForUpdatesMenuItem = NSMenuItem(title: "Check For Updates...", action: nil, keyEquivalent: "")
     private let hotKeyController = HotKeyController()
     private let audioCapture = AudioCapture()
     private let audioDucker = AudioDucker()
@@ -57,6 +59,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         onOpenTryIt: { [weak self] in self?.openTryIt() },
         onExportSupportBundle: { [weak self] in self?.exportSupportBundle() }
     )
+    private lazy var updaterController: SPUStandardUpdaterController? = Self.makeUpdaterController()
     private lazy var transcriber = WhisperTranscriber(modelURL: modelURL)
     private lazy var modelExplorer = ModelExplorerController(
         currentModel: selectedModel,
@@ -194,7 +197,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             }
         }
 
-        scheduleAutomaticUpdateCheck()
+        _ = updaterController
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
@@ -207,6 +210,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         let micReady = AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
         let pasteReady = PasteTargetDetector.readiness().severity != .blocked
         return modelReady && micReady && pasteReady
+    }
+
+    private static func makeUpdaterController() -> SPUStandardUpdaterController? {
+        guard sparkleIsConfigured else {
+            AppLog.write("Sparkle updater disabled; missing SUFeedURL or SUPublicEDKey.")
+            return nil
+        }
+
+        return SPUStandardUpdaterController(
+            startingUpdater: true,
+            updaterDelegate: nil,
+            userDriverDelegate: nil
+        )
+    }
+
+    private static var sparkleIsConfigured: Bool {
+        let bundle = Bundle.main
+        let feedURL = bundle.object(forInfoDictionaryKey: "SUFeedURL") as? String
+        let publicKey = bundle.object(forInfoDictionaryKey: "SUPublicEDKey") as? String
+        return !(feedURL ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && !(publicKey ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -337,13 +361,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         )
         exportSupportItem.target = self
         settingsMenu.addItem(exportSupportItem)
-        let checkForUpdatesItem = NSMenuItem(
-            title: "Check For Updates...",
-            action: #selector(checkForUpdates),
-            keyEquivalent: ""
-        )
-        checkForUpdatesItem.target = self
-        settingsMenu.addItem(checkForUpdatesItem)
+        configureCheckForUpdatesMenuItem()
+        settingsMenu.addItem(checkForUpdatesMenuItem)
         settingsMenu.addItem(openMicSettings)
         settingsMenu.addItem(openAccessibilitySettings)
         menu.addItem(NSMenuItem.separator())
@@ -1312,119 +1331,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         }
     }
 
-    @objc private func checkForUpdates() {
-        runUpdateCheck(isAutomatic: false)
-    }
-
-    private func scheduleAutomaticUpdateCheck() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
-            self?.checkForUpdatesIfNeeded()
+    private func configureCheckForUpdatesMenuItem() {
+        if let updaterController {
+            checkForUpdatesMenuItem.target = updaterController
+            checkForUpdatesMenuItem.action = #selector(SPUStandardUpdaterController.checkForUpdates(_:))
+            checkForUpdatesMenuItem.isEnabled = true
+        } else {
+            checkForUpdatesMenuItem.title = "Check For Updates... (Unavailable)"
+            checkForUpdatesMenuItem.isEnabled = false
         }
-    }
-
-    private func checkForUpdatesIfNeeded() {
-        guard isSetupComplete() else {
-            return
-        }
-
-        if let lastCheck = UserDefaults.standard.object(forKey: lastAutomaticUpdateCheckAtKey) as? Date,
-           Date().timeIntervalSince(lastCheck) < automaticUpdateCheckInterval {
-            return
-        }
-
-        UserDefaults.standard.set(Date(), forKey: lastAutomaticUpdateCheckAtKey)
-        runUpdateCheck(isAutomatic: true)
-    }
-
-    private func runUpdateCheck(isAutomatic: Bool) {
-        UpdateChecker.check { [weak self] result in
-            guard let self else { return }
-
-            switch result {
-            case .success(.updateAvailable(let update)):
-                if isAutomatic && UserDefaults.standard.string(forKey: lastPromptedUpdateTagKey) == update.tagName {
-                    return
-                }
-                UserDefaults.standard.set(update.tagName, forKey: lastPromptedUpdateTagKey)
-                self.showUpdateAvailableAlert(update)
-            case .success(.upToDate(let latestVersion, let latestBuild)):
-                if !isAutomatic {
-                    self.showNoUpdateAlert(latestVersion: latestVersion, latestBuild: latestBuild)
-                }
-            case .failure(let error):
-                AppLog.write("update check failed: \(error.localizedDescription)")
-                if !isAutomatic {
-                    self.showUpdateErrorAlert(error)
-                }
-            }
-        }
-    }
-
-    private func showUpdateAvailableAlert(_ update: AppUpdate) {
-        let previousActivationPolicy = NSApp.activationPolicy()
-        NSApp.setActivationPolicy(.regular)
-        NSApp.activate(ignoringOtherApps: true)
-
-        let alert = NSAlert()
-        alert.alertStyle = .informational
-        alert.messageText = "DuckWhisperer \(update.latestDisplayVersion) is available"
-        let assetLine = update.assetName.map { "\nPackage: \($0)" } ?? ""
-        alert.informativeText = """
-        Installed: \(update.currentDisplayVersion)
-        Available: \(update.latestDisplayVersion)\(assetLine)
-
-        Download the DMG, quit DuckWhisperer, then drag the new app into Applications.
-        """
-        let downloadButton = alert.addButton(withTitle: "Download DMG")
-        downloadButton.isEnabled = update.downloadURL != nil
-        alert.addButton(withTitle: "View Release")
-        alert.addButton(withTitle: "Later")
-
-        let response = alert.runModal()
-        NSApp.setActivationPolicy(previousActivationPolicy)
-
-        if response == .alertFirstButtonReturn, let downloadURL = update.downloadURL {
-            NSWorkspace.shared.open(downloadURL)
-        } else if response == .alertSecondButtonReturn {
-            NSWorkspace.shared.open(update.releaseURL)
-        }
-    }
-
-    private func showNoUpdateAlert(latestVersion: String, latestBuild: Int?) {
-        let previousActivationPolicy = NSApp.activationPolicy()
-        NSApp.setActivationPolicy(.regular)
-        NSApp.activate(ignoringOtherApps: true)
-
-        let latest = latestBuild.map { "\(latestVersion) (\($0))" } ?? latestVersion
-        let alert = NSAlert()
-        alert.alertStyle = .informational
-        alert.messageText = "DuckWhisperer is up to date"
-        alert.informativeText = "Latest available version: \(latest)"
-        alert.addButton(withTitle: "OK")
-        alert.runModal()
-        NSApp.setActivationPolicy(previousActivationPolicy)
-    }
-
-    private func showUpdateErrorAlert(_ error: Error) {
-        let previousActivationPolicy = NSApp.activationPolicy()
-        NSApp.setActivationPolicy(.regular)
-        NSApp.activate(ignoringOtherApps: true)
-
-        let alert = NSAlert()
-        alert.alertStyle = .warning
-        alert.messageText = "Could not check for updates"
-        alert.informativeText = error.localizedDescription
-        alert.addButton(withTitle: "Open Releases")
-        alert.addButton(withTitle: "OK")
-        let response = alert.runModal()
-        NSApp.setActivationPolicy(previousActivationPolicy)
-
-        guard response == .alertFirstButtonReturn,
-              let url = URL(string: "https://github.com/byrondaniels/duckwhisperer/releases")
-        else {
-            return
-        }
-        NSWorkspace.shared.open(url)
     }
 
     @objc private func clearTranscriptHistory() {

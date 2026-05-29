@@ -12,6 +12,9 @@ ARTIFACT_BASE="DuckWhisperer-${VERSION}-${BUILD}"
 BUNDLE_DEFAULT_MODEL="${BUNDLE_DEFAULT_MODEL:-0}"
 DEFAULT_MODEL="$APP_DIR/Contents/Resources/Models/ggml-small.en.bin"
 RELEASE_NOTES="$RELEASE_DIR/$ARTIFACT_BASE-release-notes.md"
+SPARKLE_RELEASE_NOTES="$RELEASE_DIR/$ARTIFACT_BASE.md"
+SPARKLE_ARCHIVE_DIR="${SPARKLE_ARCHIVE_DIR:-$RELEASE_DIR/sparkle}"
+SPARKLE_PUBLIC_ED_KEY_FILE="${SPARKLE_PUBLIC_ED_KEY_FILE:-$ROOT_DIR/.sparkle-public-ed-key}"
 
 cd "$ROOT_DIR"
 
@@ -31,6 +34,14 @@ case "$PACKAGE_FORMAT" in
     exit 1
     ;;
 esac
+
+if [[ "${REQUIRE_SPARKLE_CONFIG:-0}" == "1" ]]; then
+  if [[ -z "${SPARKLE_PUBLIC_ED_KEY:-}" && ! -f "$SPARKLE_PUBLIC_ED_KEY_FILE" ]]; then
+    echo "Sparkle public key is required for this release." >&2
+    echo "Run ./scripts/setup_sparkle_keys.sh or set SPARKLE_PUBLIC_ED_KEY." >&2
+    exit 1
+  fi
+fi
 
 write_start_here() {
   local output_path="$1"
@@ -169,6 +180,7 @@ rm -rf "$ROOT_DIR/build/module-cache"
 
 mkdir -p "$RELEASE_DIR"
 created_packages=()
+created_package_paths=()
 
 if [[ "$PACKAGE_FORMAT" == "zip" || "$PACKAGE_FORMAT" == "both" ]]; then
   ZIP_PATH="$RELEASE_DIR/$ARTIFACT_BASE.zip"
@@ -177,6 +189,7 @@ if [[ "$PACKAGE_FORMAT" == "zip" || "$PACKAGE_FORMAT" == "both" ]]; then
   ditto -c -k --sequesterRsrc --keepParent "$APP_DIR" "$ZIP_PATH"
   du -h "$ZIP_PATH"
   created_packages+=("- $ZIP_PATH")
+  created_package_paths+=("$ZIP_PATH")
 fi
 
 if [[ "$PACKAGE_FORMAT" == "dmg" || "$PACKAGE_FORMAT" == "both" ]]; then
@@ -267,9 +280,32 @@ EOF
   rm -f "$TEMP_DMG"
   du -h "$DMG_PATH"
   created_packages+=("- $DMG_PATH")
+  created_package_paths+=("$DMG_PATH")
 fi
 
 write_release_notes "$(printf '%s\n' "${created_packages[@]}")"
+cp "$RELEASE_NOTES" "$SPARKLE_RELEASE_NOTES"
+
+if [[ "${GENERATE_SPARKLE_APPCAST:-0}" == "1" ]]; then
+  if [[ "${#created_package_paths[@]}" -eq 0 ]]; then
+    echo "No package was created for Sparkle appcast generation." >&2
+    exit 1
+  fi
+
+  sparkle_update_path="${created_package_paths[0]}"
+  for package_path in "${created_package_paths[@]}"; do
+    if [[ "$package_path" == *.zip ]]; then
+      sparkle_update_path="$package_path"
+      break
+    fi
+  done
+
+  mkdir -p "$SPARKLE_ARCHIVE_DIR"
+  cp "$sparkle_update_path" "$SPARKLE_ARCHIVE_DIR/$(basename "$sparkle_update_path")"
+  cp "$SPARKLE_RELEASE_NOTES" "$SPARKLE_ARCHIVE_DIR/$(basename "${sparkle_update_path%.*}").md"
+  "$ROOT_DIR/scripts/generate_sparkle_appcast.sh" "$SPARKLE_ARCHIVE_DIR"
+  cp "$SPARKLE_ARCHIVE_DIR/appcast.xml" "$RELEASE_DIR/appcast.xml"
+fi
 
 cat <<EOF
 
@@ -279,6 +315,13 @@ $RELEASE_DIR
 Release notes:
 $RELEASE_NOTES
 
+Sparkle release notes:
+$SPARKLE_RELEASE_NOTES
+
+Sparkle appcast archive dir:
+$SPARKLE_ARCHIVE_DIR
+
 Speech models and translator add-ons remain optional and install only after user approval on first launch.
 Set BUNDLE_DEFAULT_MODEL=1 to bake the Best Accuracy English model into the app for an offline-first DMG.
+Set REQUIRE_SPARKLE_CONFIG=1 GENERATE_SPARKLE_APPCAST=1 for a signed Sparkle appcast release.
 EOF

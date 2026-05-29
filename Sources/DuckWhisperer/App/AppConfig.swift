@@ -16,14 +16,11 @@ let personalDictionaryTextKey = "PersonalDictionaryText"
 let transcriptHistoryKey = "TranscriptHistory"
 let dictationStatsKey = "DictationStats"
 let hasSeenOnboardingKey = "HasSeenOnboarding"
-let lastAutomaticUpdateCheckAtKey = "LastAutomaticUpdateCheckAt"
-let lastPromptedUpdateTagKey = "LastPromptedUpdateTag"
 let recordShortcutPresetIDKey = "RecordShortcutPresetID"
 let appDisplayName = "DuckWhisperer"
 let supportDirectoryName = "DuckWhisperer"
 let legacySupportDirectoryNames = ["Plume", "Local Whisperer"]
 let logFilename = "duckwhisperer.log"
-let automaticUpdateCheckInterval: TimeInterval = 60 * 60 * 12
 var debugPasteText: String?
 
 func appSupportRootURL() -> URL {
