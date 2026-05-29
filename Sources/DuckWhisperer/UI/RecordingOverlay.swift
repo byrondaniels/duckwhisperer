@@ -2,7 +2,6 @@ import AppKit
 import QuartzCore
 
 private final class RecordingOverlayView: NSView {
-    private let baseDrawingSize = NSSize(width: 140, height: 76)
     private static let hudArtwork: NSImage? = {
         guard let url = Bundle.main.url(forResource: "DuckWhispererOption3Hud", withExtension: "png") else {
             return nil
@@ -89,15 +88,26 @@ private final class RecordingOverlayView: NSView {
             return
         }
 
+        drawCenteredMode()
+        drawProgress()
+    }
+
+    private func drawCenteredMode() {
+        drawCenteredTitle()
+        drawCenteredContext()
+
         NSGraphicsContext.saveGraphicsState()
         let drawingTransform = NSAffineTransform()
-        drawingTransform.translateX(by: 12, yBy: 30)
+        let mascotScale: CGFloat = 1.48
+        drawingTransform.translateX(by: bounds.midX - 72 * mascotScale, yBy: 68)
+        drawingTransform.scale(by: mascotScale)
         drawingTransform.concat()
         drawCrescendo()
         drawDuckWhispererMark(level: audioLevel)
         NSGraphicsContext.restoreGraphicsState()
-        drawText()
-        drawProgress()
+
+        drawCenteredPreview()
+        drawCenteredHint()
     }
 
     private func drawPresenterMode() {
@@ -174,66 +184,115 @@ private final class RecordingOverlayView: NSView {
         )
     }
 
-    private func drawText() {
-        let textX: CGFloat = 168
-        let maxWidth = bounds.width - textX - 18
-
+    private func drawCenteredTitle() {
+        let isPasted = statusText.localizedCaseInsensitiveContains("pasted")
         let titleAttributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 15, weight: .semibold),
-            .foregroundColor: NSColor.white.withAlphaComponent(0.95)
+            .font: NSFont.systemFont(ofSize: 22, weight: .bold),
+            .foregroundColor: NSColor.white.withAlphaComponent(0.96)
         ]
-        statusText.draw(
-            in: NSRect(x: textX, y: 14, width: maxWidth, height: 20),
-            withAttributes: titleAttributes
-        )
+        let titleRect = NSRect(x: 24, y: 16, width: bounds.width - 48, height: 28)
+        drawCentered(statusText, in: titleRect, attributes: titleAttributes)
+
+        if isPasted {
+            let checkAttributes: [NSAttributedString.Key: Any] = [
+                .font: NSFont.systemFont(ofSize: 20, weight: .bold),
+                .foregroundColor: NSColor(calibratedRed: 1.0, green: 0.78, blue: 0.24, alpha: 0.95)
+            ]
+            "✓".draw(
+                at: NSPoint(x: titleRect.maxX - 18, y: titleRect.minY + 1),
+                withAttributes: checkAttributes
+            )
+        }
+    }
+
+    private func drawCenteredContext() {
+        if let commandText {
+            drawCenteredBadge("Command: \(commandText)", y: 47, maxWidth: bounds.width - 52)
+            return
+        }
 
         let trimmedContext = contextText.trimmingCharacters(in: .whitespacesAndNewlines)
-        let hasContext = !trimmedContext.isEmpty
-
-        if let commandText {
-            drawCommandBadge(
-                "Command: \(commandText)",
-                x: textX,
-                y: 32,
-                maxWidth: maxWidth,
-                fontSize: 11
-            )
-        } else if hasContext {
-            let contextAttributes: [NSAttributedString.Key: Any] = [
-                .font: NSFont.systemFont(ofSize: 11, weight: .medium),
-                .foregroundColor: NSColor(calibratedRed: 1.0, green: 0.78, blue: 0.24, alpha: 0.9)
-            ]
-            trimmedContext.draw(
-                in: NSRect(x: textX, y: 35, width: maxWidth, height: 16),
-                withAttributes: contextAttributes
-            )
+        guard !trimmedContext.isEmpty else {
+            return
         }
 
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 12, weight: .semibold),
+            .foregroundColor: NSColor(calibratedRed: 1.0, green: 0.80, blue: 0.32, alpha: 0.94)
+        ]
+        let size = trimmedContext.size(withAttributes: attributes)
+        let width = min(bounds.width - 70, size.width + 20)
+        let rect = NSRect(x: bounds.midX - width / 2, y: 48, width: width, height: 22)
+        let path = NSBezierPath(roundedRect: rect, xRadius: 8, yRadius: 8)
+        NSColor(calibratedRed: 0.30, green: 0.20, blue: 0.05, alpha: 0.66).setFill()
+        path.fill()
+        NSColor(calibratedRed: 1.0, green: 0.77, blue: 0.20, alpha: 0.16).setStroke()
+        path.lineWidth = 1
+        path.stroke()
+        drawCentered(trimmedContext, in: rect.insetBy(dx: 10, dy: 3), attributes: attributes)
+    }
+
+    private func drawCenteredPreview() {
         let preview = previewText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let fallback: String
+        if statusText.localizedCaseInsensitiveContains("recording") {
+            fallback = "Speak naturally"
+        } else if statusText.localizedCaseInsensitiveContains("transcribing") {
+            fallback = "Finalizing local transcript..."
+        } else {
+            fallback = ""
+        }
+
+        let text = preview.isEmpty ? fallback : preview
+        guard !text.isEmpty else {
+            return
+        }
+
         let paragraph = NSMutableParagraphStyle()
+        paragraph.alignment = .center
         paragraph.lineBreakMode = .byTruncatingTail
-        let previewAttributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 12),
-            .foregroundColor: NSColor.white.withAlphaComponent(0.78),
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 13, weight: .medium),
+            .foregroundColor: NSColor.white.withAlphaComponent(preview.isEmpty ? 0.58 : 0.84),
             .paragraphStyle: paragraph
         ]
-        let previewY: CGFloat = hasContext || commandText != nil ? 56 : 38
-        let previewHeight: CGFloat = hasContext || commandText != nil ? 42 : 60
-        if !preview.isEmpty {
-            preview.draw(
-                in: NSRect(x: textX, y: previewY, width: maxWidth, height: previewHeight),
-                withAttributes: previewAttributes
-            )
-        }
+        let rect = NSRect(x: 32, y: 196, width: bounds.width - 64, height: 42)
+        text.draw(in: rect, withAttributes: attributes)
+    }
 
-        let hintAttributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 10, weight: .medium),
+    private func drawCenteredHint() {
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 11, weight: .medium),
             .foregroundColor: NSColor.white.withAlphaComponent(0.46)
         ]
-        hintText.draw(
-            in: NSRect(x: textX, y: bounds.maxY - 24, width: maxWidth - 42, height: 14),
-            withAttributes: hintAttributes
+        drawCentered(
+            hintText,
+            in: NSRect(x: 28, y: bounds.maxY - 27, width: bounds.width - 56, height: 15),
+            attributes: attributes
         )
+    }
+
+    private func drawCentered(_ text: String, in rect: NSRect, attributes: [NSAttributedString.Key: Any]) {
+        let mutableAttributes = NSMutableDictionary(dictionary: attributes)
+        let paragraph = (attributes[.paragraphStyle] as? NSMutableParagraphStyle) ?? NSMutableParagraphStyle()
+        paragraph.alignment = .center
+        mutableAttributes[NSAttributedString.Key.paragraphStyle] = paragraph
+        text.draw(in: rect, withAttributes: mutableAttributes as? [NSAttributedString.Key: Any])
+    }
+
+    private func drawCenteredBadge(_ text: String, y: CGFloat, maxWidth: CGFloat) {
+        let fontSize: CGFloat = 12
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: fontSize, weight: .semibold),
+            .foregroundColor: NSColor(calibratedRed: 0.52, green: 1.0, blue: 0.57, alpha: 0.96)
+        ]
+        let size = text.size(withAttributes: attributes)
+        let width = min(maxWidth, size.width + 20)
+        let rect = NSRect(x: bounds.midX - width / 2, y: y, width: width, height: fontSize + 11)
+        let path = NSBezierPath(roundedRect: rect, xRadius: 8, yRadius: 8)
+        NSColor(calibratedRed: 0.04, green: 0.26, blue: 0.10, alpha: 0.92).setFill()
+        path.fill()
+        drawCentered(text, in: rect.insetBy(dx: 10, dy: 4), attributes: attributes)
     }
 
     private func drawCommandBadge(_ text: String, x: CGFloat, y: CGFloat, maxWidth: CGFloat, fontSize: CGFloat) {
@@ -322,8 +381,8 @@ private final class RecordingOverlayView: NSView {
     private func drawDuckWhispererMark(level: CGFloat) {
         let center = NSPoint(x: 72, y: 43)
         let energy = max(0, min(1, level))
-        let scale = 1 + energy * 0.018
-        let bob = sin(animationPhase * 0.92) * (0.25 + energy * 0.70)
+        let scale = 1 + energy * 0.012
+        let bob = sin(animationPhase * 0.92) * (0.18 + energy * 0.38)
         NSGraphicsContext.saveGraphicsState()
         let transform = NSAffineTransform()
         transform.translateX(by: center.x, yBy: center.y)
@@ -332,20 +391,24 @@ private final class RecordingOverlayView: NSView {
         transform.translateX(by: -center.x, yBy: -center.y)
         transform.concat()
 
+        drawFlappingWings(energy: energy)
+
+        if let hudArtwork = Self.hudArtwork {
+            let dropShadow = NSShadow()
+            dropShadow.shadowColor = NSColor.black.withAlphaComponent(0.34)
+            dropShadow.shadowBlurRadius = 9
+            dropShadow.shadowOffset = NSSize(width: 0, height: 4)
+            dropShadow.set()
+            drawHudArtwork(hudArtwork, energy: energy)
+            NSGraphicsContext.restoreGraphicsState()
+            return
+        }
+
         let dropShadow = NSShadow()
         dropShadow.shadowColor = NSColor.black.withAlphaComponent(0.34)
         dropShadow.shadowBlurRadius = 9
         dropShadow.shadowOffset = NSSize(width: 0, height: 4)
         dropShadow.set()
-
-        if let hudArtwork = Self.hudArtwork {
-            drawHudArtwork(hudArtwork, energy: energy)
-            drawMascotWaves(energy: energy)
-            NSGraphicsContext.restoreGraphicsState()
-            return
-        }
-
-        drawMascotWaves(energy: energy)
         drawMascotBody(energy: energy)
         drawMascotHead(energy: energy)
 
@@ -356,6 +419,83 @@ private final class RecordingOverlayView: NSView {
 
         drawMascotFace(energy: energy)
         NSGraphicsContext.restoreGraphicsState()
+    }
+
+    private func drawFlappingWings(energy: CGFloat) {
+        let raw = max(0, min(1, energy))
+        let idle = 0.060 + 0.025 * ((sin(animationPhase * 0.90) + 1) / 2)
+        let loudness = raw > 0.018 ? max(pow(raw, 0.54), 0.20) : idle
+        let flap = sin(animationPhase * (1.7 + loudness * 2.4))
+
+        NSGraphicsContext.saveGraphicsState()
+        let shadow = NSShadow()
+        shadow.shadowColor = NSColor(calibratedRed: 1.0, green: 0.58, blue: 0.10, alpha: 0.12 + loudness * 0.20)
+        shadow.shadowBlurRadius = 10 + loudness * 10
+        shadow.shadowOffset = NSSize(width: 0, height: 2)
+        shadow.set()
+
+        drawWing(side: -1, pivot: NSPoint(x: 64, y: 48), loudness: loudness, flap: flap)
+        drawWing(side: 1, pivot: NSPoint(x: 88, y: 48), loudness: loudness, flap: flap)
+        NSGraphicsContext.restoreGraphicsState()
+    }
+
+    private func drawWing(side: CGFloat, pivot: NSPoint, loudness: CGFloat, flap: CGFloat) {
+        let offsets: [CGFloat] = [-2.3, -1.25, -0.25, 0.72, 1.62]
+        let wingLift = -8 - loudness * 20 - flap * (5 + loudness * 11)
+        let open = 0.66 + loudness * 0.48
+
+        for (index, offset) in offsets.enumerated() {
+            let rank = CGFloat(index)
+            let extensionLength = 32 + loudness * 24 + (4 - rank) * 3
+            let tipX = pivot.x + side * (extensionLength + abs(offset) * 3.5)
+            let tipY = pivot.y + offset * 12 * open + wingLift + rank * 1.4
+            let rootTop = NSPoint(
+                x: pivot.x + side * (2 + rank * 0.65),
+                y: pivot.y - 5 + rank * 1.2
+            )
+            let rootBottom = NSPoint(
+                x: pivot.x + side * (4 + rank * 0.55),
+                y: pivot.y + 7 + rank * 1.5
+            )
+
+            let path = NSBezierPath()
+            path.move(to: rootTop)
+            path.curve(
+                to: NSPoint(x: tipX, y: tipY),
+                controlPoint1: NSPoint(x: pivot.x + side * (12 + loudness * 5), y: rootTop.y + offset * 3 - loudness * 3),
+                controlPoint2: NSPoint(x: tipX - side * (14 + loudness * 7), y: tipY - 7)
+            )
+            path.curve(
+                to: rootBottom,
+                controlPoint1: NSPoint(x: tipX - side * (10 + loudness * 4), y: tipY + 8 + rank * 1.7),
+                controlPoint2: NSPoint(x: pivot.x + side * (18 + loudness * 5), y: rootBottom.y + offset * 2)
+            )
+            path.close()
+
+            NSGraphicsContext.saveGraphicsState()
+            path.addClip()
+            NSGradient(colors: [
+                NSColor(calibratedRed: 1.0, green: 0.88, blue: 0.38, alpha: 0.80 + loudness * 0.14),
+                NSColor(calibratedRed: 1.0, green: 0.60, blue: 0.10, alpha: 0.52 + loudness * 0.18)
+            ])?.draw(in: path.bounds, angle: side < 0 ? 180 : 0)
+            NSGraphicsContext.restoreGraphicsState()
+
+            NSColor(calibratedRed: 1.0, green: 0.78, blue: 0.18, alpha: 0.24 + loudness * 0.24).setStroke()
+            path.lineWidth = 0.9
+            path.stroke()
+
+            let vein = NSBezierPath()
+            vein.lineCapStyle = .round
+            vein.lineWidth = 0.7
+            vein.move(to: NSPoint(x: pivot.x + side * (10 + rank), y: pivot.y + rank * 1.0))
+            vein.curve(
+                to: NSPoint(x: tipX - side * 6, y: tipY + 2),
+                controlPoint1: NSPoint(x: pivot.x + side * 18, y: pivot.y + offset * 4 - loudness * 4),
+                controlPoint2: NSPoint(x: tipX - side * 16, y: tipY + 2)
+            )
+            NSColor.white.withAlphaComponent(0.12 + loudness * 0.10).setStroke()
+            vein.stroke()
+        }
     }
 
     private func drawHudArtwork(_ image: NSImage, energy: CGFloat) {
@@ -391,31 +531,6 @@ private final class RecordingOverlayView: NSView {
             width: width,
             height: height
         )
-    }
-
-    private func drawMascotWaves(energy: CGFloat) {
-        let raw = max(0, min(1, energy))
-        let idle = 0.045 + 0.012 * ((sin(animationPhase * 1.2) + 1) / 2)
-        let loudness = raw > 0.018 ? max(pow(raw, 0.56), 0.24) : idle
-        let baseColor = NSColor(calibratedRed: 1.0, green: 0.76, blue: 0.12, alpha: 0.24 + loudness * 0.58)
-        let groups: [CGFloat] = [24, 128]
-        let baseHeights: [CGFloat] = [14, 24, 34, 24, 14]
-
-        for groupX in groups {
-            for (index, baseHeight) in baseHeights.enumerated() {
-                let phase = (sin(animationPhase * (0.9 + loudness * 0.4) + CGFloat(index) * 0.72 + groupX * 0.035) + 1) / 2
-                let polarity = CGFloat(3 - abs(index - 2))
-                let barHeight = baseHeight * (0.52 + loudness * 0.76)
-                    + loudness * (8 + polarity * 6)
-                    + phase * (1.5 + loudness * 3.0)
-                let barWidth: CGFloat = 3.8 + loudness * 2.2
-                let barX = groupX + CGFloat(index - 2) * 8 - barWidth / 2
-                let barRect = NSRect(x: barX, y: 43 - barHeight / 2, width: barWidth, height: barHeight)
-                let bar = NSBezierPath(roundedRect: barRect, xRadius: barWidth / 2, yRadius: barWidth / 2)
-                baseColor.withAlphaComponent(index == 2 ? 0.50 + loudness * 0.40 : 0.30 + loudness * 0.36).setFill()
-                bar.fill()
-            }
-        }
     }
 
     private func drawMascotBody(energy: CGFloat) {
@@ -536,7 +651,7 @@ private final class RecordingOverlayView: NSView {
     }
 }
 final class RecordingOverlayController {
-    private static let standardSize = NSSize(width: 384, height: 142)
+    private static let standardSize = NSSize(width: 400, height: 270)
     private static let presenterSize = NSSize(width: 560, height: 220)
     private static let overlayCollectionBehavior: NSWindow.CollectionBehavior = [
         .canJoinAllSpaces,
