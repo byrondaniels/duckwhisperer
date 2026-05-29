@@ -445,7 +445,7 @@ private final class RecordingOverlayView: NSView {
 
         drawWing(
             side: -1,
-            pivot: NSPoint(x: 64, y: 48),
+            pivot: NSPoint(x: 64, y: 54),
             loudness: responsiveLoudness,
             wavePhase: wavePhase,
             waveAmplitude: waveAmplitude,
@@ -453,7 +453,7 @@ private final class RecordingOverlayView: NSView {
         )
         drawWing(
             side: 1,
-            pivot: NSPoint(x: 88, y: 48),
+            pivot: NSPoint(x: 88, y: 54),
             loudness: responsiveLoudness,
             wavePhase: wavePhase,
             waveAmplitude: waveAmplitude,
@@ -661,7 +661,7 @@ private final class RecordingOverlayView: NSView {
     }
 
     private func drawHudArtwork(_ image: NSImage, energy: CGFloat) {
-        let artBounds = NSRect(x: 28, y: 0, width: 98, height: 76)
+        let artBounds = NSRect(x: 28, y: -5, width: 98, height: 76)
         let targetRect = aspectFitRect(for: image.size, in: artBounds)
 
         let glow = NSShadow()
