@@ -433,7 +433,8 @@ private final class RecordingOverlayView: NSView {
         let loudness = isSpeaking ? max(pow(raw, 0.52), 0.24) : 0
         let responsiveLoudness = min(1, loudness + vocalAccent * 0.16)
         let wavePhase = animationPhase * (0.62 + responsiveLoudness * 0.54)
-        let waveAmplitude = isSpeaking ? min(0.88, smoothstep(loudness) * 0.70 + smoothstep(vocalAccent) * 0.24) : 0
+        let movementGain: CGFloat = 1.20
+        let waveAmplitude = isSpeaking ? min(0.96, (smoothstep(loudness) * 0.70 + smoothstep(vocalAccent) * 0.24) * movementGain) : 0
 
         NSGraphicsContext.saveGraphicsState()
         let shadow = NSShadow()
