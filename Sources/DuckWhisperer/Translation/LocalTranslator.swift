@@ -27,7 +27,6 @@ enum LocalTranslator {
             return text
         }
 
-        let runtime = try translationRuntime()
         let pack: TranslationPackChoice?
         if let requestedPack,
            requestedPack.sourceCode == sourceCode,
@@ -36,6 +35,17 @@ enum LocalTranslator {
         } else {
             pack = TranslationPackChoice.choice(sourceCode: sourceCode, targetCode: targetCode)
         }
+
+        if let pack, case .translateGemmaMLX(_) = pack.backend {
+            return try TranslateGemmaTranslator.translate(
+                trimmed,
+                from: sourceCode,
+                to: targetCode,
+                using: pack
+            )
+        }
+
+        let runtime = try translationRuntime()
         let process = Process()
         process.executableURL = runtime.pythonURL
         var arguments = [runtime.scriptURL.path, "--from", sourceCode, "--to", targetCode]

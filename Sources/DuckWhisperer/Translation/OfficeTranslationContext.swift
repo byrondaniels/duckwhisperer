@@ -12,7 +12,7 @@ enum OfficeTranslationContext {
         output = replace("\\bvendor\\b", in: output, with: "supplier")
         output = replace("\\bcall ran long\\b", in: output, with: "meeting ran longer than expected")
         output = replace("\\bredlines\\b", in: output, with: "tracked edits")
-        output = replace("\\blegal\\b", in: output, with: "the legal team")
+        output = replace("\\blegal(?!\\s+team\\b)\\b", in: output, with: "the legal team")
         return output
     }
 
@@ -29,11 +29,20 @@ enum OfficeTranslationContext {
 
     private static func cleanDutch(_ text: String) -> String {
         var output = text
+        output = replace("\\bVerzend\\s+(.+?)\\s+over\\s+aan\\b", in: output, with: "Verzend $1 naar")
+        output = replace("\\bvóór lunch\\b", in: output, with: "vóór de lunch")
         output = replace("\\bpresentatiekaart\\b", in: output, with: "presentatie")
         output = replace("\\bverkoper\\b", in: output, with: "leverancier")
         output = replace("\\bde oproep\\b", in: output, with: "het gesprek")
         output = replace("\\brode lijnen\\b", in: output, with: "wijzigingen")
         output = replace("\\bworden gevolgd\\b", in: output, with: "bijgehouden")
+        output = replace("\\bbijgewerkte versies\\b", in: output, with: "bijgehouden wijzigingen")
+        output = replace("\\baangebrachte wijzigingen\\b", in: output, with: "bijgehouden wijzigingen")
+        output = replace("\\bde\\s+lancingsplanning\\b", in: output, with: "het lanceringsplan")
+        output = replace("\\bde\\s+lanceringsplanning\\b", in: output, with: "het lanceringsplan")
+        output = replace("\\blancingsplanning\\b", in: output, with: "lanceringsplan")
+        output = replace("\\blanceringsplanning\\b", in: output, with: "lanceringsplan")
+        output = replace("\\blancering\\b", in: output, with: "lancering")
         return output
     }
 
@@ -44,6 +53,7 @@ enum OfficeTranslationContext {
         output = replace("\\bvendeur\\b", in: output, with: "fournisseur")
         output = replace("\\blignes rouges\\b", in: output, with: "modifications suivies")
         output = replace("\\blangage\\b", in: output, with: "formulation")
+        output = replace("\\bjeu de présentation\\b", in: output, with: "présentation")
         return output
     }
 

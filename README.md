@@ -34,7 +34,9 @@ Requirements:
 - macOS 13 or newer
 - Xcode Command Line Tools
 - Network access for the first install
-- Python 3.11, 3.12, or 3.13 if you want local French/Dutch translation
+- macOS 26 or newer for Apple local French/Dutch translation
+- Python 3.11, 3.12, or 3.13 only if you install legacy/test translator packs
+- Apple Silicon plus Python 3.11, 3.12, or 3.13 only if you install the optional TranslateGemma French/Dutch fallback
 
 Install:
 
@@ -64,9 +66,9 @@ Runtime assets are installed outside the repo and app bundle at:
 ~/Library/Application Support/DuckWhisperer
 ```
 
-That folder contains downloaded speech models and optional translation runtime data. It is not committed to Git.
+That folder contains downloaded speech models and optional legacy/test translation runtime data. It is not committed to Git.
 
-The default install sets up transcription only. Local translation can be added later from `Speed & Accuracy` or with:
+The default install sets up transcription only. Apple French/Dutch translation assets are prepared from `Settings -> Prepare Apple Translation...`. Legacy/test translation packs can be added later from `Speed & Accuracy` or with:
 
 ```bash
 ./scripts/setup_local_translation.sh
@@ -116,7 +118,7 @@ To bake the default speech model into the app for an offline-first, larger DMG:
 BUNDLE_DEFAULT_MODEL=1 ./scripts/package_release.sh
 ```
 
-macOS still requires the user to grant Microphone and paste-back permissions after installing. French/Dutch translation remains optional and can be installed later from `Speed & Accuracy`.
+macOS still requires the user to grant Microphone and paste-back permissions after installing. Apple French/Dutch translation assets can be prepared later from `Settings -> Prepare Apple Translation...`.
 
 See `docs/release-workflow.md` for the full non-developer install test, signing notes, and release checklist.
 
@@ -239,16 +241,34 @@ Output defaults to `Same as Input`. You can also choose English, French, Dutch, 
 
 Non-English input to English can use individual local text translators. For example, Tagalog -> English installs only the Tagalog -> English translator, then DuckWhisperer transcribes Tagalog text first and translates that text to English. If the matching translator is not installed, the app asks before downloading it.
 
-On macOS 26 or newer, default French and Dutch output first use Apple's local high-fidelity Translation framework after the transcript is available in English. DuckWhisperer applies a small office-context normalization pass before translation so common dictation terms like "deck", "vendor", and "redlines" translate as business language instead of literal objects. If Apple system translation is unavailable, DuckWhisperer falls back to installed local translator packs.
+On macOS 26 or newer, default French and Dutch output use Apple's local high-fidelity Translation framework after the transcript is available in English. DuckWhisperer applies a small office-context normalization pass before translation so common dictation terms like "deck", "vendor", and "redlines" translate as business language instead of literal objects.
 
-DuckWhisperer still includes the older local packs as optional fallback/test models:
+Open `Settings -> Prepare Apple Translation...` to check and install the Apple local assets for:
 
-- `French Output`: Argos English -> French
-- `Dutch Output`: Argos English -> Dutch
+- English -> Dutch
+- English -> French
+
+Developers can run the same asset-prep flow without opening the full app:
+
+```bash
+./scripts/open_translation_pond.sh
+```
+
+These default Dutch/French outputs do not silently fall back to Argos or OPUS. If Apple translation is not ready, the app shows an error telling the user to prepare Apple Translation assets. As an explicit opt-in backup, `Speed & Accuracy` also offers `French Output - High Quality Fallback` and `Dutch Output - High Quality Fallback`; those install one shared TranslateGemma MLX model and are only used when Apple Translation is unavailable or fails.
+
+TranslateGemma fallback notes:
+
+- Download size: about 2.18 GB for the shared model, plus roughly 250 MB for the separate MLX Python runtime.
+- Requirement: Apple Silicon Mac with Metal support.
+- Storage: `~/Library/Application Support/DuckWhisperer/Translation/TranslateGemma`
+- Remove: open `Speed & Accuracy` and remove either TranslateGemma fallback row; both French and Dutch fallback rows share the same model and will show as not installed afterward.
+
+DuckWhisperer still includes older local packs as explicit legacy/test models:
+
 - `Dutch - OPUS Dedicated`: `Helsinki-NLP/opus-mt-en-nl`
 - `Dutch - OPUS Germanic`: `Helsinki-NLP/opus-mt-en-gmw` with Dutch target tagging
 
-Install local fallback translators from `Speed & Accuracy`, or install the default Argos French/Dutch packs with:
+Install legacy/test translators from `Speed & Accuracy`, or install the older Argos runtime packs with:
 
 ```bash
 ./scripts/setup_local_translation.sh

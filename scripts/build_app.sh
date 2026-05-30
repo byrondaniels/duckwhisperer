@@ -157,6 +157,7 @@ if [[ "$ENABLE_SPARKLE" == "1" ]]; then
 fi
 find "$MODEL_DST_DIR" -maxdepth 1 -type f -name 'ggml-*.bin' -delete
 cp "$ROOT_DIR/translation/translate_local.py" "$TRANSLATION_DST_DIR/translate_local.py"
+cp "$ROOT_DIR/translation/translate_gemma_mlx.py" "$TRANSLATION_DST_DIR/translate_gemma_mlx.py"
 
 swiftc \
   -swift-version 5 \

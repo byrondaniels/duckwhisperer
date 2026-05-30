@@ -49,6 +49,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         self?.refreshPermissionUI()
     }
     private lazy var transcriptHistoryController = TranscriptHistoryController()
+    private lazy var appleTranslationAssetsController = AppleTranslationAssetsController()
     private lazy var setupDoctorController = SetupDoctorController(
         onOpenMicrophone: { [weak self] in self?.openMicrophoneSettings() },
         onOpenAccessibility: { [weak self] in self?.openAccessibilitySettings() },
@@ -351,6 +352,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         )
         topLevelModelExplorer.target = self
         settingsMenu.addItem(topLevelModelExplorer)
+        let appleTranslationAssetsItem = NSMenuItem(
+            title: "Prepare Apple Translation...",
+            action: #selector(openAppleTranslationAssets(_:)),
+            keyEquivalent: ""
+        )
+        appleTranslationAssetsItem.target = self
+        settingsMenu.addItem(appleTranslationAssetsItem)
         settingsMenu.addItem(modelMenuItem())
         settingsMenu.addItem(NSMenuItem.separator())
         settingsMenu.addItem(userGuideItem)
@@ -1158,6 +1166,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             runtimeNote = "This installs one local Argos translation package."
         case .huggingFaceMarian(_):
             runtimeNote = "This installs one dedicated Helsinki/OPUS text translator. The first dedicated translator may also install a local Python ML runtime."
+        case .translateGemmaMLX(_):
+            runtimeNote = "This installs the validated high-quality local fallback used only when Apple Translation is unavailable. It adds a separate MLX runtime and one shared model for French and Dutch."
         }
         alert.informativeText = "\(runtimeNote) Download size: \(pack.downloadSizeText). Nothing downloads unless you choose Install."
         alert.alertStyle = .informational
@@ -1556,34 +1566,51 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                     writingProfile: writingProfile
                 )
                 let dictionaryOutput = PersonalDictionary.apply(dictionaryEntries, to: commandResult.text)
-                let willRunArgosTranslation = commandResult.outputLanguage.requiresTranslation
+                let willRunOutputTranslation = commandResult.outputLanguage.requiresTranslation
                     && !commandResult.outputLanguage.matchesInput(inputLanguage)
-                if willRunArgosTranslation {
+                if willRunOutputTranslation {
                     let targetLabel = commandResult.outputLanguage.title
+                    let usesAppleTranslation = commandResult.outputLanguage.translationTargetCode.map {
+                        AppleSystemTranslator.isDefaultSystemPair(
+                            sourceCode: "en",
+                            targetCode: $0,
+                            requestedPackID: commandResult.outputLanguage.translationPackID
+                        )
+                    } ?? false
+                    let defaultTargetCode = commandResult.outputLanguage.translationTargetCode
+                    let previewText: String
+                    if usesAppleTranslation,
+                       let defaultTargetCode,
+                       !AppleSystemTranslator.shouldHandle(
+                            sourceCode: "en",
+                            targetCode: defaultTargetCode,
+                            requestedPackID: commandResult.outputLanguage.translationPackID
+                       ),
+                       let fallbackPack = TranslationPackChoice.translateGemmaFallback(for: defaultTargetCode),
+                       TranslationStore.isInstalled(fallbackPack) {
+                        previewText = "Using TranslateGemma local fallback..."
+                    } else {
+                        previewText = usesAppleTranslation
+                            ? "Using Apple local translation..."
+                            : "Sending text through the selected local translator..."
+                    }
                     DispatchQueue.main.async { [weak self] in
                         guard let self, self.isActiveTranscription(transcriptionID) else { return }
                         self.recordingOverlay.setDetails(
                             statusText: "Translating to \(targetLabel)",
                             contextText: self.overlayContextText(),
-                            previewText: "Sending text through the local translator...",
+                            previewText: previewText,
                             hintText: "Esc cancels",
                             commandText: commandResult.commandName,
                             presenterMode: self.presenterModeEnabled
                         )
                     }
                 }
-                let translatedOutput: String
-                do {
-                    translatedOutput = try TranscriptionOutputPipeline.applyConfiguredOutputLanguage(
-                        to: dictionaryOutput,
-                        inputLanguage: inputLanguage,
-                        outputLanguage: commandResult.outputLanguage
-                    )
-                } catch {
-                    let fallbackDescription = shouldTranslateAudioToEnglish ? "English transcript" : "transcript"
-                    AppLog.write("translation failed for \(commandResult.outputLanguage.title); falling back to \(fallbackDescription): \(error.localizedDescription)")
-                    translatedOutput = dictionaryOutput
-                }
+                let translatedOutput = try TranscriptionOutputPipeline.applyConfiguredOutputLanguage(
+                    to: dictionaryOutput,
+                    inputLanguage: inputLanguage,
+                    outputLanguage: commandResult.outputLanguage
+                )
                 let languageOutput = self.applyLanguageOutput(
                     to: translatedOutput,
                     outputLanguage: commandResult.outputLanguage,
@@ -2046,6 +2073,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     @objc private func openModelExplorer(_ sender: Any?) {
         AppLog.write("open model explorer action fired from \(String(describing: type(of: sender as Any)))")
         showModelExplorer()
+    }
+
+    @objc private func openAppleTranslationAssets(_ sender: Any?) {
+        appleTranslationAssetsController.show()
     }
 
     private func showModelExplorer() {

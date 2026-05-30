@@ -3,17 +3,30 @@ import Foundation
 import Translation
 
 enum AppleSystemTranslator {
+    static func isDefaultSystemPair(sourceCode: String, targetCode: String, requestedPackID: String?) -> Bool {
+        requestedPackID == nil
+            && sourceCode == "en"
+            && ["fr", "nl"].contains(targetCode)
+    }
+
     static func shouldHandle(sourceCode: String, targetCode: String, requestedPackID: String?) -> Bool {
-        guard requestedPackID == nil else {
-            return false
-        }
-        guard sourceCode == "en", ["fr", "nl"].contains(targetCode) else {
+        guard isDefaultSystemPair(sourceCode: sourceCode, targetCode: targetCode, requestedPackID: requestedPackID) else {
             return false
         }
         if #available(macOS 26.0, *) {
             return NSApp.isRunning
         }
         return false
+    }
+
+    static func notReadyMessage(sourceCode: String, targetCode: String, underlyingError: Error? = nil) -> String {
+        var message = """
+        Apple local translation is required for \(sourceCode) -> \(targetCode), but it is not ready yet. Open Settings -> Prepare Apple Translation..., then choose Install Local Assets.
+        """
+        if let underlyingError {
+            message += " Apple reported: \(underlyingError.localizedDescription)"
+        }
+        return message
     }
 
     static func translate(_ text: String, from sourceCode: String, to targetCode: String) throws -> String {

@@ -26,7 +26,7 @@ enum TranscriptionOutputPipeline {
         }
 
         if let targetCode = outputLanguage.translationTargetCode,
-           AppleSystemTranslator.shouldHandle(
+           AppleSystemTranslator.isDefaultSystemPair(
                 sourceCode: "en",
                 targetCode: targetCode,
                 requestedPackID: outputLanguage.translationPackID
@@ -89,21 +89,77 @@ enum TranscriptionOutputPipeline {
         if outputLanguage.requiresTranslation {
             if preferAppleSystemTranslation,
                let targetCode = outputLanguage.translationTargetCode,
-               AppleSystemTranslator.shouldHandle(
+               AppleSystemTranslator.isDefaultSystemPair(
                     sourceCode: "en",
                     targetCode: targetCode,
                     requestedPackID: outputLanguage.translationPackID
                ) {
+                guard AppleSystemTranslator.shouldHandle(
+                    sourceCode: "en",
+                    targetCode: targetCode,
+                    requestedPackID: outputLanguage.translationPackID
+                ) else {
+                    if let fallbackOutput = try translateWithInstalledAppleFallback(
+                        englishBaseText,
+                        targetCode: targetCode
+                    ) {
+                        return fallbackOutput
+                    }
+                    throw DuckWhispererError.translationFailed(
+                        AppleSystemTranslator.notReadyMessage(sourceCode: "en", targetCode: targetCode)
+                            + "\n\nOr install the high-quality TranslateGemma fallback from Speed & Accuracy."
+                    )
+                }
                 do {
                     return try AppleSystemTranslator.translate(englishBaseText, from: "en", to: targetCode)
-                } catch {
-                    AppLog.write("Apple system translation failed for en -> \(targetCode): \(error.localizedDescription)")
+                } catch let appleError {
+                    AppLog.write("Apple system translation failed for en -> \(targetCode): \(appleError.localizedDescription)")
+                    do {
+                        if let fallbackOutput = try translateWithInstalledAppleFallback(
+                            englishBaseText,
+                            targetCode: targetCode
+                        ) {
+                            return fallbackOutput
+                        }
+                    } catch {
+                        AppLog.write("TranslateGemma fallback failed for en -> \(targetCode): \(error.localizedDescription)")
+                        throw DuckWhispererError.translationFailed(
+                            "Apple local translation failed, and the installed TranslateGemma fallback also failed. Apple reported: \(appleError.localizedDescription). TranslateGemma reported: \(error.localizedDescription)"
+                        )
+                    }
+                    throw DuckWhispererError.translationFailed(
+                        AppleSystemTranslator.notReadyMessage(
+                            sourceCode: "en",
+                            targetCode: targetCode,
+                            underlyingError: appleError
+                        )
+                    )
                 }
             }
             return try LocalTranslator.translate(englishBaseText, to: outputLanguage)
         }
 
         return englishBaseText
+    }
+
+    private static func translateWithInstalledAppleFallback(
+        _ text: String,
+        targetCode: String
+    ) throws -> String? {
+        guard let fallbackPack = TranslationPackChoice.translateGemmaFallback(for: targetCode),
+              TranslationStore.isInstalled(fallbackPack)
+        else {
+            return nil
+        }
+
+        let normalized = OfficeTranslationContext.normalizeEnglishSource(text)
+        let translated = try TranslateGemmaTranslator.translate(
+            normalized,
+            from: "en",
+            to: targetCode,
+            using: fallbackPack
+        )
+        return OfficeTranslationContext.cleanTranslatedOutput(translated, targetCode: targetCode)
     }
 
     private static func englishToTargetPack(for outputLanguage: OutputLanguage) -> TranslationPackChoice? {

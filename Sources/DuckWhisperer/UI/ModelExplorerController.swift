@@ -511,6 +511,8 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
             runtimeNote = "This adds one local Argos translation package."
         case .huggingFaceMarian(_):
             runtimeNote = "This adds one dedicated Helsinki/OPUS text translator. The first dedicated translator may also install a local Python ML runtime."
+        case .translateGemmaMLX(_):
+            runtimeNote = "This adds the validated high-quality local fallback used only when Apple Translation is unavailable. It installs a separate MLX runtime and one shared model for French and Dutch."
         }
         alert.informativeText = "\(runtimeNote) Download size: \(pack.downloadSizeText). It stays on this Mac."
         alert.alertStyle = .informational
@@ -544,7 +546,11 @@ final class ModelExplorerController: NSObject, NSWindowDelegate {
     private func confirmAndDelete(_ pack: TranslationPackChoice) {
         let alert = NSAlert()
         alert.messageText = "Remove \(pack.title)?"
-        alert.informativeText = "This removes the downloaded translator from this Mac. You can install it again anytime."
+        if case .translateGemmaMLX(_) = pack.backend {
+            alert.informativeText = "This removes the shared TranslateGemma fallback model from this Mac. French and Dutch fallback rows will both show as not installed afterward."
+        } else {
+            alert.informativeText = "This removes the downloaded translator from this Mac. You can install it again anytime."
+        }
         alert.alertStyle = .warning
         alert.addButton(withTitle: "Remove")
         alert.addButton(withTitle: "Cancel")

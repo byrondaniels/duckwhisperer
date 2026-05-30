@@ -3,6 +3,7 @@ import Foundation
 enum TranslationPackBackend: Equatable {
     case argos
     case huggingFaceMarian(modelID: String)
+    case translateGemmaMLX(modelID: String)
 }
 
 struct TranslationPackChoice: Equatable {
@@ -73,6 +74,31 @@ struct TranslationPackChoice: Equatable {
         self.sourcePrefix = sourcePrefix
     }
 
+    init(
+        id: String,
+        title: String,
+        sourceCode: String,
+        targetCode: String,
+        detail: String,
+        translateGemmaModelID: String,
+        packageDirectoryName: String,
+        downloadSizeText: String
+    ) {
+        self.id = id
+        self.title = title
+        self.sourceCode = sourceCode
+        self.targetCode = targetCode
+        self.detail = detail
+        self.backend = .translateGemmaMLX(modelID: translateGemmaModelID)
+        self.packageFilename = nil
+        self.packageDirectoryName = packageDirectoryName
+        self.downloadSizeText = downloadSizeText
+        self.sourcePrefix = nil
+    }
+
+    static let translateGemmaModelID = "mlx-community/translategemma-4b-it-4bit_immersive-translate"
+    static let translateGemmaPackageDirectoryName = "mlx-community__translategemma-4b-it-4bit_immersive-translate"
+
     static let all: [TranslationPackChoice] = [
         TranslationPackChoice(
             id: "translation-fr",
@@ -113,6 +139,26 @@ struct TranslationPackChoice: Equatable {
             packageFilename: "translate-nl_en-1_8.argosmodel",
             packageDirectoryName: "translate-nl_en-1_8",
             downloadSizeText: "68 MB"
+        ),
+        TranslationPackChoice(
+            id: "translation-fr-translategemma",
+            title: "French Output - High Quality Fallback",
+            sourceCode: "en",
+            targetCode: "fr",
+            detail: "English speech -> French text using validated TranslateGemma if Apple is unavailable",
+            translateGemmaModelID: TranslationPackChoice.translateGemmaModelID,
+            packageDirectoryName: TranslationPackChoice.translateGemmaPackageDirectoryName,
+            downloadSizeText: "2.18 GB"
+        ),
+        TranslationPackChoice(
+            id: "translation-nl-translategemma",
+            title: "Dutch Output - High Quality Fallback",
+            sourceCode: "en",
+            targetCode: "nl",
+            detail: "English speech -> Dutch text using validated TranslateGemma if Apple is unavailable",
+            translateGemmaModelID: TranslationPackChoice.translateGemmaModelID,
+            packageDirectoryName: TranslationPackChoice.translateGemmaPackageDirectoryName,
+            downloadSizeText: "2.18 GB"
         ),
         TranslationPackChoice(
             id: "translation-nl-opus",
@@ -177,13 +223,25 @@ struct TranslationPackChoice: Equatable {
         all.first { $0.sourceCode == sourceCode && $0.targetCode == targetCode }
     }
 
+    static func translateGemmaFallback(for targetCode: String) -> TranslationPackChoice? {
+        all.first {
+            $0.sourceCode == "en"
+                && $0.targetCode == targetCode
+                && $0.id.hasSuffix("-translategemma")
+        }
+    }
+
     static func visiblePacks(for inputLanguage: InputLanguageChoice) -> [TranslationPackChoice] {
         var packs: [TranslationPackChoice] = []
         if !inputLanguage.isEnglish,
            let inputPack = choice(sourceCode: inputLanguage.whisperCode, targetCode: "en") {
             packs.append(inputPack)
         }
-        packs.append(contentsOf: all.filter { $0.sourceCode == "en" })
+        packs.append(contentsOf: all.filter {
+            $0.sourceCode == "en"
+                && $0.id != "translation-fr"
+                && $0.id != "translation-nl"
+        })
         return packs
     }
 }
@@ -193,6 +251,7 @@ enum TranslationStore {
     private static let transformersRequirement = "transformers>=4.42,<5"
     private static let torchRequirement = "torch>=2.3,<3"
     private static let huggingFaceHubRequirement = "huggingface_hub>=0.23,<1"
+    private static let mlxLMRequirement = "mlx-lm>=0.31,<0.32"
     private static let sacremosesRequirement = "sacremoses>=0.1,<1"
 
     static var supportRootURL: URL {
@@ -224,6 +283,26 @@ enum TranslationStore {
         supportRootURL.appendingPathComponent("HuggingFace", isDirectory: true)
     }
 
+    static var translateGemmaRootURL: URL {
+        supportRootURL.appendingPathComponent("TranslateGemma", isDirectory: true)
+    }
+
+    static var translateGemmaVenvURL: URL {
+        translateGemmaRootURL.appendingPathComponent(".venv", isDirectory: true)
+    }
+
+    static var translateGemmaPythonURL: URL {
+        translateGemmaVenvURL.appendingPathComponent("bin/python")
+    }
+
+    static var translateGemmaCacheURL: URL {
+        translateGemmaRootURL.appendingPathComponent("Cache", isDirectory: true)
+    }
+
+    static var translateGemmaModelsURL: URL {
+        translateGemmaRootURL.appendingPathComponent("Models", isDirectory: true)
+    }
+
     static func localURL(for pack: TranslationPackChoice) -> URL {
         switch pack.backend {
         case .argos:
@@ -232,6 +311,8 @@ enum TranslationStore {
                 .appendingPathComponent(pack.packageDirectoryName, isDirectory: true)
         case .huggingFaceMarian(_):
             return huggingFaceModelsURL.appendingPathComponent(pack.packageDirectoryName, isDirectory: true)
+        case .translateGemmaMLX(_):
+            return translateGemmaModelsURL.appendingPathComponent(pack.packageDirectoryName, isDirectory: true)
         }
     }
 
@@ -241,6 +322,8 @@ enum TranslationStore {
             return isArgosPackInstalled(pack)
         case .huggingFaceMarian(_):
             return isHuggingFacePackInstalled(pack)
+        case .translateGemmaMLX(_):
+            return isTranslateGemmaPackInstalled(pack)
         }
     }
 
@@ -265,6 +348,17 @@ enum TranslationStore {
             && hasWeights
     }
 
+    private static func isTranslateGemmaPackInstalled(_ pack: TranslationPackChoice) -> Bool {
+        let modelURL = localURL(for: pack)
+        return FileManager.default.isExecutableFile(atPath: translateGemmaPythonURL.path)
+            && FileManager.default.fileExists(atPath: modelURL.appendingPathComponent("config.json").path)
+            && FileManager.default.fileExists(atPath: modelURL.appendingPathComponent("model.safetensors").path)
+            && (
+                FileManager.default.fileExists(atPath: modelURL.appendingPathComponent("tokenizer.json").path)
+                    || FileManager.default.fileExists(atPath: modelURL.appendingPathComponent("tokenizer.model").path)
+            )
+    }
+
     static func install(_ pack: TranslationPackChoice) throws {
         try FileManager.default.createDirectory(at: packageDownloadsURL, withIntermediateDirectories: true)
         try FileManager.default.createDirectory(at: dataHomeURL, withIntermediateDirectories: true)
@@ -275,6 +369,8 @@ enum TranslationStore {
             try installArgosPack(pack)
         case .huggingFaceMarian(let modelID):
             try installHuggingFacePack(pack, modelID: modelID)
+        case .translateGemmaMLX(let modelID):
+            try installTranslateGemmaPack(pack, modelID: modelID)
         }
     }
 
@@ -284,6 +380,9 @@ enum TranslationStore {
             return
         }
         try FileManager.default.removeItem(at: installedURL)
+        if case .translateGemmaMLX(_) = pack.backend {
+            try deleteTranslateGemmaRuntimeIfUnused()
+        }
     }
 
     private static func installArgosPack(_ pack: TranslationPackChoice) throws {
@@ -365,7 +464,87 @@ enum TranslationStore {
         }
     }
 
+    private static func installTranslateGemmaPack(_ pack: TranslationPackChoice, modelID: String) throws {
+        try ensureTranslateGemmaRuntime()
+        try FileManager.default.createDirectory(at: translateGemmaModelsURL, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: translateGemmaCacheURL, withIntermediateDirectories: true)
+
+        let destinationURL = localURL(for: pack)
+        let temporaryURL = translateGemmaModelsURL.appendingPathComponent("\(pack.packageDirectoryName).download-\(UUID().uuidString)", isDirectory: true)
+        if FileManager.default.fileExists(atPath: temporaryURL.path) {
+            try FileManager.default.removeItem(at: temporaryURL)
+        }
+
+        let installScript = """
+        import sys
+        from pathlib import Path
+        from huggingface_hub import snapshot_download
+
+        repo_id = sys.argv[1]
+        destination = Path(sys.argv[2])
+        destination.mkdir(parents=True, exist_ok=True)
+
+        snapshot_download(
+            repo_id,
+            local_dir=str(destination),
+            allow_patterns=[
+                "added_tokens.json",
+                "config.json",
+                "generation_config.json",
+                "model.safetensors",
+                "model.safetensors.index.json",
+                "special_tokens_map.json",
+                "tokenizer*.json",
+                "tokenizer.model",
+                "*.jinja",
+                "*.md",
+            ],
+        )
+        """
+
+        do {
+            try run(
+                translateGemmaPythonURL,
+                arguments: ["-c", installScript, modelID, temporaryURL.path],
+                environment: translateGemmaEnvironment()
+            )
+            if FileManager.default.fileExists(atPath: destinationURL.path) {
+                try FileManager.default.removeItem(at: destinationURL)
+            }
+            try FileManager.default.moveItem(at: temporaryURL, to: destinationURL)
+        } catch {
+            try? FileManager.default.removeItem(at: temporaryURL)
+            throw error
+        }
+    }
+
+    private static func deleteTranslateGemmaRuntimeIfUnused() throws {
+        guard FileManager.default.fileExists(atPath: translateGemmaModelsURL.path) else {
+            if FileManager.default.fileExists(atPath: translateGemmaRootURL.path) {
+                try FileManager.default.removeItem(at: translateGemmaRootURL)
+            }
+            return
+        }
+
+        let installedModels = (try? FileManager.default.contentsOfDirectory(
+            at: translateGemmaModelsURL,
+            includingPropertiesForKeys: nil
+        )) ?? []
+        if installedModels.isEmpty,
+           FileManager.default.fileExists(atPath: translateGemmaRootURL.path) {
+            try FileManager.default.removeItem(at: translateGemmaRootURL)
+        }
+    }
+
     private static func ensurePythonRuntime() throws {
+        try ensurePythonRuntime(venvURL: venvURL, pythonURL: pythonURL)
+    }
+
+    private static func ensureTranslateGemmaPythonRuntime() throws {
+        try ensurePythonRuntime(venvURL: translateGemmaVenvURL, pythonURL: translateGemmaPythonURL)
+    }
+
+    private static func ensurePythonRuntime(venvURL: URL, pythonURL: URL) throws {
         if FileManager.default.isExecutableFile(atPath: pythonURL.path),
            !isSupportedPython(pythonURL) {
             try FileManager.default.removeItem(at: venvURL)
@@ -373,6 +552,7 @@ enum TranslationStore {
 
         if !FileManager.default.isExecutableFile(atPath: pythonURL.path) {
             let hostPython = try hostPythonURL()
+            try FileManager.default.createDirectory(at: venvURL.deletingLastPathComponent(), withIntermediateDirectories: true)
             try run(hostPython, arguments: ["-m", "venv", venvURL.path])
         }
     }
@@ -421,6 +601,29 @@ enum TranslationStore {
             } catch {
                 throw DuckWhispererError.translationInstallFailed(
                     "\(error.localizedDescription)\n\nInstall Homebrew Python 3.13 or 3.12, then try installing the translator again."
+                )
+            }
+        }
+    }
+
+    private static func ensureTranslateGemmaRuntime() throws {
+        try ensureTranslateGemmaPythonRuntime()
+
+        if !translateGemmaRuntimeIsAvailable() {
+            do {
+                try run(
+                    translateGemmaPythonURL,
+                    arguments: [
+                        "-m", "pip", "install",
+                        "--no-cache-dir",
+                        "--only-binary=:all:",
+                        mlxLMRequirement
+                    ],
+                    environment: translateGemmaEnvironment()
+                )
+            } catch {
+                throw DuckWhispererError.translationInstallFailed(
+                    "\(error.localizedDescription)\n\nTranslateGemma fallback requires Apple Silicon, macOS with Metal support, and Homebrew Python 3.13 or 3.12."
                 )
             }
         }
@@ -481,7 +684,27 @@ enum TranslationStore {
 
     private static func huggingFaceTranslatorIsAvailable() -> Bool {
         do {
-            try run(pythonURL, arguments: ["-c", "import torch, transformers, huggingface_hub, sentencepiece"])
+            try run(
+                pythonURL,
+                arguments: [
+                    "-c",
+                    """
+                    import sys
+                    import torch, transformers, huggingface_hub, sentencepiece
+                    from packaging.version import Version
+                    sys.exit(0 if Version(transformers.__version__) < Version("5") and Version(huggingface_hub.__version__) < Version("1") else 1)
+                    """
+                ]
+            )
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    private static func translateGemmaRuntimeIsAvailable() -> Bool {
+        do {
+            try run(translateGemmaPythonURL, arguments: ["-c", "import huggingface_hub, mlx, mlx_lm"])
             return true
         } catch {
             return false
@@ -531,6 +754,13 @@ enum TranslationStore {
         environment["XDG_DATA_HOME"] = dataHomeURL.path
         environment["XDG_CACHE_HOME"] = cacheHomeURL.path
         environment["HF_HOME"] = cacheHomeURL.appendingPathComponent("huggingface", isDirectory: true).path
+        return environment
+    }
+
+    static func translateGemmaEnvironment() -> [String: String] {
+        var environment = ProcessInfo.processInfo.environment
+        environment["HF_HOME"] = translateGemmaCacheURL.appendingPathComponent("huggingface", isDirectory: true).path
+        environment["TOKENIZERS_PARALLELISM"] = "false"
         return environment
     }
 
