@@ -65,8 +65,11 @@ func runSmokeTranscriptionIfRequested() {
             samples: samples,
             translateToEnglish: shouldTranslateAudioToEnglish
         )
+        let spokenFormattingOutput = spokenFormattingCommandsEnabled()
+            ? SpokenFormattingProcessor.apply(transcript)
+            : transcript
         let translatedOutput = try TranscriptionOutputPipeline.applyConfiguredOutputLanguage(
-            to: transcript,
+            to: spokenFormattingOutput,
             inputLanguage: inputLanguage,
             outputLanguage: outputLanguage,
             preferAppleSystemTranslation: false

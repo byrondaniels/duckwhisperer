@@ -26,6 +26,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     private let undoLastPasteMenuItem = NSMenuItem(title: "Undo Last Paste", action: #selector(undoLastPaste), keyEquivalent: "")
     private let copyLastMenuItem = NSMenuItem(title: "Copy Last Text", action: #selector(copyLastTranscript), keyEquivalent: "")
     private let preserveCapitalizationMenuItem = NSMenuItem(title: "Preserve Capitalization", action: #selector(togglePreserveCapitalization), keyEquivalent: "")
+    private let spokenFormattingMenuItem = NSMenuItem(title: "Spoken Formatting Commands", action: #selector(toggleSpokenFormatting), keyEquivalent: "")
     private let audioDuckingMenuItem = NSMenuItem(title: "Audio Ducking", action: #selector(toggleAudioDucking), keyEquivalent: "")
     private let presenterModeMenuItem = NSMenuItem(title: "Presenter Mode", action: #selector(togglePresenterMode), keyEquivalent: "")
     private let checkForUpdatesMenuItem = NSMenuItem(title: "Check For Updates...", action: nil, keyEquivalent: "")
@@ -137,6 +138,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             return true
         }
         return UserDefaults.standard.bool(forKey: preserveCapitalizationKey)
+    }
+
+    private var spokenFormattingEnabled: Bool {
+        spokenFormattingCommandsEnabled()
     }
 
     private var modelURL: URL {
@@ -281,6 +286,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         copyLastMenuItem.target = self
         copyLastMenuItem.isEnabled = false
         preserveCapitalizationMenuItem.target = self
+        spokenFormattingMenuItem.target = self
         audioDuckingMenuItem.target = self
         presenterModeMenuItem.target = self
 
@@ -342,6 +348,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         menu.addItem(settingsMenuItem())
 
         settingsMenu.addItem(appDefaultsMenuItem())
+        settingsMenu.addItem(spokenFormattingMenuItem)
         settingsMenu.addItem(audioDuckingMenuItem)
         settingsMenu.addItem(presenterModeMenuItem)
         settingsMenu.addItem(NSMenuItem.separator())
@@ -377,6 +384,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         menu.addItem(NSMenuItem(title: "Quit \(appDisplayName)", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         statusItem.menu = menu
         rebuildPreserveCapitalizationMenuItem()
+        rebuildSpokenFormattingMenuItem()
         rebuildAudioDuckingMenuItem()
         rebuildPresenterModeMenuItem()
         rebuildInputLanguageMenu()
@@ -692,6 +700,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         preserveCapitalizationMenuItem.state = preserveCapitalization ? .on : .off
     }
 
+    private func rebuildSpokenFormattingMenuItem() {
+        spokenFormattingMenuItem.state = spokenFormattingEnabled ? .on : .off
+        spokenFormattingMenuItem.toolTip = "Turns spoken commands like quote ... end quote into punctuation."
+    }
+
     private func rebuildAudioDuckingMenuItem() {
         audioDuckingMenuItem.state = audioDuckingEnabled ? .on : .off
     }
@@ -776,6 +789,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         undoLastPasteMenuItem.isEnabled = canUndoLastPaste
         refreshPermissionUI()
         rebuildPreserveCapitalizationMenuItem()
+        rebuildSpokenFormattingMenuItem()
         rebuildAudioDuckingMenuItem()
         rebuildPresenterModeMenuItem()
         rebuildInputLanguageMenu()
@@ -1271,6 +1285,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         setState(state)
     }
 
+    @objc private func toggleSpokenFormatting() {
+        UserDefaults.standard.set(!spokenFormattingEnabled, forKey: spokenFormattingEnabledKey)
+        rebuildSpokenFormattingMenuItem()
+        setState(state)
+    }
+
     @objc private func toggleAudioDucking() {
         UserDefaults.standard.set(!audioDuckingEnabled, forKey: audioDuckingEnabledKey)
         rebuildAudioDuckingMenuItem()
@@ -1539,6 +1559,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         let modelChoice = activeModelChoice ?? selectedModel
         let appName = activeAppName
         let shouldPreserveCapitalization = preserveCapitalization
+        let shouldApplySpokenFormatting = spokenFormattingEnabled
         let dictionaryEntries = personalDictionaryEntries
         let shouldTranslateAudioToEnglish = TranscriptionOutputPipeline.shouldUseWhisperEnglishTranslation(
             inputLanguage: inputLanguage,
@@ -1566,6 +1587,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                     writingProfile: writingProfile
                 )
                 let dictionaryOutput = PersonalDictionary.apply(dictionaryEntries, to: commandResult.text)
+                let spokenFormattingOutput = shouldApplySpokenFormatting
+                    ? SpokenFormattingProcessor.apply(dictionaryOutput)
+                    : dictionaryOutput
                 let willRunOutputTranslation = commandResult.outputLanguage.requiresTranslation
                     && !commandResult.outputLanguage.matchesInput(inputLanguage)
                 if willRunOutputTranslation {
@@ -1607,7 +1631,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                     }
                 }
                 let translatedOutput = try TranscriptionOutputPipeline.applyConfiguredOutputLanguage(
-                    to: dictionaryOutput,
+                    to: spokenFormattingOutput,
                     inputLanguage: inputLanguage,
                     outputLanguage: commandResult.outputLanguage
                 )

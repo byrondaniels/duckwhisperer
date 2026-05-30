@@ -9,6 +9,7 @@ let selectedOutputLanguageIDKey = "SelectedOutputLanguageID"
 let selectedStyleIntensityPercentKey = "SelectedStyleIntensityPercent"
 let selectedWritingProfileIDKey = "SelectedWritingProfileID"
 let preserveCapitalizationKey = "PreserveCapitalization"
+let spokenFormattingEnabledKey = "SpokenFormattingEnabled"
 let audioDuckingEnabledKey = "AudioDuckingEnabled"
 let presenterModeEnabledKey = "PresenterModeEnabled"
 let appDefaultsKey = "AppDefaults"
@@ -38,6 +39,13 @@ func appSupportRootURL() -> URL {
     }
 
     return currentURL
+}
+
+func spokenFormattingCommandsEnabled() -> Bool {
+    if UserDefaults.standard.object(forKey: spokenFormattingEnabledKey) == nil {
+        return true
+    }
+    return UserDefaults.standard.bool(forKey: spokenFormattingEnabledKey)
 }
 
 private func fourCharCode(_ value: String) -> OSType {

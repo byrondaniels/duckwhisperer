@@ -13,6 +13,7 @@ private final class RecordingOverlayView: NSView {
     var audioAccent: CGFloat = 0
     var animationPhase: CGFloat = 0
     var wingOpenProgress: CGFloat = 1
+    var idleIntroFlapProgress: CGFloat = 0
 
     var progressPercent: Int? {
         didSet {
@@ -62,13 +63,17 @@ private final class RecordingOverlayView: NSView {
         audioLevel: CGFloat,
         audioAccent: CGFloat,
         animationPhase: CGFloat,
-        wingOpenProgress: CGFloat? = nil
+        wingOpenProgress: CGFloat? = nil,
+        idleIntroFlapProgress: CGFloat? = nil
     ) {
         self.audioLevel = audioLevel
         self.audioAccent = audioAccent
         self.animationPhase = animationPhase
         if let wingOpenProgress {
             self.wingOpenProgress = max(0, min(1, wingOpenProgress))
+        }
+        if let idleIntroFlapProgress {
+            self.idleIntroFlapProgress = max(0, min(1, idleIntroFlapProgress))
         }
         needsDisplay = true
     }
@@ -405,7 +410,12 @@ private final class RecordingOverlayView: NSView {
         transform.translateX(by: -center.x, yBy: -center.y)
         transform.concat()
 
-        drawFlappingWings(energy: energy, accent: vocalAccent, openProgress: wingOpenProgress)
+        drawFlappingWings(
+            energy: energy,
+            accent: vocalAccent,
+            openProgress: wingOpenProgress,
+            idleIntroFlapProgress: idleIntroFlapProgress
+        )
 
         if let hudArtwork = Self.hudArtwork {
             let dropShadow = NSShadow()
@@ -435,7 +445,12 @@ private final class RecordingOverlayView: NSView {
         NSGraphicsContext.restoreGraphicsState()
     }
 
-    private func drawFlappingWings(energy: CGFloat, accent: CGFloat, openProgress: CGFloat) {
+    private func drawFlappingWings(
+        energy: CGFloat,
+        accent: CGFloat,
+        openProgress: CGFloat,
+        idleIntroFlapProgress: CGFloat
+    ) {
         let lifecycleOpen = smoothstep(openProgress)
         guard lifecycleOpen > 0.018 else {
             return
@@ -444,11 +459,19 @@ private final class RecordingOverlayView: NSView {
         let raw = max(0, min(1, energy))
         let vocalAccent = max(0, min(1, accent))
         let isSpeaking = raw > 0.030
+        let introProgress = isSpeaking ? 0 : max(0, min(1, idleIntroFlapProgress))
+        let introEnvelope = sin(introProgress * .pi)
+        let introStroke = sin(introProgress * .pi * 2.0) * introEnvelope
+        let introPhase = introProgress * .pi * 2.0
         let loudness = isSpeaking ? max(pow(raw, 0.52), 0.24) : 0
-        let responsiveLoudness = min(1, loudness + vocalAccent * 0.16)
-        let wavePhase = animationPhase * (0.62 + responsiveLoudness * 0.54)
+        let responsiveLoudness = min(1, loudness + vocalAccent * 0.16 + introEnvelope * 0.30)
+        let wavePhase = animationPhase * (0.62 + responsiveLoudness * 0.54) + introPhase
         let movementGain: CGFloat = 1.20
-        let waveAmplitude = (isSpeaking ? min(0.96, (smoothstep(loudness) * 0.70 + smoothstep(vocalAccent) * 0.24) * movementGain) : 0) * lifecycleOpen
+        let voiceWave = isSpeaking
+            ? min(0.96, (smoothstep(loudness) * 0.70 + smoothstep(vocalAccent) * 0.24) * movementGain)
+            : 0
+        let introWave = introEnvelope * 0.48
+        let waveAmplitude = max(voiceWave, introWave) * lifecycleOpen
 
         NSGraphicsContext.saveGraphicsState()
         let shadow = NSShadow()
@@ -469,7 +492,10 @@ private final class RecordingOverlayView: NSView {
             wavePhase: wavePhase,
             waveAmplitude: waveAmplitude,
             vocalAccent: vocalAccent,
-            foldOpen: lifecycleOpen
+            foldOpen: lifecycleOpen,
+            ceremonialFlap: introEnvelope,
+            ceremonialStroke: introStroke,
+            ceremonialPhase: introPhase
         )
         drawWing(
             side: 1,
@@ -478,7 +504,10 @@ private final class RecordingOverlayView: NSView {
             wavePhase: wavePhase,
             waveAmplitude: waveAmplitude,
             vocalAccent: vocalAccent,
-            foldOpen: lifecycleOpen
+            foldOpen: lifecycleOpen,
+            ceremonialFlap: introEnvelope,
+            ceremonialStroke: introStroke,
+            ceremonialPhase: introPhase
         )
         NSGraphicsContext.restoreGraphicsState()
     }
@@ -490,14 +519,22 @@ private final class RecordingOverlayView: NSView {
         wavePhase: CGFloat,
         waveAmplitude: CGFloat,
         vocalAccent: CGFloat,
-        foldOpen: CGFloat
+        foldOpen: CGFloat,
+        ceremonialFlap: CGFloat,
+        ceremonialStroke: CGFloat,
+        ceremonialPhase: CGFloat
     ) {
         let offsets: [CGFloat] = [-1.90, -1.48, -1.08, -0.70, -0.33, 0.05, 0.42, 0.78, 1.12, 1.44, 1.74]
         let featherSpan = CGFloat(max(offsets.count - 1, 1))
         let fold = max(0, min(1, foldOpen))
-        let baseLift = -2 + (-9 - loudness * 5.0 - vocalAccent * 0.9) * fold
-        let open = 0.10 + (0.68 + loudness * 0.12 + vocalAccent * 0.020) * fold
-        let lengthFactor = 0.16 + 0.84 * fold
+        let rootOpen = stagedUnfold(fold, delay: 0.00, span: 0.74)
+        let midOpen = stagedUnfold(fold, delay: 0.10, span: 0.76)
+        let tipOpen = stagedUnfold(fold, delay: 0.26, span: 0.68)
+        let unfoldSurge = sin(fold * .pi)
+        let baseLift = -1.5 + (-9.5 - loudness * 5.0 - vocalAccent * 0.9) * rootOpen - unfoldSurge * 2.2
+        let open = 0.08 + (0.70 + loudness * 0.12 + vocalAccent * 0.020) * midOpen
+        let rootLengthFactor = 0.10 + 0.90 * rootOpen
+        let midLengthFactor = 0.12 + 0.88 * midOpen
 
         drawWingMembrane(
             side: side,
@@ -508,33 +545,76 @@ private final class RecordingOverlayView: NSView {
             baseLift: baseLift,
             wavePhase: wavePhase,
             waveAmplitude: waveAmplitude,
-            foldOpen: fold
+            rootOpen: rootOpen,
+            midOpen: midOpen,
+            tipOpen: tipOpen,
+            unfoldSurge: unfoldSurge,
+            ceremonialFlap: ceremonialFlap,
+            ceremonialStroke: ceremonialStroke,
+            ceremonialPhase: ceremonialPhase
         )
 
         for (index, offset) in offsets.enumerated() {
             let rank = CGFloat(index)
             let progress = rank / featherSpan
             let featherPriority = CGFloat(offsets.count - index)
+            let featherOpen = stagedUnfold(fold, delay: 0.06 + progress * 0.22, span: 0.66)
+            let featherTipOpen = stagedUnfold(fold, delay: 0.22 + progress * 0.24, span: 0.58)
+            let featherOpacity = max(0, min(1, featherOpen))
+            let featherLengthFactor = 0.08 + 0.92 * featherTipOpen
+            let unfurlWave = sin((fold - progress * 0.16) * .pi) * max(0, min(1, featherOpen))
+            let curlDown = (1 - featherTipOpen) * (12.0 + progress * 9.5)
 
             let rootWave = waveAmplitude * sin(wavePhase + 0.16 - progress * 0.28) * (0.35 + loudness * 0.74 + vocalAccent * 0.24)
             let midWave = waveAmplitude * sin(wavePhase - 0.52 - progress * 0.88) * (1.55 + loudness * 3.10 + vocalAccent * 0.92)
             let tipWave = waveAmplitude * sin(wavePhase - 1.12 - progress * 1.50) * (2.90 + loudness * 4.90 + vocalAccent * 1.55)
             let sweepWave = waveAmplitude * cos(wavePhase - 0.88 - progress * 1.05) * (1.35 + loudness * 2.70 + vocalAccent * 0.72)
-            let trailingDrop = 0.6 + pow(progress, 1.7) * (8.0 + loudness * 1.2)
+            let ceremonialRoll = ceremonialFlap * sin(ceremonialPhase - 0.45 - progress * 1.05)
+            let ceremonialHinge = ceremonialStroke * (4.5 + progress * 21.0)
+            let ceremonialTipWave = ceremonialRoll * (4.5 + progress * 10.5)
+            let ceremonialShoulderWave = ceremonialRoll * (1.8 + progress * 4.0)
+            let openingSweep = unfoldSurge * (1.4 + progress * 6.8) * side
+            let trailingDrop = 0.6 + pow(progress, 1.7) * (8.0 + loudness * 1.2) + curlDown
 
-            let extensionLength = (62 + loudness * 9 + vocalAccent * 2.8 + featherPriority * 4.4) * lengthFactor
-            let tipX = pivot.x + side * (extensionLength + abs(offset) * 2.6 + sweepWave)
-            let tipY = pivot.y + offset * 7.4 * open + baseLift + trailingDrop + tipWave + rank * 0.30
-            let shoulderX = pivot.x + side * (extensionLength * 0.42 + loudness * 6)
-            let shoulderY = pivot.y + offset * 4.8 * open + baseLift * 0.54 + trailingDrop * 0.36 + midWave + rank * 0.18
-            let lowerShoulderY = shoulderY + 4.8 + progress * 2.8 + midWave * 0.14
+            let extensionLength = (62 + loudness * 9 + vocalAccent * 2.8 + featherPriority * 4.4) * featherLengthFactor
+            let tipX = pivot.x
+                + side * (extensionLength + abs(offset) * 2.6 + sweepWave)
+                + openingSweep
+                + side * ceremonialFlap * (1.0 + progress * 4.4)
+            let tipY = pivot.y
+                + offset * 7.4 * open
+                + baseLift
+                + trailingDrop
+                + tipWave
+                + ceremonialHinge
+                + ceremonialTipWave
+                + rank * 0.30
+                - unfurlWave * (5.4 + progress * 5.4)
+            let shoulderX = pivot.x
+                + side * (extensionLength * 0.42 + loudness * 6) * midLengthFactor
+                + side * ceremonialFlap * (0.6 + progress * 1.8)
+            let shoulderY = pivot.y
+                + offset * 4.8 * open
+                + baseLift * 0.54
+                + trailingDrop * 0.36
+                + midWave
+                + ceremonialHinge * 0.38
+                + ceremonialShoulderWave
+                + rank * 0.18
+                - unfurlWave * (3.1 + progress * 2.6)
+            let lowerShoulderY = shoulderY
+                + 4.8
+                + progress * 2.8
+                + midWave * 0.14
+                + ceremonialHinge * 0.10
+                - ceremonialShoulderWave * 0.24
             let rootTop = NSPoint(
-                x: pivot.x + side * (2 + rank * 0.30),
-                y: pivot.y - 4.2 + rank * 0.24 + rootWave
+                x: pivot.x + side * (2 + rank * 0.30) * rootLengthFactor,
+                y: pivot.y - 2.0 - 2.2 * rootOpen + rank * 0.24 + rootWave + (1 - rootOpen) * 2.5 + ceremonialStroke * 0.8
             )
             let rootBottom = NSPoint(
-                x: pivot.x + side * (4 + rank * 0.32),
-                y: pivot.y + 6.0 + rank * 0.30 + rootWave * 0.45
+                x: pivot.x + side * (4 + rank * 0.32) * rootLengthFactor,
+                y: pivot.y + 2.5 + 3.5 * rootOpen + rank * 0.30 + rootWave * 0.45 + (1 - rootOpen) * 3.0 + ceremonialStroke * 1.0
             )
 
             let path = NSBezierPath()
@@ -588,12 +668,12 @@ private final class RecordingOverlayView: NSView {
             NSGraphicsContext.saveGraphicsState()
             path.addClip()
             NSGradient(colors: [
-                NSColor(calibratedRed: 1.0, green: 0.88, blue: 0.38, alpha: (0.80 + loudness * 0.14) * fold),
-                NSColor(calibratedRed: 1.0, green: 0.60, blue: 0.10, alpha: (0.52 + loudness * 0.18) * fold)
+                NSColor(calibratedRed: 1.0, green: 0.88, blue: 0.38, alpha: (0.80 + loudness * 0.14) * featherOpacity),
+                NSColor(calibratedRed: 1.0, green: 0.60, blue: 0.10, alpha: (0.52 + loudness * 0.18) * featherOpacity)
             ])?.draw(in: path.bounds, angle: side < 0 ? 180 : 0)
             NSGraphicsContext.restoreGraphicsState()
 
-            NSColor(calibratedRed: 1.0, green: 0.78, blue: 0.18, alpha: (0.24 + loudness * 0.24) * fold).setStroke()
+            NSColor(calibratedRed: 1.0, green: 0.78, blue: 0.18, alpha: (0.24 + loudness * 0.24) * featherOpacity).setStroke()
             path.lineWidth = 0.9
             path.stroke()
 
@@ -611,7 +691,7 @@ private final class RecordingOverlayView: NSView {
                 controlPoint1: NSPoint(x: shoulderX + side * 22, y: shoulderY + 3.2 + midWave * 0.14),
                 controlPoint2: NSPoint(x: tipX - side * 28, y: tipY + 2 + tipWave * 0.08)
             )
-            NSColor.white.withAlphaComponent((0.12 + loudness * 0.10) * fold).setStroke()
+            NSColor.white.withAlphaComponent((0.12 + loudness * 0.10) * featherOpacity).setStroke()
             vein.stroke()
         }
     }
@@ -625,28 +705,45 @@ private final class RecordingOverlayView: NSView {
         baseLift: CGFloat,
         wavePhase: CGFloat,
         waveAmplitude: CGFloat,
-        foldOpen: CGFloat
+        rootOpen: CGFloat,
+        midOpen: CGFloat,
+        tipOpen: CGFloat,
+        unfoldSurge: CGFloat,
+        ceremonialFlap: CGFloat,
+        ceremonialStroke: CGFloat,
+        ceremonialPhase: CGFloat
     ) {
-        let fold = max(0, min(1, foldOpen))
+        let rootOpen = max(0, min(1, rootOpen))
+        let midOpen = max(0, min(1, midOpen))
+        let tipOpen = max(0, min(1, tipOpen))
         let rootWave = waveAmplitude * sin(wavePhase + 0.10) * (0.35 + loudness * 0.70 + vocalAccent * 0.18)
         let midWave = waveAmplitude * sin(wavePhase - 0.56) * (1.35 + loudness * 2.65 + vocalAccent * 0.76)
         let tipWave = waveAmplitude * sin(wavePhase - 1.18) * (2.65 + loudness * 4.35 + vocalAccent * 1.28)
         let sweepWave = waveAmplitude * cos(wavePhase - 0.92) * (1.1 + loudness * 2.45 + vocalAccent * 0.56)
-        let extensionLength = (112 + loudness * 7 + vocalAccent * 2.4) * (0.16 + 0.84 * fold) + sweepWave
+        let extensionLength = (112 + loudness * 7 + vocalAccent * 2.4) * (0.10 + 0.90 * tipOpen) + sweepWave
+        let ceremonialRoll = ceremonialFlap * sin(ceremonialPhase - 0.62)
+        let ceremonialMidHinge = ceremonialStroke * 8.5 + ceremonialRoll * 3.8
+        let ceremonialTipHinge = ceremonialStroke * 23.0 + ceremonialFlap * sin(ceremonialPhase - 1.22) * 11.0
 
-        let rootTop = NSPoint(x: pivot.x + side * 3, y: pivot.y - 10.5 * open + rootWave)
-        let rootBottom = NSPoint(x: pivot.x + side * 5, y: pivot.y + 12.5 * open + rootWave * 0.4)
+        let rootTop = NSPoint(
+            x: pivot.x + side * (1.5 + 1.5 * rootOpen),
+            y: pivot.y - 10.5 * open + rootWave + (1 - rootOpen) * 4.0 + ceremonialStroke * 1.2
+        )
+        let rootBottom = NSPoint(
+            x: pivot.x + side * (2.5 + 2.5 * rootOpen),
+            y: pivot.y + 12.5 * open + rootWave * 0.4 + (1 - rootOpen) * 4.5 + ceremonialStroke * 1.4
+        )
         let shoulder = NSPoint(
-            x: pivot.x + side * (extensionLength * 0.54),
-            y: pivot.y - 9.5 * open + baseLift * 0.60 + midWave
+            x: pivot.x + side * (extensionLength * 0.54) * (0.22 + 0.78 * midOpen) + side * ceremonialFlap * 2.0,
+            y: pivot.y - 9.5 * open + baseLift * 0.60 + midWave - unfoldSurge * 2.5 + ceremonialMidHinge
         )
         let lowerShoulder = NSPoint(
-            x: pivot.x + side * (extensionLength * 0.48),
-            y: pivot.y + 7.5 * open + baseLift * 0.18 + midWave * 0.50
+            x: pivot.x + side * (extensionLength * 0.48) * (0.22 + 0.78 * midOpen) + side * ceremonialFlap * 1.4,
+            y: pivot.y + 7.5 * open + baseLift * 0.18 + midWave * 0.50 + (1 - midOpen) * 5.0 + ceremonialMidHinge * 0.62
         )
         let tip = NSPoint(
-            x: pivot.x + side * extensionLength,
-            y: pivot.y - 6.5 * open + baseLift + tipWave
+            x: pivot.x + side * extensionLength + side * unfoldSurge * 5.0 + side * ceremonialFlap * 5.0,
+            y: pivot.y - 6.5 * open + baseLift + tipWave + (1 - tipOpen) * 14.0 - unfoldSurge * 5.0 + ceremonialTipHinge
         )
 
         let membrane = NSBezierPath()
@@ -676,10 +773,15 @@ private final class RecordingOverlayView: NSView {
         NSGraphicsContext.saveGraphicsState()
         membrane.addClip()
         NSGradient(colors: [
-            NSColor(calibratedRed: 1.0, green: 0.82, blue: 0.22, alpha: (0.10 + loudness * 0.06 + vocalAccent * 0.018) * fold),
-            NSColor(calibratedRed: 1.0, green: 0.55, blue: 0.08, alpha: (0.035 + loudness * 0.045 + vocalAccent * 0.014) * fold)
+            NSColor(calibratedRed: 1.0, green: 0.82, blue: 0.22, alpha: (0.10 + loudness * 0.06 + vocalAccent * 0.018) * midOpen),
+            NSColor(calibratedRed: 1.0, green: 0.55, blue: 0.08, alpha: (0.035 + loudness * 0.045 + vocalAccent * 0.014) * midOpen)
         ])?.draw(in: membrane.bounds, angle: side < 0 ? 180 : 0)
         NSGraphicsContext.restoreGraphicsState()
+    }
+
+    private func stagedUnfold(_ value: CGFloat, delay: CGFloat, span: CGFloat) -> CGFloat {
+        let normalized = (value - delay) / max(0.001, span)
+        return smoothstep(normalized)
     }
 
     private func smoothstep(_ value: CGFloat) -> CGFloat {
@@ -842,8 +944,11 @@ private final class RecordingOverlayView: NSView {
 final class RecordingOverlayController {
     private static let standardSize = NSSize(width: 440, height: 278)
     private static let presenterSize = NSSize(width: 560, height: 220)
-    private static let wingOpenDuration: TimeInterval = 0.42
+    private static let wingOpenDuration: TimeInterval = 1.26
     private static let wingCloseDuration: TimeInterval = 0.285
+    private static let idleIntroFlapDuration: TimeInterval = 0.95
+    private static let idleIntroFlapStartOpenProgress: CGFloat = 0.94
+    private static let idleIntroFlapHeadStart: TimeInterval = 0.055
     private static let overlayCollectionBehavior: NSWindow.CollectionBehavior = [
         .canJoinAllSpaces,
         .fullScreenAuxiliary,
@@ -868,6 +973,10 @@ final class RecordingOverlayController {
     private var wingAnimationTargetProgress: CGFloat = 0
     private var wingAnimationStartedAt: Date?
     private var wingAnimationDuration: TimeInterval = 0.12
+    private var heardAudioThisSession = false
+    private var idleIntroFlapCompleted = false
+    private var idleIntroFlapStartedAt: Date?
+    private var idleIntroFlapProgress: CGFloat = 0
     private var isClosing = false
     private var hideGeneration = 0
 
@@ -942,13 +1051,24 @@ final class RecordingOverlayController {
             wingAnimationStartedAt = nil
             wingAnimationStartProgress = 0
             wingAnimationTargetProgress = 0
-            overlayView.setAnimationState(audioLevel: 0, audioAccent: 0, animationPhase: 0, wingOpenProgress: 0)
+            heardAudioThisSession = false
+            idleIntroFlapCompleted = false
+            idleIntroFlapStartedAt = nil
+            idleIntroFlapProgress = 0
+            overlayView.setAnimationState(
+                audioLevel: 0,
+                audioAccent: 0,
+                animationPhase: 0,
+                wingOpenProgress: 0,
+                idleIntroFlapProgress: 0
+            )
         }
         isClosing = false
         hideGeneration += 1
-        animateWings(to: 1, duration: Self.wingOpenDuration)
-        startAnimationTimer()
+        let showGeneration = hideGeneration
         if isVisible {
+            animateWings(to: 1, duration: Self.wingOpenDuration)
+            startAnimationTimer()
             revealOnActiveSpace()
             return
         }
@@ -962,6 +1082,14 @@ final class RecordingOverlayController {
             context.duration = 0.16
             context.timingFunction = CAMediaTimingFunction(name: .easeOut)
             panel.animator().alphaValue = 1
+        }
+
+        startAnimationTimer()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.055) { [weak self] in
+            guard let self, self.isVisible, !self.isClosing, self.hideGeneration == showGeneration else {
+                return
+            }
+            self.animateWings(to: 1, duration: Self.wingOpenDuration)
         }
     }
 
@@ -980,8 +1108,18 @@ final class RecordingOverlayController {
             wingAnimationStartedAt = nil
             wingAnimationStartProgress = 0
             wingAnimationTargetProgress = 0
+            heardAudioThisSession = false
+            idleIntroFlapCompleted = false
+            idleIntroFlapStartedAt = nil
+            idleIntroFlapProgress = 0
             isClosing = false
-            overlayView.setAnimationState(audioLevel: 0, audioAccent: 0, animationPhase: animationPhase, wingOpenProgress: 0)
+            overlayView.setAnimationState(
+                audioLevel: 0,
+                audioAccent: 0,
+                animationPhase: animationPhase,
+                wingOpenProgress: 0,
+                idleIntroFlapProgress: 0
+            )
             overlayView.previewText = ""
             overlayView.commandText = nil
             stopAnimationTimer()
@@ -995,6 +1133,8 @@ final class RecordingOverlayController {
         overlayView.progressPercent = nil
         targetAudioLevel = 0
         targetAudioAccent = 0
+        idleIntroFlapStartedAt = nil
+        idleIntroFlapProgress = 0
         animateWings(to: 0, duration: Self.wingCloseDuration)
         overlayView.previewText = ""
         overlayView.commandText = nil
@@ -1021,13 +1161,18 @@ final class RecordingOverlayController {
                 self.displayedAudioLevel = 0
                 self.displayedAudioAccent = 0
                 self.displayedWingOpenProgress = 0
+                self.heardAudioThisSession = false
+                self.idleIntroFlapCompleted = false
+                self.idleIntroFlapStartedAt = nil
+                self.idleIntroFlapProgress = 0
                 self.wingAnimationStartedAt = nil
                 self.isClosing = false
                 self.overlayView.setAnimationState(
                     audioLevel: 0,
                     audioAccent: 0,
                     animationPhase: self.animationPhase,
-                    wingOpenProgress: 0
+                    wingOpenProgress: 0,
+                    idleIntroFlapProgress: 0
                 )
                 self.stopAnimationTimer()
                 self.panel.orderOut(nil)
@@ -1125,6 +1270,10 @@ final class RecordingOverlayController {
         let gatedLevel = max(0, (clampedLevel - noiseFloor) / (1 - noiseFloor))
         let shapedLevel = min(0.96, pow(gatedLevel, 0.62) * 1.04)
         let nextLevel = min(0.96, max(0.06, shapedLevel))
+        heardAudioThisSession = true
+        idleIntroFlapCompleted = true
+        idleIntroFlapStartedAt = nil
+        idleIntroFlapProgress = 0
         targetAudioLevel = nextLevel
         targetAudioAccent = smoothstep(nextLevel)
     }
@@ -1182,10 +1331,14 @@ final class RecordingOverlayController {
             let elapsed = Date().timeIntervalSince(wingAnimationStartedAt)
             let rawProgress = max(0, min(1, elapsed / wingAnimationDuration))
             let easedProgress = wingAnimationTargetProgress > wingAnimationStartProgress
-                ? easeOutCubic(CGFloat(rawProgress))
+                ? easeInOutCubic(CGFloat(rawProgress))
                 : easeInCubic(CGFloat(rawProgress))
             displayedWingOpenProgress = wingAnimationStartProgress
                 + (wingAnimationTargetProgress - wingAnimationStartProgress) * easedProgress
+            if wingAnimationTargetProgress >= 0.99,
+               displayedWingOpenProgress >= Self.idleIntroFlapStartOpenProgress {
+                beginIdleIntroFlapIfNeeded()
+            }
             if rawProgress >= 1 {
                 displayedWingOpenProgress = wingAnimationTargetProgress
                 self.wingAnimationStartedAt = nil
@@ -1194,8 +1347,12 @@ final class RecordingOverlayController {
             displayedWingOpenProgress = targetWingOpenProgress
         }
 
+        updateIdleIntroFlap()
+
         if displayedAudioLevel > 0.020 {
             animationPhase += 0.010 + displayedAudioLevel * 0.032 + displayedAudioAccent * 0.010
+        } else if idleIntroFlapProgress > 0 {
+            animationPhase += 0.025
         } else if displayedWingOpenProgress > 0 && displayedWingOpenProgress < 1 {
             animationPhase += 0.018
         }
@@ -1203,8 +1360,50 @@ final class RecordingOverlayController {
             audioLevel: displayedAudioLevel,
             audioAccent: displayedAudioAccent,
             animationPhase: animationPhase,
-            wingOpenProgress: displayedWingOpenProgress
+            wingOpenProgress: displayedWingOpenProgress,
+            idleIntroFlapProgress: idleIntroFlapProgress
         )
+    }
+
+    private func beginIdleIntroFlapIfNeeded() {
+        guard isVisible,
+              !isClosing,
+              !heardAudioThisSession,
+              !idleIntroFlapCompleted,
+              idleIntroFlapStartedAt == nil,
+              targetAudioLevel <= 0.020,
+              displayedAudioLevel <= 0.020
+        else {
+            return
+        }
+
+        idleIntroFlapStartedAt = Date().addingTimeInterval(-Self.idleIntroFlapHeadStart)
+        idleIntroFlapProgress = CGFloat(Self.idleIntroFlapHeadStart / Self.idleIntroFlapDuration)
+    }
+
+    private func updateIdleIntroFlap() {
+        guard let idleIntroFlapStartedAt else {
+            if heardAudioThisSession || isClosing {
+                idleIntroFlapProgress = 0
+            }
+            return
+        }
+
+        if heardAudioThisSession || isClosing || targetAudioLevel > 0.020 || displayedAudioLevel > 0.020 {
+            self.idleIntroFlapStartedAt = nil
+            idleIntroFlapProgress = 0
+            idleIntroFlapCompleted = true
+            return
+        }
+
+        let rawProgress = max(0, min(1, Date().timeIntervalSince(idleIntroFlapStartedAt) / Self.idleIntroFlapDuration))
+        if rawProgress >= 1 {
+            self.idleIntroFlapStartedAt = nil
+            idleIntroFlapProgress = 0
+            idleIntroFlapCompleted = true
+        } else {
+            idleIntroFlapProgress = CGFloat(rawProgress)
+        }
     }
 
     private func smoothstep(_ value: CGFloat) -> CGFloat {
@@ -1212,9 +1411,12 @@ final class RecordingOverlayController {
         return clamped * clamped * (3 - 2 * clamped)
     }
 
-    private func easeOutCubic(_ value: CGFloat) -> CGFloat {
+    private func easeInOutCubic(_ value: CGFloat) -> CGFloat {
         let clamped = max(0, min(1, value))
-        return 1 - pow(1 - clamped, 3)
+        if clamped < 0.5 {
+            return 4 * clamped * clamped * clamped
+        }
+        return 1 - pow(-2 * clamped + 2, 3) / 2
     }
 
     private func easeInCubic(_ value: CGFloat) -> CGFloat {
